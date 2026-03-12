@@ -1,0 +1,36 @@
+export interface BloomreachClientConfig {
+  /** Bloomreach environment ID */
+  environment: string;
+  /** API token for authentication */
+  apiToken: string;
+}
+
+/**
+ * Client for interacting with Bloomreach APIs.
+ *
+ * @example
+ * ```ts
+ * const client = new BloomreachClient({
+ *   environment: 'my-env',
+ *   apiToken: 'token-123',
+ * });
+ * ```
+ */
+export class BloomreachClient {
+  readonly config: BloomreachClientConfig;
+
+  constructor(config: BloomreachClientConfig) {
+    this.config = config;
+  }
+
+  /**
+   * Check connectivity to the Bloomreach API.
+   * @returns status object with connection information
+   */
+  async status(): Promise<{ connected: boolean; environment: string }> {
+    return {
+      connected: false,
+      environment: this.config.environment,
+    };
+  }
+}
