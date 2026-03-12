@@ -4,9 +4,11 @@ import { Command } from 'commander';
 import {
   BloomreachClient,
   BloomreachDashboardsService,
+  BloomreachEmailCampaignsService,
   BloomreachPerformanceService,
   BloomreachScenariosService,
 } from '@bloomreach-buddy/core';
+import type { EmailCampaignSchedule, EmailCampaignABTestConfig } from '@bloomreach-buddy/core';
 
 function printJson(value: unknown): void {
   console.log(JSON.stringify(value, null, 2));
@@ -692,6 +694,314 @@ scenarios
         } else {
           console.log('Scenario archive prepared.');
           console.log(`  Scenario: ${options.scenarioId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+const emailCampaigns = program
+  .command('email-campaigns')
+  .description('Manage Bloomreach Engagement email campaigns');
+
+emailCampaigns
+  .command('list')
+  .description('List all email campaigns in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--status <status>', 'Filter by status (draft, scheduled, sending, sent, paused, archived)')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      status?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachEmailCampaignsService(options.project);
+        const input: { project: string; status?: string } = {
+          project: options.project,
+        };
+        if (options.status) input.status = options.status;
+
+        const result = await service.listEmailCampaigns(input);
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          if (result.length === 0) {
+            console.log('No email campaigns found.');
+            return;
+          }
+          for (const campaign of result) {
+            console.log(`  ${campaign.name}`);
+            console.log(`    Status:  ${campaign.status}`);
+            console.log(`    Subject: ${campaign.subjectLine}`);
+            console.log(`    ID:      ${campaign.id}`);
+            console.log(`    URL:     ${campaign.url}`);
+          }
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+emailCampaigns
+  .command('view-results')
+  .description('View delivery and engagement metrics for an email campaign')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--campaign-id <id>', 'Email campaign ID')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      campaignId: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachEmailCampaignsService(options.project);
+        const result = await service.viewCampaignResults({
+          project: options.project,
+          campaignId: options.campaignId,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log(`Campaign Results: ${result.campaignId}`);
+          console.log(`  Sent:         ${result.sent}`);
+          console.log(`  Delivered:    ${result.delivered}`);
+          console.log(`  Opened:       ${result.opened}`);
+          console.log(`  Clicked:      ${result.clicked}`);
+          console.log(`  Bounced:      ${result.bounced}`);
+          console.log(`  Unsubscribed: ${result.unsubscribed}`);
+          console.log(`  Open Rate:    ${(result.openRate * 100).toFixed(1)}%`);
+          console.log(`  CTR:          ${(result.clickThroughRate * 100).toFixed(1)}%`);
+          console.log(`  Revenue:      ${result.revenue}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+emailCampaigns
+  .command('create')
+  .description('Prepare creation of a new email campaign (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Campaign name')
+  .requiredOption('--subject <subject>', 'Email subject line')
+  .option('--template-type <type>', 'Template type (visual, html)')
+  .option('--audience <audience>', 'Audience segment identifier')
+  .option('--schedule-type <type>', 'Send schedule (immediate, scheduled, recurring)')
+  .option('--scheduled-at <datetime>', 'ISO-8601 datetime for scheduled sends')
+  .option('--cron <expression>', 'Cron expression for recurring sends')
+  .option('--ab-variants <n>', 'Number of A/B test variants')
+  .option('--ab-split <percent>', 'A/B test split percentage')
+  .option('--ab-winner <criteria>', 'A/B test winner criteria (open_rate, click_rate)')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      subject: string;
+      templateType?: string;
+      audience?: string;
+      scheduleType?: string;
+      scheduledAt?: string;
+      cron?: string;
+      abVariants?: string;
+      abSplit?: string;
+      abWinner?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        let schedule: EmailCampaignSchedule | undefined;
+        if (options.scheduleType) {
+          schedule = {
+            type: options.scheduleType as 'immediate' | 'scheduled' | 'recurring',
+            scheduledAt: options.scheduledAt,
+            cronExpression: options.cron,
+          };
+        }
+
+        let abTest: EmailCampaignABTestConfig | undefined;
+        if (options.abVariants) {
+          abTest = {
+            enabled: true,
+            variants: parseInt(options.abVariants, 10),
+            splitPercentage: options.abSplit
+              ? parseInt(options.abSplit, 10)
+              : undefined,
+            winnerCriteria: options.abWinner,
+          };
+        }
+
+        const service = new BloomreachEmailCampaignsService(options.project);
+        const result = service.prepareCreateEmailCampaign({
+          project: options.project,
+          name: options.name,
+          subjectLine: options.subject,
+          templateType: options.templateType,
+          audience: options.audience,
+          schedule,
+          abTest,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Email campaign creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Subject: ${options.subject}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+emailCampaigns
+  .command('send')
+  .description('Prepare sending an email campaign (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--campaign-id <id>', 'Email campaign ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      campaignId: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachEmailCampaignsService(options.project);
+        const result = service.prepareSendEmailCampaign({
+          project: options.project,
+          campaignId: options.campaignId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Email campaign send prepared.');
+          console.log(`  Campaign: ${options.campaignId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+emailCampaigns
+  .command('clone')
+  .description('Prepare cloning an email campaign (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--campaign-id <id>', 'Email campaign ID to clone')
+  .option('--new-name <name>', 'Name for the cloned campaign')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      campaignId: string;
+      newName?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachEmailCampaignsService(options.project);
+        const result = service.prepareCloneEmailCampaign({
+          project: options.project,
+          campaignId: options.campaignId,
+          newName: options.newName,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Email campaign clone prepared.');
+          console.log(`  Source:   ${options.campaignId}`);
+          console.log(`  New name: ${options.newName ?? '(auto-generated)'}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+emailCampaigns
+  .command('archive')
+  .description('Prepare archiving an email campaign (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--campaign-id <id>', 'Email campaign ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      campaignId: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachEmailCampaignsService(options.project);
+        const result = service.prepareArchiveEmailCampaign({
+          project: options.project,
+          campaignId: options.campaignId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Email campaign archive prepared.');
+          console.log(`  Campaign: ${options.campaignId}`);
           console.log(`  Token:    ${result.confirmToken}`);
           console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');
