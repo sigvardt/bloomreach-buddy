@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import {
   BloomreachClient,
+  BloomreachCampaignCalendarService,
   BloomreachDashboardsService,
   BloomreachEmailCampaignsService,
   BloomreachPerformanceService,
@@ -1303,6 +1304,172 @@ surveys
         } else {
           console.log('Survey archive prepared.');
           console.log(`  Survey:  ${options.surveyId}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+const campaignCalendar = program
+  .command('campaigns-calendar')
+  .description('View and manage the Bloomreach campaign calendar');
+
+campaignCalendar
+  .command('view')
+  .description('View campaign calendar for a date range')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
+  .option('--end-date <date>', 'End date (YYYY-MM-DD)')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      startDate?: string;
+      endDate?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachCampaignCalendarService(options.project);
+        const result = await service.viewCampaignCalendar({
+          project: options.project,
+          startDate: options.startDate,
+          endDate: options.endDate,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          if (result.length === 0) {
+            console.log('No campaigns found in calendar.');
+            return;
+          }
+          for (const entry of result) {
+            console.log(`  ${entry.name}`);
+            console.log(`    Type:    ${entry.type}`);
+            console.log(`    Channel: ${entry.channel}`);
+            console.log(`    Status:  ${entry.status}`);
+            console.log(`    Start:   ${entry.startDate}`);
+            console.log(`    End:     ${entry.endDate}`);
+            console.log(`    URL:     ${entry.url}`);
+          }
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+campaignCalendar
+  .command('filter')
+  .description('Filter campaign calendar by type, status, or channel')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
+  .option('--end-date <date>', 'End date (YYYY-MM-DD)')
+  .option('--type <type>', 'Campaign type (email, sms, push, in_app, weblayer, webhook)')
+  .option('--status <status>', 'Campaign status (draft, scheduled, running, paused, stopped, finished)')
+  .option('--channel <channel>', 'Channel (email, sms, push, in_app, weblayer, webhook)')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      startDate?: string;
+      endDate?: string;
+      type?: string;
+      status?: string;
+      channel?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachCampaignCalendarService(options.project);
+        const result = await service.filterCampaignCalendar({
+          project: options.project,
+          startDate: options.startDate,
+          endDate: options.endDate,
+          type: options.type,
+          status: options.status,
+          channel: options.channel,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          if (result.length === 0) {
+            console.log('No campaigns match the filters.');
+            return;
+          }
+          for (const entry of result) {
+            console.log(`  ${entry.name}`);
+            console.log(`    Type:    ${entry.type}`);
+            console.log(`    Channel: ${entry.channel}`);
+            console.log(`    Status:  ${entry.status}`);
+            console.log(`    Start:   ${entry.startDate}`);
+            console.log(`    End:     ${entry.endDate}`);
+            console.log(`    URL:     ${entry.url}`);
+          }
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+campaignCalendar
+  .command('export')
+  .description('Prepare export of campaign calendar data (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
+  .option('--end-date <date>', 'End date (YYYY-MM-DD)')
+  .option('--type <type>', 'Campaign type filter (email, sms, push, in_app, weblayer, webhook)')
+  .option('--status <status>', 'Campaign status filter (draft, scheduled, running, paused, stopped, finished)')
+  .option('--channel <channel>', 'Channel filter (email, sms, push, in_app, weblayer, webhook)')
+  .option('--format <format>', 'Export format (json, csv)', 'json')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      startDate?: string;
+      endDate?: string;
+      type?: string;
+      status?: string;
+      channel?: string;
+      format: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachCampaignCalendarService(options.project);
+        const result = service.prepareExportCalendar({
+          project: options.project,
+          startDate: options.startDate,
+          endDate: options.endDate,
+          type: options.type,
+          status: options.status,
+          channel: options.channel,
+          format: options.format,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Calendar export prepared.');
+          console.log(`  Format:  ${options.format}`);
           console.log(`  Token:   ${result.confirmToken}`);
           console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');

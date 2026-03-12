@@ -1,3 +1,4 @@
+export * from './bloomreachCampaignCalendar.js';
 export * from './bloomreachDashboards.js';
 export * from './bloomreachEmailCampaigns.js';
 export * from './bloomreachPerformance.js';
