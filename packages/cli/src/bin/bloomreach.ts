@@ -8,6 +8,7 @@ import {
   BloomreachEmailCampaignsService,
   BloomreachPerformanceService,
   BloomreachScenariosService,
+  BloomreachTrendsService,
   BloomreachSurveysService,
 } from '@bloomreach-buddy/core';
 import type {
@@ -15,6 +16,7 @@ import type {
   EmailCampaignABTestConfig,
   SurveyQuestion,
   SurveyDisplayConditions,
+  TrendFilter,
 } from '@bloomreach-buddy/core';
 
 function printJson(value: unknown): void {
@@ -1472,6 +1474,250 @@ campaignCalendar
           console.log(`  Format:  ${options.format}`);
           console.log(`  Token:   ${result.confirmToken}`);
           console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+const trends = program
+  .command('trends')
+  .description('Manage Bloomreach Engagement trend analyses');
+
+trends
+  .command('list')
+  .description('List all trend analyses in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachTrendsService(options.project);
+      const result = await service.listTrendAnalyses({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No trend analyses found.');
+          return;
+        }
+        for (const trend of result) {
+          console.log(`  ${trend.name}`);
+          console.log(`    Events:      ${trend.events.join(', ')}`);
+          console.log(`    Granularity: ${trend.granularity}`);
+          console.log(`    ID:          ${trend.id}`);
+          console.log(`    URL:         ${trend.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(
+        `Error: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      process.exit(1);
+    }
+  });
+
+trends
+  .command('view-results')
+  .description('View time-series data for a trend analysis')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--analysis-id <id>', 'Trend analysis ID')
+  .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
+  .option('--end-date <date>', 'End date (YYYY-MM-DD)')
+  .option('--granularity <granularity>', 'Time granularity (hourly, daily, weekly, monthly)')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      analysisId: string;
+      startDate?: string;
+      endDate?: string;
+      granularity?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachTrendsService(options.project);
+        const result = await service.viewTrendResults({
+          project: options.project,
+          analysisId: options.analysisId,
+          startDate: options.startDate,
+          endDate: options.endDate,
+          granularity: options.granularity,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log(`Trend Analysis: ${result.analysisName}`);
+          console.log(`  Granularity: ${result.granularity}`);
+          console.log(`  Date range:  ${result.startDate} to ${result.endDate}`);
+          if (result.dataPoints.length === 0) {
+            console.log('  Data points: none');
+          } else {
+            console.log('  Data points:');
+            for (const dataPoint of result.dataPoints) {
+              console.log(`    ${JSON.stringify(dataPoint)}`);
+            }
+          }
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+trends
+  .command('create')
+  .description('Prepare creation of a new trend analysis (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Trend analysis name')
+  .requiredOption('--events <csv>', 'Events to track (comma-separated)')
+  .option('--granularity <granularity>', 'Time granularity (hourly, daily, weekly, monthly)', 'daily')
+  .option('--customer-attributes <json>', 'JSON object of customer attribute filters')
+  .option('--event-properties <json>', 'JSON object of event property filters')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      events: string;
+      granularity: string;
+      customerAttributes?: string;
+      eventProperties?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const filters: TrendFilter = {};
+        if (options.customerAttributes) {
+          filters.customerAttributes = JSON.parse(options.customerAttributes) as Record<
+            string,
+            string
+          >;
+        }
+        if (options.eventProperties) {
+          filters.eventProperties = JSON.parse(options.eventProperties) as Record<
+            string,
+            string
+          >;
+        }
+
+        const service = new BloomreachTrendsService(options.project);
+        const result = service.prepareCreateTrendAnalysis({
+          project: options.project,
+          name: options.name,
+          events: options.events.split(',').map(event => event.trim()),
+          granularity: options.granularity,
+          filters: Object.keys(filters).length > 0 ? filters : undefined,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Trend analysis creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+trends
+  .command('clone')
+  .description('Prepare cloning a trend analysis (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--analysis-id <id>', 'Trend analysis ID to clone')
+  .option('--new-name <name>', 'Name for the cloned analysis')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      analysisId: string;
+      newName?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachTrendsService(options.project);
+        const result = service.prepareCloneTrendAnalysis({
+          project: options.project,
+          analysisId: options.analysisId,
+          newName: options.newName,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Trend analysis clone prepared.');
+          console.log(`  Source:   ${options.analysisId}`);
+          console.log(`  New name: ${options.newName ?? '(auto-generated)'}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+trends
+  .command('archive')
+  .description('Prepare archiving a trend analysis (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--analysis-id <id>', 'Trend analysis ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      analysisId: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachTrendsService(options.project);
+        const result = service.prepareArchiveTrendAnalysis({
+          project: options.project,
+          analysisId: options.analysisId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Trend analysis archive prepared.');
+          console.log(`  Analysis: ${options.analysisId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');
           console.log('To confirm, run:');
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
