@@ -1,4 +1,5 @@
 export * from './bloomreachDashboards.js';
+export * from './bloomreachPerformance.js';
 
 export interface BloomreachClientConfig {
   /** Bloomreach environment ID */
