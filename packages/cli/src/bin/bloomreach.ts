@@ -5,6 +5,7 @@ import {
   BloomreachClient,
   BloomreachDashboardsService,
   BloomreachPerformanceService,
+  BloomreachScenariosService,
 } from '@bloomreach-buddy/core';
 
 function printJson(value: unknown): void {
@@ -373,6 +374,329 @@ performance
           console.log(`Project Health: ${result.project}`);
           console.log(`  Source: ${result.source_url}`);
           printJson(result.metrics);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+const scenarios = program
+  .command('scenarios')
+  .description('Manage Bloomreach Engagement scenarios');
+
+scenarios
+  .command('list')
+  .description('List all scenarios in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--status <status>', 'Filter by status')
+  .option('--tags <csv>', 'Filter by tags (comma-separated)')
+  .option('--owner <owner>', 'Filter by owner')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      status?: string;
+      tags?: string;
+      owner?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachScenariosService(options.project);
+        const input: {
+          project: string;
+          status?: string;
+          tags?: string[];
+          owner?: string;
+        } = {
+          project: options.project,
+        };
+        if (options.status) input.status = options.status;
+        if (options.tags) input.tags = options.tags.split(',').map(t => t.trim());
+        if (options.owner) input.owner = options.owner;
+
+        const result = await service.listScenarios(input);
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          if (result.length === 0) {
+            console.log('No scenarios found.');
+            return;
+          }
+          for (const scenario of result) {
+            console.log(`  ${scenario.name}`);
+            console.log(`    Status: ${scenario.status}`);
+            if (scenario.tags && scenario.tags.length > 0) {
+              console.log(`    Tags:   ${scenario.tags.join(', ')}`);
+            }
+            console.log(`    ID:     ${scenario.id}`);
+            console.log(`    URL:    ${scenario.url}`);
+          }
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+scenarios
+  .command('view')
+  .description('View details of a specific scenario')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--scenario-id <id>', 'Scenario ID')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      scenarioId: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachScenariosService(options.project);
+        const result = await service.viewScenario({
+          project: options.project,
+          scenarioId: options.scenarioId,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log(`Scenario: ${result.name}`);
+          console.log(`  Status: ${result.status}`);
+          console.log(`  Nodes:  ${result.nodes.length}`);
+          if (result.triggerDescription) {
+            console.log(`  Trigger: ${result.triggerDescription}`);
+          }
+          if (result.performance) {
+            console.log(`  Performance: ${JSON.stringify(result.performance)}`);
+          }
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+scenarios
+  .command('create')
+  .description('Prepare creation of a new scenario (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Scenario name')
+  .option('--template-id <id>', 'Template ID to use')
+  .option('--tags <csv>', 'Tags (comma-separated)')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      templateId?: string;
+      tags?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachScenariosService(options.project);
+        const result = service.prepareCreateScenario({
+          project: options.project,
+          name: options.name,
+          templateId: options.templateId,
+          tags: options.tags ? options.tags.split(',').map(t => t.trim()) : undefined,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Scenario creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+scenarios
+  .command('start')
+  .description('Prepare starting a scenario (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--scenario-id <id>', 'Scenario ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      scenarioId: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachScenariosService(options.project);
+        const result = service.prepareStartScenario({
+          project: options.project,
+          scenarioId: options.scenarioId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Scenario start prepared.');
+          console.log(`  Scenario: ${options.scenarioId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+scenarios
+  .command('stop')
+  .description('Prepare stopping a scenario (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--scenario-id <id>', 'Scenario ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      scenarioId: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachScenariosService(options.project);
+        const result = service.prepareStopScenario({
+          project: options.project,
+          scenarioId: options.scenarioId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Scenario stop prepared.');
+          console.log(`  Scenario: ${options.scenarioId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+scenarios
+  .command('clone')
+  .description('Prepare cloning a scenario (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--scenario-id <id>', 'Scenario ID to clone')
+  .option('--new-name <name>', 'Name for the cloned scenario')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      scenarioId: string;
+      newName?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachScenariosService(options.project);
+        const result = service.prepareCloneScenario({
+          project: options.project,
+          scenarioId: options.scenarioId,
+          newName: options.newName,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Scenario clone prepared.');
+          console.log(`  Source:   ${options.scenarioId}`);
+          console.log(`  New name: ${options.newName ?? '(auto-generated)'}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+scenarios
+  .command('archive')
+  .description('Prepare archiving a scenario (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--scenario-id <id>', 'Scenario ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      scenarioId: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachScenariosService(options.project);
+        const result = service.prepareArchiveScenario({
+          project: options.project,
+          scenarioId: options.scenarioId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Scenario archive prepared.');
+          console.log(`  Scenario: ${options.scenarioId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
         console.error(
