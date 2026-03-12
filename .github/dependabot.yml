@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    assignees:
+      - sigvardt
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    assignees:
+      - sigvardt
+    labels:
+      - dependencies
+      - github-actions
+    groups:
+      security-workflows:
+        patterns:
+          - "github/codeql-action"
+          - "actions/dependency-review-action"
+          - "ossf/scorecard-action"
+          - "actions/checkout"
+          - "actions/upload-artifact"
