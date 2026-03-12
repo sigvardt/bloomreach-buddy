@@ -1,0 +1,19 @@
+{
+  "name": "bloomreach-buddy",
+  "version": "0.0.1",
+  "description": "AI-powered Bloomreach integration toolkit",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "echo 'No lint configured yet'",
+    "typecheck": "echo 'No typecheck configured yet'",
+    "test": "echo 'No tests configured yet'",
+    "start": "echo 'Not implemented yet'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sigvardt/bloomreach-buddy.git"
+  },
+  "author": "Joakim Sigvardt",
+  "license": "MIT"
+}
