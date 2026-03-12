@@ -2,6 +2,7 @@ export * from './bloomreachDashboards.js';
 export * from './bloomreachEmailCampaigns.js';
 export * from './bloomreachPerformance.js';
 export * from './bloomreachScenarios.js';
+export * from './bloomreachSurveys.js';
 
 export interface BloomreachClientConfig {
   /** Bloomreach environment ID */
