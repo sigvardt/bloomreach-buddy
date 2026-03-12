@@ -1,0 +1,29 @@
+{
+  "name": "@bloomreach-buddy/cli",
+  "version": "0.0.1",
+  "description": "CLI for Bloomreach Buddy",
+  "type": "module",
+  "bin": {
+    "bloomreach": "./dist/bin/bloomreach.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/bin/bloomreach.js",
+      "types": "./dist/bin/bloomreach.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bloomreach-buddy/core": "0.0.1",
+    "commander": "^13.0.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0"
+  }
+}
