@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import {
   BloomreachClient,
   BloomreachDashboardsService,
+  BloomreachPerformanceService,
 } from '@bloomreach-buddy/core';
 
 function printJson(value: unknown): void {
@@ -196,6 +197,182 @@ dashboards
           console.log('');
           console.log('To confirm, run:');
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+const performance = program
+  .command('performance')
+  .description('View Bloomreach Engagement performance dashboards');
+
+performance
+  .command('project')
+  .description('View project-wide revenue and conversion KPIs')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
+  .option('--end-date <date>', 'End date (YYYY-MM-DD)')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      startDate?: string;
+      endDate?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachPerformanceService(options.project);
+        const dateRange =
+          options.startDate || options.endDate
+            ? { startDate: options.startDate, endDate: options.endDate }
+            : undefined;
+        const result = await service.viewProjectPerformance({
+          project: options.project,
+          dateRange,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log(`Project Performance: ${result.project}`);
+          console.log(`  Source: ${result.source_url}`);
+          printJson(result.metrics);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+performance
+  .command('channel')
+  .description('View per-channel engagement, deliverability and revenue metrics')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
+  .option('--end-date <date>', 'End date (YYYY-MM-DD)')
+  .option('--channel <channel>', 'Filter to specific channel (email, sms, push, whatsapp, weblayer, in_app_message)')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      startDate?: string;
+      endDate?: string;
+      channel?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachPerformanceService(options.project);
+        const dateRange =
+          options.startDate || options.endDate
+            ? { startDate: options.startDate, endDate: options.endDate }
+            : undefined;
+        const result = await service.viewChannelPerformance({
+          project: options.project,
+          dateRange,
+          channel: options.channel,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log(`Channel Performance: ${result.project}`);
+          console.log(`  Source: ${result.source_url}`);
+          printJson(result.metrics);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+performance
+  .command('usage')
+  .description('View Bloomreach billing, event-tracking and usage statistics')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachPerformanceService(options.project);
+        const result = await service.viewBloomreachUsage({
+          project: options.project,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log(`Bloomreach Usage: ${result.project}`);
+          console.log(`  Source: ${result.source_url}`);
+          printJson(result.metrics);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+performance
+  .command('overview')
+  .description('View high-level project statistics')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachPerformanceService(options.project);
+        const result = await service.viewProjectOverview({
+          project: options.project,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log(`Project Overview: ${result.project}`);
+          console.log(`  Source: ${result.source_url}`);
+          printJson(result.metrics);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+performance
+  .command('health')
+  .description('View project health and data-quality indicators')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachPerformanceService(options.project);
+        const result = await service.viewProjectHealth({
+          project: options.project,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log(`Project Health: ${result.project}`);
+          console.log(`  Source: ${result.source_url}`);
+          printJson(result.metrics);
         }
       } catch (error) {
         console.error(
