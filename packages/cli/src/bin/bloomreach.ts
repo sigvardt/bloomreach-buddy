@@ -7,8 +7,14 @@ import {
   BloomreachEmailCampaignsService,
   BloomreachPerformanceService,
   BloomreachScenariosService,
+  BloomreachSurveysService,
 } from '@bloomreach-buddy/core';
-import type { EmailCampaignSchedule, EmailCampaignABTestConfig } from '@bloomreach-buddy/core';
+import type {
+  EmailCampaignSchedule,
+  EmailCampaignABTestConfig,
+  SurveyQuestion,
+  SurveyDisplayConditions,
+} from '@bloomreach-buddy/core';
 
 function printJson(value: unknown): void {
   console.log(JSON.stringify(value, null, 2));
@@ -1004,6 +1010,301 @@ emailCampaigns
           console.log(`  Campaign: ${options.campaignId}`);
           console.log(`  Token:    ${result.confirmToken}`);
           console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+const surveys = program
+  .command('surveys')
+  .description('Manage Bloomreach Engagement on-site surveys');
+
+surveys
+  .command('list')
+  .description('List all surveys in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--status <status>', 'Filter by status (active, inactive, draft, archived)')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      status?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachSurveysService(options.project);
+        const input: { project: string; status?: string } = {
+          project: options.project,
+        };
+        if (options.status) input.status = options.status;
+
+        const result = await service.listSurveys(input);
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          if (result.length === 0) {
+            console.log('No surveys found.');
+            return;
+          }
+          for (const survey of result) {
+            console.log(`  ${survey.name}`);
+            console.log(`    Status:    ${survey.status}`);
+            console.log(`    Questions: ${survey.questions.length}`);
+            console.log(`    ID:        ${survey.id}`);
+            console.log(`    URL:       ${survey.url}`);
+          }
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+surveys
+  .command('view-results')
+  .description('View responses and analytics for a survey')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--survey-id <id>', 'Survey ID')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      surveyId: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachSurveysService(options.project);
+        const result = await service.viewSurveyResults({
+          project: options.project,
+          surveyId: options.surveyId,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log(`Survey Results: ${result.surveyId}`);
+          console.log(`  Total Responses:  ${result.totalResponses}`);
+          console.log(`  Completion Rate:  ${(result.completionRate * 100).toFixed(1)}%`);
+          for (const dist of result.responseDistribution) {
+            console.log(`  Question: ${dist.questionText}`);
+            for (const [answer, count] of Object.entries(dist.answers)) {
+              console.log(`    ${answer}: ${count}`);
+            }
+          }
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+surveys
+  .command('create')
+  .description('Prepare creation of a new on-site survey (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Survey name')
+  .requiredOption('--questions <json>', 'JSON array of questions [{id, type, text, options?, required?}]')
+  .option('--audience <audience>', 'Target audience segment')
+  .option('--page-url <url>', 'Page URL where survey appears')
+  .option('--trigger-event <event>', 'Trigger event name')
+  .option('--delay-ms <ms>', 'Delay before showing survey (ms)')
+  .option('--frequency <frequency>', 'Display frequency (once, always, once_per_session)')
+  .option('--template-id <id>', 'Survey template ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      questions: string;
+      audience?: string;
+      pageUrl?: string;
+      triggerEvent?: string;
+      delayMs?: string;
+      frequency?: string;
+      templateId?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const questions: SurveyQuestion[] = JSON.parse(options.questions) as SurveyQuestion[];
+
+        let displayConditions: SurveyDisplayConditions | undefined;
+        if (
+          options.audience ||
+          options.pageUrl ||
+          options.triggerEvent ||
+          options.delayMs ||
+          options.frequency
+        ) {
+          displayConditions = {
+            audience: options.audience,
+            pageUrl: options.pageUrl,
+            triggerEvent: options.triggerEvent,
+            delayMs: options.delayMs ? parseInt(options.delayMs, 10) : undefined,
+            frequency: options.frequency,
+          };
+        }
+
+        const service = new BloomreachSurveysService(options.project);
+        const result = service.prepareCreateSurvey({
+          project: options.project,
+          name: options.name,
+          questions,
+          displayConditions,
+          templateId: options.templateId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Survey creation prepared.');
+          console.log(`  Name:      ${options.name}`);
+          console.log(`  Questions: ${questions.length}`);
+          console.log(`  Token:     ${result.confirmToken}`);
+          console.log(`  Expires:   ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+surveys
+  .command('start')
+  .description('Prepare starting a survey (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--survey-id <id>', 'Survey ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      surveyId: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachSurveysService(options.project);
+        const result = service.prepareStartSurvey({
+          project: options.project,
+          surveyId: options.surveyId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Survey start prepared.');
+          console.log(`  Survey:  ${options.surveyId}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+surveys
+  .command('stop')
+  .description('Prepare stopping a survey (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--survey-id <id>', 'Survey ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      surveyId: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachSurveysService(options.project);
+        const result = service.prepareStopSurvey({
+          project: options.project,
+          surveyId: options.surveyId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Survey stop prepared.');
+          console.log(`  Survey:  ${options.surveyId}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+surveys
+  .command('archive')
+  .description('Prepare archiving a survey (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--survey-id <id>', 'Survey ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      surveyId: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachSurveysService(options.project);
+        const result = service.prepareArchiveSurvey({
+          project: options.project,
+          surveyId: options.surveyId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Survey archive prepared.');
+          console.log(`  Survey:  ${options.surveyId}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');
           console.log('To confirm, run:');
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
