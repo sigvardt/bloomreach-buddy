@@ -128,16 +128,9 @@ export class ProfileManager {
     // Release lock in finally block
   }
 
-  async runWithPersistentContext<T>(
-    profileName: string,
-    options,
-    callback,
-  ): Promise<T> {
+  async runWithPersistentContext<T>(profileName: string, options, callback): Promise<T> {
     return this.withProfileLock(profileName, async (userDataDir) => {
-      const context = await chromium.launchPersistentContext(
-        userDataDir,
-        launchOptions,
-      );
+      const context = await chromium.launchPersistentContext(userDataDir, launchOptions);
       // ...
     });
   }
@@ -185,26 +178,19 @@ export interface BloomreachContentDocument {
 
 // 2. Runtime interface (injected dependencies)
 export interface BloomreachContentRuntime extends BloomreachContentExecutorRuntime {
-  twoPhaseCommit: Pick<
-    TwoPhaseCommitService<BloomreachContentExecutorRuntime>,
-    "prepare"
-  >;
+  twoPhaseCommit: Pick<TwoPhaseCommitService<BloomreachContentExecutorRuntime>, 'prepare'>;
 }
 
 // 3. Service class with read-only methods and prepare* mutation methods
 export class BloomreachContentService {
-  async listDocuments(
-    input: ListDocumentsInput,
-  ): Promise<BloomreachContentDocument[]> {
+  async listDocuments(input: ListDocumentsInput): Promise<BloomreachContentDocument[]> {
     // Read-only: navigate, extract, return
   }
 
-  async preparePublishDocument(
-    input: PublishDocumentInput,
-  ): Promise<PreparedActionResult> {
+  async preparePublishDocument(input: PublishDocumentInput): Promise<PreparedActionResult> {
     // Mutation: validate, create preview, return confirm token
     return this.twoPhaseCommit.prepare({
-      actionType: "content.publish",
+      actionType: 'content.publish',
       target: { documentId: input.documentId },
       payload: {
         /* changes */
@@ -228,8 +214,8 @@ export class PublishDocumentActionExecutor implements ActionExecutor<BloomreachC
 // 5. Executor registry factory
 export function createContentActionExecutors(): ActionExecutorRegistry<BloomreachContentExecutorRuntime> {
   return {
-    "content.publish": new PublishDocumentActionExecutor(),
-    "content.delete": new DeleteDocumentActionExecutor(),
+    'content.publish': new PublishDocumentActionExecutor(),
+    'content.delete': new DeleteDocumentActionExecutor(),
   };
 }
 ```
@@ -411,7 +397,7 @@ export class EvasionSession {
 
 ```typescript
 // From: packages/core/src/humanize.ts (1993 lines)
-export type TypingProfileName = "casual" | "careful" | "fast";
+export type TypingProfileName = 'casual' | 'careful' | 'fast';
 
 // Features: per-grapheme timing, nearby-key typos with auto-correction,
 // thinking pauses, burst typing, shift-lead timing, field-specific profiles
@@ -470,22 +456,20 @@ XActions uses flat `x_` prefix naming (`x_get_profile`, `x_get_followers`, `x_fo
 
 ```typescript
 // From: packages/mcp/src/index.ts — tool name constants
-export const BLOOMREACH_SESSION_STATUS_TOOL = "bloomreach.session.status";
-export const BLOOMREACH_CONTENT_LIST_DOCUMENTS_TOOL =
-  "bloomreach.content.list_documents";
+export const BLOOMREACH_SESSION_STATUS_TOOL = 'bloomreach.session.status';
+export const BLOOMREACH_CONTENT_LIST_DOCUMENTS_TOOL = 'bloomreach.content.list_documents';
 // ...
 
 // From: packages/mcp/src/bin/bloomreach-mcp.ts — tool schema + handler
 const tools: LinkedInMcpToolDefinition[] = [
   {
     name: BLOOMREACH_SESSION_STATUS_TOOL,
-    description:
-      "Check whether the Bloomreach dashboard session is authenticated.",
+    description: 'Check whether the Bloomreach dashboard session is authenticated.',
     inputSchema: {
-      type: "object",
+      type: 'object',
       properties: {
-        profileName: { type: "string", description: "Browser profile name" },
-        cdpUrl: { type: "string", description: "CDP endpoint URL" },
+        profileName: { type: 'string', description: 'Browser profile name' },
+        cdpUrl: { type: 'string', description: 'CDP endpoint URL' },
       },
     },
   },
@@ -498,18 +482,18 @@ const tools: LinkedInMcpToolDefinition[] = [
 // From: /tmp/xactions-reference/src/mcp/server.js
 const TOOLS = [
   {
-    name: "x_get_profile",
-    description: "Get profile information for a user.",
+    name: 'x_get_profile',
+    description: 'Get profile information for a user.',
     inputSchema: {
-      type: "object",
+      type: 'object',
       properties: {
-        username: { type: "string", description: "Username (without @)" },
+        username: { type: 'string', description: 'Username (without @)' },
         platform: {
-          type: "string",
-          enum: ["twitter", "bluesky", "mastodon", "threads"],
+          type: 'string',
+          enum: ['twitter', 'bluesky', 'mastodon', 'threads'],
         },
       },
-      required: ["username"],
+      required: ['username'],
     },
   },
   // 140+ more tools...
@@ -519,11 +503,11 @@ const TOOLS = [
 ### MCP server setup (from linkedin-buddy)
 
 ```typescript
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
 const server = new Server(
-  { name: "bloomreach-mcp", version: "0.1.0" },
+  { name: 'bloomreach-mcp', version: '0.1.0' },
   { capabilities: { tools: {} } },
 );
 server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools }));
@@ -540,16 +524,14 @@ await server.connect(transport);
 ```typescript
 function toToolResult(payload: unknown): ToolResult {
   return {
-    content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
+    content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }],
   };
 }
 
 function toErrorResult(error: unknown): ToolErrorResult {
   return {
     isError: true,
-    content: [
-      { type: "text", text: JSON.stringify(toErrorPayload(error), null, 2) },
-    ],
+    content: [{ type: 'text', text: JSON.stringify(toErrorPayload(error), null, 2) }],
   };
 }
 ```
@@ -663,10 +645,10 @@ XActions uses `chalk` for colored output and `ora` for spinners:
 
 ```javascript
 // XActions CLI pattern
-import chalk from "chalk";
-import ora from "ora";
+import chalk from 'chalk';
+import ora from 'ora';
 
-const spinner = ora("Scraping profile...").start();
+const spinner = ora('Scraping profile...').start();
 const profile = await scrapeProfile(page, username);
 spinner.succeed(chalk.green(`Profile scraped: ${profile.name}`));
 ```
@@ -702,21 +684,21 @@ test/                                  # Root-level E2E fixtures and configs
 
 ```typescript
 // From: packages/core/src/__tests__/rateLimiter.test.ts
-import { describe, it, expect, beforeEach } from "vitest";
-import { RateLimiter } from "../rateLimiter.js";
+import { describe, it, expect, beforeEach } from 'vitest';
+import { RateLimiter } from '../rateLimiter.js';
 
-describe("RateLimiter", () => {
+describe('RateLimiter', () => {
   let db: AssistantDatabase;
   let rateLimiter: RateLimiter;
 
   beforeEach(() => {
-    db = new AssistantDatabase(":memory:");
+    db = new AssistantDatabase(':memory:');
     rateLimiter = new RateLimiter(db);
   });
 
-  it("allows consumption within limit", () => {
+  it('allows consumption within limit', () => {
     const state = rateLimiter.consume({
-      counterKey: "test",
+      counterKey: 'test',
       windowSizeMs: 3600000,
       limit: 10,
     });
@@ -734,15 +716,15 @@ linkedin-buddy uses a fixture replay system for deterministic E2E testing withou
 // E2E test with replay
 // LINKEDIN_E2E=1 LINKEDIN_E2E_REPLAY=1 vitest run -c vitest.config.e2e.ts
 
-describe("search", () => {
-  it("searches people", async () => {
+describe('search', () => {
+  it('searches people', async () => {
     const runtime = createCoreRuntime({
       /* fixture replay config */
     });
     const results = await runtime.search.search({
-      profileName: "default",
-      category: "people",
-      query: "engineer",
+      profileName: 'default',
+      category: 'people',
+      query: 'engineer',
       limit: 5,
     });
     expect(results.results).toHaveLength(5);
@@ -788,15 +770,15 @@ describe("search", () => {
 ```typescript
 // From: packages/core/src/errors.ts
 export const ERROR_CODES = [
-  "AUTH_REQUIRED", // Dashboard session expired or missing
-  "CAPTCHA_OR_CHALLENGE", // Bot detection challenge encountered
-  "RATE_LIMITED", // Rate limit exceeded
-  "UI_CHANGED_SELECTOR_FAILED", // Dashboard UI changed, selectors broken
-  "NETWORK_ERROR", // Network connectivity issue
-  "TIMEOUT", // Operation timed out
-  "TARGET_NOT_FOUND", // Requested resource not found
-  "ACTION_PRECONDITION_FAILED", // Invalid input or state
-  "UNKNOWN", // Unclassified error
+  'AUTH_REQUIRED', // Dashboard session expired or missing
+  'CAPTCHA_OR_CHALLENGE', // Bot detection challenge encountered
+  'RATE_LIMITED', // Rate limit exceeded
+  'UI_CHANGED_SELECTOR_FAILED', // Dashboard UI changed, selectors broken
+  'NETWORK_ERROR', // Network connectivity issue
+  'TIMEOUT', // Operation timed out
+  'TARGET_NOT_FOUND', // Requested resource not found
+  'ACTION_PRECONDITION_FAILED', // Invalid input or state
+  'UNKNOWN', // Unclassified error
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -805,13 +787,9 @@ export class BloomreachBuddyError extends Error {
   readonly code: ErrorCode;
   readonly details: Record<string, unknown>;
 
-  constructor(
-    code: ErrorCode,
-    message: string,
-    details: Record<string, unknown> = {},
-  ) {
+  constructor(code: ErrorCode, message: string, details: Record<string, unknown> = {}) {
     super(message);
-    this.name = "BloomreachBuddyError";
+    this.name = 'BloomreachBuddyError';
     this.code = code;
     this.details = details;
   }
@@ -839,12 +817,12 @@ export function toErrorPayload(error: unknown): ErrorPayload {
   }
   if (error instanceof Error) {
     return {
-      code: "UNKNOWN",
+      code: 'UNKNOWN',
       message: error.message,
       details: { cause_name: error.name },
     };
   }
-  return { code: "UNKNOWN", message: String(error), details: {} };
+  return { code: 'UNKNOWN', message: String(error), details: {} };
 }
 ```
 
@@ -933,8 +911,8 @@ export class RateLimiter {
 
 // Rate limit is consumed only when action is confirmed:
 const state = consumeRateLimitOrThrow(rateLimiter, {
-  config: { counterKey: "content.publish", windowSizeMs: 3600000, limit: 20 },
-  message: "Content publish rate limit exceeded.",
+  config: { counterKey: 'content.publish', windowSizeMs: 3600000, limit: 20 },
+  message: 'Content publish rate limit exceeded.',
 });
 ```
 
