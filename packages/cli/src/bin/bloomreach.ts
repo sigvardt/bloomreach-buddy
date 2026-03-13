@@ -1249,6 +1249,36 @@ surveys
     }
   });
 
+function resolveDateShorthand(options: {
+  startDate?: string;
+  endDate?: string;
+  week?: boolean;
+  month?: boolean;
+}): { startDate?: string; endDate?: string } {
+  if (options.week) {
+    const now = new Date();
+    const day = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((day + 6) % 7));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    return {
+      startDate: monday.toISOString().slice(0, 10),
+      endDate: sunday.toISOString().slice(0, 10),
+    };
+  }
+  if (options.month) {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return {
+      startDate: firstDay.toISOString().slice(0, 10),
+      endDate: lastDay.toISOString().slice(0, 10),
+    };
+  }
+  return { startDate: options.startDate, endDate: options.endDate };
+}
+
 const campaignCalendar = program
   .command('campaigns-calendar')
   .description('View and manage the Bloomreach campaign calendar');
@@ -1257,17 +1287,27 @@ campaignCalendar
   .command('view')
   .description('View campaign calendar for a date range')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
-  .option('--end-date <date>', 'End date (YYYY-MM-DD)')
+  .option('--start-date <date>', 'Start date in YYYY-MM-DD format (e.g. 2025-01-01)')
+  .option('--end-date <date>', 'End date in YYYY-MM-DD format (e.g. 2025-12-31)')
+  .option('--week', 'Show current week (Monday to Sunday)')
+  .option('--month', 'Show current month')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: { project: string; startDate?: string; endDate?: string; json?: boolean }) => {
+    async (options: {
+      project: string;
+      startDate?: string;
+      endDate?: string;
+      week?: boolean;
+      month?: boolean;
+      json?: boolean;
+    }) => {
       try {
+        const dates = resolveDateShorthand(options);
         const service = new BloomreachCampaignCalendarService(options.project);
         const result = await service.viewCampaignCalendar({
           project: options.project,
-          startDate: options.startDate,
-          endDate: options.endDate,
+          startDate: dates.startDate,
+          endDate: dates.endDate,
         });
 
         if (options.json) {
@@ -1298,31 +1338,36 @@ campaignCalendar
   .command('filter')
   .description('Filter campaign calendar by type, status, or channel')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
-  .option('--end-date <date>', 'End date (YYYY-MM-DD)')
-  .option('--type <type>', 'Campaign type (email, sms, push, in_app, weblayer, webhook)')
+  .option('--start-date <date>', 'Start date in YYYY-MM-DD format (e.g. 2025-01-01)')
+  .option('--end-date <date>', 'End date in YYYY-MM-DD format (e.g. 2025-12-31)')
+  .option('--week', 'Show current week (Monday to Sunday)')
+  .option('--month', 'Show current month')
+  .option('--type <type>', 'Campaign type: email, sms, push, in_app, weblayer, or webhook')
   .option(
     '--status <status>',
-    'Campaign status (draft, scheduled, running, paused, stopped, finished)',
+    'Campaign status: draft, scheduled, running, paused, stopped, or finished',
   )
-  .option('--channel <channel>', 'Channel (email, sms, push, in_app, weblayer, webhook)')
+  .option('--channel <channel>', 'Channel: email, sms, push, in_app, weblayer, or webhook')
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
       project: string;
       startDate?: string;
       endDate?: string;
+      week?: boolean;
+      month?: boolean;
       type?: string;
       status?: string;
       channel?: string;
       json?: boolean;
     }) => {
       try {
+        const dates = resolveDateShorthand(options);
         const service = new BloomreachCampaignCalendarService(options.project);
         const result = await service.filterCampaignCalendar({
           project: options.project,
-          startDate: options.startDate,
-          endDate: options.endDate,
+          startDate: dates.startDate,
+          endDate: dates.endDate,
           type: options.type,
           status: options.status,
           channel: options.channel,
@@ -1356,14 +1401,14 @@ campaignCalendar
   .command('export')
   .description('Prepare export of campaign calendar data (two-phase commit)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
-  .option('--end-date <date>', 'End date (YYYY-MM-DD)')
-  .option('--type <type>', 'Campaign type filter (email, sms, push, in_app, weblayer, webhook)')
+  .option('--start-date <date>', 'Start date in YYYY-MM-DD format (e.g. 2025-01-01)')
+  .option('--end-date <date>', 'End date in YYYY-MM-DD format (e.g. 2025-12-31)')
+  .option('--type <type>', 'Campaign type filter: email, sms, push, in_app, weblayer, or webhook')
   .option(
     '--status <status>',
-    'Campaign status filter (draft, scheduled, running, paused, stopped, finished)',
+    'Campaign status filter: draft, scheduled, running, paused, stopped, or finished',
   )
-  .option('--channel <channel>', 'Channel filter (email, sms, push, in_app, weblayer, webhook)')
+  .option('--channel <channel>', 'Channel filter: email, sms, push, in_app, weblayer, or webhook')
   .option('--format <format>', 'Export format (json, csv)', 'json')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')

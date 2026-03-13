@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const EXPORT_CALENDAR_ACTION_TYPE = 'campaign_calendar.export';
 
@@ -176,9 +177,24 @@ export function buildCampaignCalendarUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/campaigns/calendar`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 /**
  * Executor for a confirmed campaign calendar mutation.
- * Execute methods require browser automation infrastructure (not yet built).
+ * Execute methods require browser automation infrastructure.
  */
 export interface CampaignCalendarActionExecutor {
   readonly actionType: string;
@@ -187,40 +203,52 @@ export interface CampaignCalendarActionExecutor {
 
 class ExportCalendarExecutor implements CampaignCalendarActionExecutor {
   readonly actionType = EXPORT_CALENDAR_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ExportCalendarExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ExportCalendarExecutor: not yet implemented. ' +
+        'Calendar export is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createCampaignCalendarActionExecutors(): Record<
-  string,
-  CampaignCalendarActionExecutor
-> {
+export function createCampaignCalendarActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, CampaignCalendarActionExecutor> {
   return {
-    [EXPORT_CALENDAR_ACTION_TYPE]: new ExportCalendarExecutor(),
+    [EXPORT_CALENDAR_ACTION_TYPE]: new ExportCalendarExecutor(apiConfig),
   };
 }
 
 /**
  * Manages the Bloomreach Engagement campaign calendar. Read methods return data
  * directly. Mutation methods follow the two-phase commit pattern (prepare + confirm).
- * Browser-dependent methods throw until Playwright infrastructure is available.
+ *
+ * **API support:** The Bloomreach Engagement API does not expose campaign
+ * calendar endpoints — calendar views, filtering, and data export are only
+ * available through the Bloomreach Engagement UI. This service validates
+ * inputs and manages two-phase commit flows; browser automation is required
+ * for actual execution.
  */
 export class BloomreachCampaignCalendarService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildCampaignCalendarUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get calendarUrl(): string {
     return this.baseUrl;
   }
 
-  /** @throws {Error} Browser automation not yet available. */
   async viewCampaignCalendar(input: ViewCampaignCalendarInput): Promise<CampaignCalendarEntry[]> {
     validateProject(input.project);
     if (input.startDate !== undefined && input.endDate !== undefined) {
@@ -234,12 +262,13 @@ export class BloomreachCampaignCalendarService {
       }
     }
 
+    void this.apiConfig;
     throw new Error(
-      'viewCampaignCalendar: not yet implemented. Requires browser automation infrastructure.',
+      'viewCampaignCalendar: the Bloomreach API does not provide a calendar view endpoint. ' +
+        'Campaign calendar is only available through the Bloomreach Engagement UI.',
     );
   }
 
-  /** @throws {Error} Browser automation not yet available. */
   async filterCampaignCalendar(
     input: FilterCampaignCalendarInput,
   ): Promise<CampaignCalendarEntry[]> {
@@ -264,12 +293,13 @@ export class BloomreachCampaignCalendarService {
       validateCalendarChannel(input.channel);
     }
 
+    void this.apiConfig;
     throw new Error(
-      'filterCampaignCalendar: not yet implemented. Requires browser automation infrastructure.',
+      'filterCampaignCalendar: the Bloomreach API does not provide a calendar filter endpoint. ' +
+        'Campaign calendar is only available through the Bloomreach Engagement UI.',
     );
   }
 
-  /** @throws {Error} If input validation fails. */
   prepareExportCalendar(input: ExportCalendarInput): PreparedCalendarAction {
     const project = validateProject(input.project);
     if (input.startDate !== undefined && input.endDate !== undefined) {
