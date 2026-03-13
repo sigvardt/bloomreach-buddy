@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
 import {
   CREATE_CUSTOMER_ACTION_TYPE,
   UPDATE_CUSTOMER_ACTION_TYPE,
@@ -18,6 +19,17 @@ import {
   createCustomerActionExecutors,
   BloomreachCustomersService,
 } from '../index.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_CUSTOMER_ACTION_TYPE', () => {
@@ -234,11 +246,39 @@ describe('createCustomerActionExecutors', () => {
     }
   });
 
-  it('executors throw not yet implemented on execute', async () => {
+  it('executors require API credentials when apiConfig is not provided', async () => {
     const executors = createCustomerActionExecutors();
     for (const executor of Object.values(executors)) {
-      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+      await expect(executor.execute({})).rejects.toThrow('requires API credentials');
     }
+  });
+
+  it('executors attempt API calls when apiConfig is provided', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ),
+    );
+
+    const executors = createCustomerActionExecutors(TEST_API_CONFIG);
+    await executors[CREATE_CUSTOMER_ACTION_TYPE].execute({
+      customerIds: { registered: 'cust-1' },
+      properties: { tier: 'gold' },
+    });
+    await executors[UPDATE_CUSTOMER_ACTION_TYPE].execute({
+      customerId: 'cust-2',
+      idType: 'registered',
+      properties: { tier: 'platinum' },
+    });
+    await executors[DELETE_CUSTOMER_ACTION_TYPE].execute({
+      customerId: 'cust-3',
+      idType: 'registered',
+    });
+
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
   });
 });
 
@@ -262,12 +302,43 @@ describe('BloomreachCustomersService', () => {
     it('throws for empty project', () => {
       expect(() => new BloomreachCustomersService('')).toThrow('must not be empty');
     });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachCustomersService('my-project', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachCustomersService);
+    });
   });
 
   describe('listCustomers', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws API credential error when apiConfig is not provided', async () => {
       const service = new BloomreachCustomersService('test');
-      await expect(service.listCustomers()).rejects.toThrow('not yet implemented');
+      await expect(service.listCustomers()).rejects.toThrow('requires API credentials');
+    });
+
+    it('returns mapped customers when apiConfig is provided', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify([
+            { registered: 'cust-1', email_id: 'one@example.com', tier: 'gold' },
+            { registered: 'cust-2', cookie: 'cookie-2', tier: 'silver' },
+          ]),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        ),
+      );
+
+      const service = new BloomreachCustomersService('test', TEST_API_CONFIG);
+      const result = await service.listCustomers({ project: 'test', limit: 1, offset: 1 });
+
+      expect(result).toEqual([
+        {
+          customerIds: { registered: 'cust-2', cookie: 'cookie-2' },
+          properties: { tier: 'silver' },
+          url: '',
+        },
+      ]);
     });
 
     it('validates limit when input is provided', async () => {
@@ -293,11 +364,51 @@ describe('BloomreachCustomersService', () => {
   });
 
   describe('searchCustomers', () => {
-    it('throws not-yet-implemented error with valid input', async () => {
+    it('throws API credential error with valid input when apiConfig is not provided', async () => {
       const service = new BloomreachCustomersService('test');
       await expect(
         service.searchCustomers({ project: 'test', query: 'shoes', limit: 10, offset: 0 }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('requires API credentials');
+    });
+
+    it('returns mapped search result when apiConfig is provided', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            results: [
+              { success: true, value: 'Jane' },
+              { success: true, value: 'Doe' },
+              { success: true, value: 'jane@example.com' },
+              { success: true, value: 'cust-10' },
+              { success: true, value: 'cookie-10' },
+            ],
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        ),
+      );
+
+      const service = new BloomreachCustomersService('test', TEST_API_CONFIG);
+      const result = await service.searchCustomers({
+        project: 'test',
+        query: 'shoes',
+        limit: 10,
+        offset: 0,
+      });
+
+      expect(result).toEqual([
+        {
+          customerIds: { registered: 'cust-10', cookie: 'cookie-10' },
+          properties: {
+            first_name: 'Jane',
+            last_name: 'Doe',
+            email: 'jane@example.com',
+          },
+          url: '',
+        },
+      ]);
     });
 
     it('validates query', async () => {
@@ -316,11 +427,56 @@ describe('BloomreachCustomersService', () => {
   });
 
   describe('viewCustomer', () => {
-    it('throws not-yet-implemented error with valid input', async () => {
+    it('throws API credential error with valid input when apiConfig is not provided', async () => {
       const service = new BloomreachCustomersService('test');
       await expect(
         service.viewCustomer({ project: 'test', customerId: 'customer-1', idType: 'registered' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('requires API credentials');
+    });
+
+    it('returns customer profile when apiConfig is provided', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            results: [
+              { success: true, value: 'John' },
+              { success: true, value: 'Smith' },
+              { success: true, value: 'john@example.com' },
+              { success: true, value: '+123' },
+              { success: true, value: 'registered-1' },
+              { success: true, value: 'cookie-1' },
+            ],
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        ),
+      );
+
+      const service = new BloomreachCustomersService('test', TEST_API_CONFIG);
+      const result = await service.viewCustomer({
+        project: 'test',
+        customerId: 'customer-1',
+        idType: 'registered',
+      });
+
+      expect(result).toEqual({
+        customerIds: { registered: 'registered-1', cookie: 'cookie-1' },
+        properties: {
+          first_name: 'John',
+          last_name: 'Smith',
+          email: 'john@example.com',
+          phone: '+123',
+        },
+        url: '',
+        firstName: 'John',
+        lastName: 'Smith',
+        email: 'john@example.com',
+        phone: '+123',
+        events: [],
+        segments: [],
+      });
     });
 
     it('validates customerId', async () => {

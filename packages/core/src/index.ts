@@ -32,6 +32,7 @@ export * from './bloomreachEvaluationSettings.js';
 export * from './bloomreachWeblayers.js';
 export * from './bloomreachUseCases.js';
 export * from './bloomreachAccessManagement.js';
+export * from './bloomreachApiClient.js';
 
 export interface BloomreachClientConfig {
   /** Bloomreach environment ID */

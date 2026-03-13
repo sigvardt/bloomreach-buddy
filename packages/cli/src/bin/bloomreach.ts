@@ -35,8 +35,10 @@ import {
   BloomreachTrendsService,
   BloomreachVouchersService,
   BloomreachWeblayersService,
+  resolveApiConfig,
 } from '@bloomreach-buddy/core';
 import type {
+  BloomreachApiConfig,
   CustomerIds,
   DataSelection,
   EmailCampaignABTestConfig,
@@ -76,6 +78,16 @@ import type {
 
 function printJson(value: unknown): void {
   console.log(JSON.stringify(value, null, 2));
+}
+
+function tryResolveApiConfig(projectToken?: string): BloomreachApiConfig | undefined {
+  try {
+    return resolveApiConfig(
+      projectToken ? { projectToken } : undefined,
+    );
+  } catch {
+    return undefined;
+  }
 }
 
 const program = new Command();
@@ -2564,18 +2576,28 @@ geoAnalyses
     },
   );
 
-const customers = program.command('customers').description('Manage Bloomreach customer profiles');
+const customers = program
+  .command('customers')
+  .description(
+    'Manage Bloomreach customer profiles.\n\n' +
+      'Requires API credentials via environment variables:\n' +
+      '  BLOOMREACH_PROJECT_TOKEN  — Project token (UUID)\n' +
+      '  BLOOMREACH_API_KEY_ID     — API key identifier\n' +
+      '  BLOOMREACH_API_SECRET     — API secret\n' +
+      '  BLOOMREACH_API_BASE_URL   — Optional (default: https://api.exponea.com)',
+  );
 
 customers
   .command('list')
   .description('List customer profiles in the project')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .option('--limit <limit>', 'Maximum number of customers to return', '50')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID)')
+  .option('--limit <limit>', 'Maximum number of customers to return (1-1000)', '50')
   .option('--offset <offset>', 'Offset for pagination', '0')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; limit: string; offset: string; json?: boolean }) => {
     try {
-      const service = new BloomreachCustomersService(options.project);
+      const apiConfig = tryResolveApiConfig(options.project);
+      const service = new BloomreachCustomersService(options.project, apiConfig);
       const result = await service.listCustomers({
         project: options.project,
         limit: parseInt(options.limit, 10),
@@ -2606,10 +2628,10 @@ customers
 
 customers
   .command('search')
-  .description('Search customer profiles by query')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--query <query>', 'Search query')
-  .option('--limit <limit>', 'Maximum number of customers to return', '50')
+  .description('Search for a customer profile by identifier')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID)')
+  .requiredOption('--query <query>', 'Customer identifier value to search for (e.g. email address)')
+  .option('--limit <limit>', 'Maximum number of customers to return (1-1000)', '50')
   .option('--offset <offset>', 'Offset for pagination', '0')
   .option('--json', 'Output as JSON')
   .action(
@@ -2621,7 +2643,8 @@ customers
       json?: boolean;
     }) => {
       try {
-        const service = new BloomreachCustomersService(options.project);
+        const apiConfig = tryResolveApiConfig(options.project);
+        const service = new BloomreachCustomersService(options.project, apiConfig);
         const result = await service.searchCustomers({
           project: options.project,
           query: options.query,
@@ -2654,15 +2677,20 @@ customers
 
 customers
   .command('view')
-  .description('View details for a customer profile')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description('View full profile for a customer')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID)')
   .requiredOption('--customer-id <customerId>', 'Customer identifier value')
-  .option('--id-type <idType>', 'Identifier type', 'registered')
+  .option(
+    '--id-type <idType>',
+    'Type of the customer identifier: registered (default), cookie, or email',
+    'registered',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: { project: string; customerId: string; idType: string; json?: boolean }) => {
       try {
-        const service = new BloomreachCustomersService(options.project);
+        const apiConfig = tryResolveApiConfig(options.project);
+        const service = new BloomreachCustomersService(options.project, apiConfig);
         const result = await service.viewCustomer({
           project: options.project,
           customerId: options.customerId,
@@ -2692,9 +2720,15 @@ customers
 customers
   .command('create')
   .description('Prepare creation of a customer profile (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--customer-ids <json>', 'JSON object of customer identifiers')
-  .requiredOption('--properties <json>', 'JSON object of customer properties')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID)')
+  .requiredOption(
+    '--customer-ids <json>',
+    'JSON object of customer identifiers, e.g. \'{"registered":"user@example.com"}\'',
+  )
+  .requiredOption(
+    '--properties <json>',
+    'JSON object of customer properties, e.g. \'{"first_name":"Jane"}\'',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -2709,7 +2743,8 @@ customers
         const customerIds = JSON.parse(options.customerIds) as CustomerIds;
         const properties = JSON.parse(options.properties) as Record<string, unknown>;
 
-        const service = new BloomreachCustomersService(options.project);
+        const apiConfig = tryResolveApiConfig(options.project);
+        const service = new BloomreachCustomersService(options.project, apiConfig);
         const result = service.prepareCreateCustomer({
           project: options.project,
           customerIds,
@@ -2737,10 +2772,17 @@ customers
 customers
   .command('update')
   .description('Prepare update of a customer profile (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID)')
   .requiredOption('--customer-id <customerId>', 'Customer identifier value')
-  .requiredOption('--properties <json>', 'JSON object of customer properties')
-  .option('--id-type <idType>', 'Identifier type', 'registered')
+  .requiredOption(
+    '--properties <json>',
+    'JSON object of customer properties to update, e.g. \'{"tier":"gold"}\'',
+  )
+  .option(
+    '--id-type <idType>',
+    'Type of the customer identifier: registered (default), cookie, or email',
+    'registered',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -2755,7 +2797,8 @@ customers
       try {
         const properties = JSON.parse(options.properties) as Record<string, unknown>;
 
-        const service = new BloomreachCustomersService(options.project);
+        const apiConfig = tryResolveApiConfig(options.project);
+        const service = new BloomreachCustomersService(options.project, apiConfig);
         const result = service.prepareUpdateCustomer({
           project: options.project,
           customerId: options.customerId,
@@ -2784,10 +2827,17 @@ customers
 
 customers
   .command('delete')
-  .description('Prepare deletion of a customer profile (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description(
+    'Prepare deletion (anonymization) of a customer profile (two-phase commit).\n' +
+      'Bloomreach does not hard-delete customers; this anonymizes PII via the GDPR API.',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID)')
   .requiredOption('--customer-id <customerId>', 'Customer identifier value')
-  .option('--id-type <idType>', 'Identifier type', 'registered')
+  .option(
+    '--id-type <idType>',
+    'Type of the customer identifier: registered (default), cookie, or email',
+    'registered',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -2799,7 +2849,8 @@ customers
       json?: boolean;
     }) => {
       try {
-        const service = new BloomreachCustomersService(options.project);
+        const apiConfig = tryResolveApiConfig(options.project);
+        const service = new BloomreachCustomersService(options.project, apiConfig);
         const result = service.prepareDeleteCustomer({
           project: options.project,
           customerId: options.customerId,
@@ -2810,7 +2861,7 @@ customers
         if (options.json) {
           printJson(result);
         } else {
-          console.log('Customer deletion prepared.');
+          console.log('Customer deletion (anonymization) prepared.');
           console.log(`  Customer: ${options.customerId}`);
           console.log(`  Token:    ${result.confirmToken}`);
           console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
