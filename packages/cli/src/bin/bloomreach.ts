@@ -1459,8 +1459,10 @@ const trends = program.command('trends').description('Manage Bloomreach Engageme
 
 trends
   .command('list')
-  .description('List all trend analyses in the project')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description(
+    'List all trend analyses in the project (note: the Bloomreach API does not provide a trends endpoint — requires browser automation)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -1490,12 +1492,20 @@ trends
 
 trends
   .command('view-results')
-  .description('View time-series data for a trend analysis')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--analysis-id <id>', 'Trend analysis ID')
-  .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
-  .option('--end-date <date>', 'End date (YYYY-MM-DD)')
-  .option('--granularity <granularity>', 'Time granularity (hourly, daily, weekly, monthly)')
+  .description(
+    'View time-series data for a trend analysis (note: the Bloomreach API does not provide a trends endpoint — requires browser automation)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption(
+    '--analysis-id <id>',
+    'Trend analysis ID (hex string from Bloomreach UI URL, e.g. "606488856f8cf6f848b20af8")',
+  )
+  .option('--start-date <date>', 'Start date in ISO-8601 format (YYYY-MM-DD)')
+  .option('--end-date <date>', 'End date in ISO-8601 format (YYYY-MM-DD)')
+  .option(
+    '--granularity <granularity>',
+    'Time granularity: hourly | daily | weekly | monthly',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -1540,17 +1550,26 @@ trends
 
 trends
   .command('create')
-  .description('Prepare creation of a new trend analysis (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--name <name>', 'Trend analysis name')
-  .requiredOption('--events <csv>', 'Events to track (comma-separated)')
+  .description('Prepare creation of a new trend analysis (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--name <name>', 'Trend analysis name (max 200 characters)')
+  .requiredOption(
+    '--events <csv>',
+    'Events to track (comma-separated, e.g. "purchase,session_start,page_view")',
+  )
   .option(
     '--granularity <granularity>',
-    'Time granularity (hourly, daily, weekly, monthly)',
+    'Time granularity: hourly | daily | weekly | monthly (default: daily)',
     'daily',
   )
-  .option('--customer-attributes <json>', 'JSON object of customer attribute filters')
-  .option('--event-properties <json>', 'JSON object of event property filters')
+  .option(
+    '--customer-attributes <json>',
+    'Customer attribute filters as JSON (e.g. \'{"segment":"vip","locale":"en_US"}\')',
+  )
+  .option(
+    '--event-properties <json>',
+    'Event property filters as JSON (e.g. \'{"currency":"USD"}\')',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -1606,10 +1625,13 @@ trends
 
 trends
   .command('clone')
-  .description('Prepare cloning a trend analysis (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--analysis-id <id>', 'Trend analysis ID to clone')
-  .option('--new-name <name>', 'Name for the cloned analysis')
+  .description('Prepare cloning a trend analysis (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption(
+    '--analysis-id <id>',
+    'Trend analysis ID to clone (hex string from Bloomreach UI URL)',
+  )
+  .option('--new-name <name>', 'Name for the cloned analysis (max 200 characters)')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -1650,9 +1672,12 @@ trends
 
 trends
   .command('archive')
-  .description('Prepare archiving a trend analysis (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--analysis-id <id>', 'Trend analysis ID')
+  .description('Prepare archiving a trend analysis (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption(
+    '--analysis-id <id>',
+    'Trend analysis ID to archive (hex string from Bloomreach UI URL)',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
