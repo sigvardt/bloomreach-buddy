@@ -290,6 +290,18 @@ export function validateCustomUrl(url: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// QoL helpers
+// ---------------------------------------------------------------------------
+
+/** Masks a project token for safe display, showing only the last 4 characters. */
+export function maskProjectToken(token: string): string {
+  if (token.length <= 4) {
+    return '*'.repeat(token.length || 4);
+  }
+  return '*'.repeat(token.length - 4) + token.slice(-4);
+}
+
+// ---------------------------------------------------------------------------
 // URL builders
 // ---------------------------------------------------------------------------
 
@@ -327,7 +339,8 @@ class UpdateProjectNameExecutor implements ProjectSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
-      'UpdateProjectNameExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'UpdateProjectNameExecutor: not yet implemented. ' +
+        'Project name updates are only available through the Bloomreach Engagement UI.',
     );
   }
 }
@@ -337,7 +350,8 @@ class UpdateCustomUrlExecutor implements ProjectSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
-      'UpdateCustomUrlExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'UpdateCustomUrlExecutor: not yet implemented. ' +
+        'Custom URL updates are only available through the Bloomreach Engagement UI.',
     );
   }
 }
@@ -347,7 +361,8 @@ class UpdateTermsAndConditionsExecutor implements ProjectSettingsActionExecutor 
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
-      'UpdateTermsAndConditionsExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'UpdateTermsAndConditionsExecutor: not yet implemented. ' +
+        'Terms and conditions updates are only available through the Bloomreach Engagement UI.',
     );
   }
 }
@@ -357,7 +372,8 @@ class CreateCustomTagExecutor implements ProjectSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
-      'CreateCustomTagExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateCustomTagExecutor: not yet implemented. ' +
+        'Tag creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
@@ -367,7 +383,8 @@ class UpdateCustomTagExecutor implements ProjectSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
-      'UpdateCustomTagExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'UpdateCustomTagExecutor: not yet implemented. ' +
+        'Tag updates are only available through the Bloomreach Engagement UI.',
     );
   }
 }
@@ -377,7 +394,8 @@ class DeleteCustomTagExecutor implements ProjectSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
-      'DeleteCustomTagExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DeleteCustomTagExecutor: not yet implemented. ' +
+        'Tag deletion is only available through the Bloomreach Engagement UI.',
     );
   }
 }
@@ -387,7 +405,8 @@ class CreateProjectVariableExecutor implements ProjectSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
-      'CreateProjectVariableExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateProjectVariableExecutor: not yet implemented. ' +
+        'Variable creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
@@ -397,7 +416,8 @@ class UpdateProjectVariableExecutor implements ProjectSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
-      'UpdateProjectVariableExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'UpdateProjectVariableExecutor: not yet implemented. ' +
+        'Variable updates are only available through the Bloomreach Engagement UI.',
     );
   }
 }
@@ -407,7 +427,8 @@ class DeleteProjectVariableExecutor implements ProjectSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
-      'DeleteProjectVariableExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DeleteProjectVariableExecutor: not yet implemented. ' +
+        'Variable deletion is only available through the Bloomreach Engagement UI.',
     );
   }
 }
@@ -475,42 +496,62 @@ export class BloomreachProjectSettingsService {
 
   /** @throws {Error} Browser automation not yet available. */
   async viewProjectSettings(
-    _input?: ViewProjectSettingsInput,
+    input?: ViewProjectSettingsInput,
   ): Promise<BloomreachProjectGeneralSettings> {
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'viewProjectSettings: not yet implemented. Requires browser automation infrastructure.',
+      'viewProjectSettings: not yet implemented. ' +
+        'Project settings must be viewed through the Bloomreach Engagement UI.',
     );
   }
 
   /** @throws {Error} Browser automation not yet available. */
-  async viewProjectToken(_input?: ViewProjectTokenInput): Promise<{ projectToken: string }> {
+  async viewProjectToken(input?: ViewProjectTokenInput): Promise<{ projectToken: string }> {
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'viewProjectToken: not yet implemented. Requires browser automation infrastructure.',
+      'viewProjectToken: not yet implemented. ' +
+        'Project token must be viewed through the Bloomreach Engagement UI.',
     );
   }
 
   /** @throws {Error} Browser automation not yet available. */
   async viewTermsAndConditions(
-    _input?: ViewTermsAndConditionsInput,
+    input?: ViewTermsAndConditionsInput,
   ): Promise<BloomreachTermsAndConditions> {
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'viewTermsAndConditions: not yet implemented. Requires browser automation infrastructure.',
+      'viewTermsAndConditions: not yet implemented. ' +
+        'Terms and conditions must be viewed through the Bloomreach Engagement UI.',
     );
   }
 
   /** @throws {Error} Browser automation not yet available. */
-  async listCustomTags(_input?: ListCustomTagsInput): Promise<BloomreachCustomTag[]> {
+  async listCustomTags(input?: ListCustomTagsInput): Promise<BloomreachCustomTag[]> {
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'listCustomTags: not yet implemented. Requires browser automation infrastructure.',
+      'listCustomTags: not yet implemented. ' +
+        'Custom tags must be viewed through the Bloomreach Engagement UI.',
     );
   }
 
   /** @throws {Error} Browser automation not yet available. */
   async listProjectVariables(
-    _input?: ListProjectVariablesInput,
+    input?: ListProjectVariablesInput,
   ): Promise<BloomreachProjectVariable[]> {
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'listProjectVariables: not yet implemented. Requires browser automation infrastructure.',
+      'listProjectVariables: not yet implemented. ' +
+        'Project variables must be viewed through the Bloomreach Engagement UI.',
     );
   }
 

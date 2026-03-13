@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   UPDATE_PROJECT_NAME_ACTION_TYPE,
   UPDATE_CUSTOM_URL_ACTION_TYPE,
@@ -13,6 +13,7 @@ import {
   PROJECT_SETTINGS_MODIFY_RATE_LIMIT,
   PROJECT_SETTINGS_TAG_RATE_LIMIT,
   PROJECT_SETTINGS_VARIABLE_RATE_LIMIT,
+  PROJECT_TYPES,
   validateProjectName,
   validateCustomTagName,
   validateCustomTagId,
@@ -24,9 +25,14 @@ import {
   buildProjectSettingsTermsUrl,
   buildProjectSettingsCustomTagsUrl,
   buildProjectSettingsVariablesUrl,
+  maskProjectToken,
   createProjectSettingsActionExecutors,
   BloomreachProjectSettingsService,
 } from '../index.js';
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports UPDATE_PROJECT_NAME_ACTION_TYPE', () => {
@@ -92,6 +98,12 @@ describe('rate limit constants', () => {
   });
 });
 
+describe('enum arrays', () => {
+  it('exports PROJECT_TYPES in order', () => {
+    expect(PROJECT_TYPES).toEqual(['Production', 'Sandbox', 'Development']);
+  });
+});
+
 describe('validateProjectName', () => {
   it('throws for empty string', () => {
     expect(() => validateProjectName('')).toThrow('must not be empty');
@@ -104,6 +116,17 @@ describe('validateProjectName', () => {
   it('returns trimmed name for valid input', () => {
     expect(validateProjectName('  My Project  ')).toBe('My Project');
   });
+
+  it('accepts single-character name', () => expect(validateProjectName('A')).toBe('A'));
+
+  it('accepts mixed whitespace around valid name', () =>
+    expect(validateProjectName(' \t  My Project \n ')).toBe('My Project'));
+
+  it('throws for newline-only string', () =>
+    expect(() => validateProjectName('\n\n')).toThrow('must not be empty'));
+
+  it('throws for tab-only string', () =>
+    expect(() => validateProjectName('\t\t')).toThrow('must not be empty'));
 
   it('accepts name at maximum length', () => {
     const name = 'x'.repeat(200);
@@ -128,6 +151,11 @@ describe('validateCustomTagName', () => {
   it('returns trimmed name for valid input', () => {
     expect(validateCustomTagName('  Priority  ')).toBe('Priority');
   });
+
+  it('accepts single-character tag name', () => expect(validateCustomTagName('X')).toBe('X'));
+
+  it('accepts mixed whitespace around valid name', () =>
+    expect(validateCustomTagName(' \t Priority \n ')).toBe('Priority'));
 
   it('accepts tag name at maximum length', () => {
     const name = 'x'.repeat(100);
@@ -159,6 +187,13 @@ describe('validateTagColor', () => {
     expect(validateTagColor('#FF5733')).toBe('#FF5733');
   });
 
+  it('accepts lowercase hex color', () => expect(validateTagColor('#ff5733')).toBe('#ff5733'));
+
+  it('trims whitespace around valid hex color', () =>
+    expect(validateTagColor('  #FF5733  ')).toBe('#FF5733'));
+
+  it('throws for empty string', () => expect(() => validateTagColor('')).toThrow('valid hex color code'));
+
   it('throws for missing # prefix', () => {
     expect(() => validateTagColor('FF5733')).toThrow('valid hex color code');
   });
@@ -185,6 +220,11 @@ describe('validateVariableName', () => {
     expect(validateVariableName('  welcome_message  ')).toBe('welcome_message');
   });
 
+  it('accepts single-character variable name', () => expect(validateVariableName('x')).toBe('x'));
+
+  it('accepts mixed whitespace around valid name', () =>
+    expect(validateVariableName(' \t welcome_msg \n ')).toBe('welcome_msg'));
+
   it('accepts variable name at maximum length', () => {
     const name = 'x'.repeat(200);
     expect(validateVariableName(name)).toBe(name);
@@ -199,6 +239,13 @@ describe('validateVariableName', () => {
 describe('validateVariableValue', () => {
   it('accepts valid variable value', () => {
     expect(validateVariableValue('hello world')).toBe('hello world');
+  });
+
+  it('accepts empty string', () => expect(validateVariableValue('')).toBe(''));
+
+  it('accepts value at maximum length', () => {
+    const v = 'x'.repeat(5000);
+    expect(validateVariableValue(v)).toBe(v);
   });
 
   it('throws for value exceeding maximum length', () => {
@@ -219,6 +266,11 @@ describe('validateCustomUrl', () => {
   it('returns trimmed URL for valid input', () => {
     expect(validateCustomUrl('  https://example.com/path  ')).toBe('https://example.com/path');
   });
+
+  it('accepts single-character URL', () => expect(validateCustomUrl('x')).toBe('x'));
+
+  it('accepts mixed whitespace around valid URL', () =>
+    expect(validateCustomUrl(' \t https://example.com \n ')).toBe('https://example.com'));
 
   it('accepts custom URL at maximum length', () => {
     const url = 'x'.repeat(500);
@@ -276,6 +328,36 @@ describe('URL builders', () => {
       '/p/org%2Fproject/project-settings/project-variables-project',
     );
   });
+
+  it('encodes unicode characters in all URLs', () => {
+    expect(buildProjectSettingsGeneralUrl('projekt åäö')).toBe(
+      '/p/projekt%20%C3%A5%C3%A4%C3%B6/project-settings/general',
+    );
+    expect(buildProjectSettingsTermsUrl('projekt åäö')).toBe(
+      '/p/projekt%20%C3%A5%C3%A4%C3%B6/project-settings/terms-and-conditions',
+    );
+    expect(buildProjectSettingsCustomTagsUrl('projekt åäö')).toBe(
+      '/p/projekt%20%C3%A5%C3%A4%C3%B6/project-settings/custom-tags',
+    );
+    expect(buildProjectSettingsVariablesUrl('projekt åäö')).toBe(
+      '/p/projekt%20%C3%A5%C3%A4%C3%B6/project-settings/project-variables-project',
+    );
+  });
+
+  it('encodes hash in all URLs', () => {
+    expect(buildProjectSettingsGeneralUrl('my#project')).toBe(
+      '/p/my%23project/project-settings/general',
+    );
+    expect(buildProjectSettingsTermsUrl('my#project')).toBe(
+      '/p/my%23project/project-settings/terms-and-conditions',
+    );
+    expect(buildProjectSettingsCustomTagsUrl('my#project')).toBe(
+      '/p/my%23project/project-settings/custom-tags',
+    );
+    expect(buildProjectSettingsVariablesUrl('my#project')).toBe(
+      '/p/my%23project/project-settings/project-variables-project',
+    );
+  });
 });
 
 describe('createProjectSettingsActionExecutors', () => {
@@ -300,11 +382,45 @@ describe('createProjectSettingsActionExecutors', () => {
     }
   });
 
-  it('executors throw "not yet implemented" on execute', async () => {
+  it('executors throw with UI-only error message', async () => {
     const executors = createProjectSettingsActionExecutors();
     for (const executor of Object.values(executors)) {
       await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+      await expect(executor.execute({})).rejects.toThrow('Bloomreach Engagement UI');
     }
+  });
+});
+
+describe('maskProjectToken', () => {
+  it('masks token showing only last 4 characters', () => {
+    expect(maskProjectToken('abc123-def456-ghi789')).toBe('*'.repeat(16) + 'i789');
+  });
+
+  it('returns all asterisks for token with exactly 4 characters', () => {
+    expect(maskProjectToken('abcd')).toBe('****');
+  });
+
+  it('returns all asterisks for token shorter than 4 characters', () => {
+    expect(maskProjectToken('ab')).toBe('**');
+  });
+
+  it('returns 4 asterisks for empty string', () => {
+    expect(maskProjectToken('')).toBe('****');
+  });
+
+  it('masks single-character token', () => {
+    expect(maskProjectToken('x')).toBe('*');
+  });
+
+  it('masks 5-character token showing last 4', () => {
+    expect(maskProjectToken('abcde')).toBe('*bcde');
+  });
+
+  it('preserves exact length of original token', () => {
+    const token = 'project-token-12345678';
+    const masked = maskProjectToken(token);
+    expect(masked.length).toBe(token.length);
+    expect(masked.endsWith('5678')).toBe(true);
   });
 });
 
@@ -322,6 +438,26 @@ describe('BloomreachProjectSettingsService', () => {
 
     it('throws for empty project', () => {
       expect(() => new BloomreachProjectSettingsService('')).toThrow('must not be empty');
+    });
+
+    it('encodes special characters in project name', () => {
+      const service = new BloomreachProjectSettingsService('my project');
+      expect(service.projectSettingsGeneralUrl).toContain('my%20project');
+
+      const service2 = new BloomreachProjectSettingsService('org/proj');
+      expect(service2.projectSettingsGeneralUrl).toContain('org%2Fproj');
+    });
+
+    it('encodes unicode characters in constructor URL', () => {
+      const service = new BloomreachProjectSettingsService('projekt åäö');
+      expect(service.projectSettingsGeneralUrl).toBe(
+        '/p/projekt%20%C3%A5%C3%A4%C3%B6/project-settings/general',
+      );
+    });
+
+    it('encodes hash in constructor URL', () => {
+      const service = new BloomreachProjectSettingsService('my#project');
+      expect(service.projectSettingsGeneralUrl).toBe('/p/my%23project/project-settings/general');
     });
   });
 
@@ -367,6 +503,15 @@ describe('BloomreachProjectSettingsService', () => {
     it('listProjectVariables throws not-yet-implemented error', async () => {
       const service = new BloomreachProjectSettingsService('test');
       await expect(service.listProjectVariables()).rejects.toThrow('not yet implemented');
+    });
+
+    it('validates project for read methods when input is provided', async () => {
+      const service = new BloomreachProjectSettingsService('test');
+      await expect(service.viewProjectSettings({ project: '' })).rejects.toThrow('must not be empty');
+      await expect(service.viewProjectToken({ project: '' })).rejects.toThrow('must not be empty');
+      await expect(service.viewTermsAndConditions({ project: '' })).rejects.toThrow('must not be empty');
+      await expect(service.listCustomTags({ project: '' })).rejects.toThrow('must not be empty');
+      await expect(service.listProjectVariables({ project: '' })).rejects.toThrow('must not be empty');
     });
   });
 
@@ -562,6 +707,17 @@ describe('BloomreachProjectSettingsService', () => {
         }),
       ).toThrow('At least one of name or color must be provided');
     });
+
+    it('accepts update with only color (no name)', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      const result = service.prepareUpdateCustomTag({
+        project: 'test',
+        tagId: 'tag-1',
+        color: '#0000FF',
+      });
+      expect(result.preview.color).toBe('#0000FF');
+      expect(result.preview.name).toBeUndefined();
+    });
   });
 
   describe('prepareDeleteCustomTag', () => {
@@ -707,6 +863,17 @@ describe('BloomreachProjectSettingsService', () => {
         }),
       ).toThrow('At least one of value or description must be provided');
     });
+
+    it('accepts update with only description (no value)', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      const result = service.prepareUpdateProjectVariable({
+        project: 'test',
+        variableName: 'welcome_message',
+        description: 'Updated description only',
+      });
+      expect(result.preview.description).toBe('Updated description only');
+      expect(result.preview.value).toBeUndefined();
+    });
   });
 
   describe('prepareDeleteProjectVariable', () => {
@@ -749,6 +916,251 @@ describe('BloomreachProjectSettingsService', () => {
           variableName: '',
         }),
       ).toThrow('must not be empty');
+    });
+  });
+
+  describe('token expiry', () => {
+    it('sets expiresAtMs to approximately 30 minutes from now', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      const before = Date.now();
+      const result = service.prepareUpdateProjectName({
+        project: 'test',
+        name: 'Expiry Test',
+      });
+      const after = Date.now();
+
+      const expectedTtl = 30 * 60 * 1000;
+      expect(result.expiresAtMs).toBeGreaterThanOrEqual(before + expectedTtl);
+      expect(result.expiresAtMs).toBeLessThanOrEqual(after + expectedTtl);
+    });
+
+    it('all prepare methods set consistent expiry', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      const tolerance = 1000;
+      const expectedTtl = 30 * 60 * 1000;
+
+      const results = [
+        service.prepareUpdateProjectName({ project: 'test', name: 'Name' }),
+        service.prepareUpdateCustomUrl({ project: 'test', customUrl: 'https://example.com' }),
+        service.prepareUpdateTermsAndConditions({ project: 'test', accepted: true }),
+        service.prepareCreateCustomTag({ project: 'test', name: 'Tag' }),
+        service.prepareUpdateCustomTag({ project: 'test', tagId: 'tag-1', name: 'Updated' }),
+        service.prepareDeleteCustomTag({ project: 'test', tagId: 'tag-1' }),
+        service.prepareCreateProjectVariable({ project: 'test', name: 'var', value: 'val' }),
+        service.prepareUpdateProjectVariable({ project: 'test', variableName: 'var', value: 'val' }),
+        service.prepareDeleteProjectVariable({ project: 'test', variableName: 'var' }),
+      ];
+
+      for (const result of results) {
+        const now = Date.now();
+        expect(result.expiresAtMs).toBeGreaterThanOrEqual(now + expectedTtl - tolerance);
+        expect(result.expiresAtMs).toBeLessThanOrEqual(now + expectedTtl + tolerance);
+      }
+    });
+  });
+
+  describe('optional fields in preview', () => {
+    it('prepareUpdateProjectName includes operatorNote when provided', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      const result = service.prepareUpdateProjectName({
+        project: 'test',
+        name: 'Name',
+        operatorNote: 'test-note',
+      });
+      expect(result.preview.operatorNote).toBe('test-note');
+    });
+
+    it('prepareUpdateProjectName excludes operatorNote when omitted', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      const result = service.prepareUpdateProjectName({
+        project: 'test',
+        name: 'Name',
+      });
+      expect(result.preview.operatorNote).toBeUndefined();
+    });
+
+    it('prepareCreateCustomTag includes color when provided', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      const result = service.prepareCreateCustomTag({
+        project: 'test',
+        name: 'Tag',
+        color: '#FF0000',
+      });
+      expect(result.preview.color).toBe('#FF0000');
+    });
+
+    it('prepareCreateCustomTag excludes color when omitted', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      const result = service.prepareCreateCustomTag({
+        project: 'test',
+        name: 'Tag',
+      });
+      expect(result.preview.color).toBeUndefined();
+    });
+
+    it('prepareCreateProjectVariable includes description when provided', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      const result = service.prepareCreateProjectVariable({
+        project: 'test',
+        name: 'var',
+        value: 'val',
+        description: 'A description',
+      });
+      expect(result.preview.description).toBe('A description');
+    });
+
+    it('prepareCreateProjectVariable excludes description when omitted', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      const result = service.prepareCreateProjectVariable({
+        project: 'test',
+        name: 'var',
+        value: 'val',
+      });
+      expect(result.preview.description).toBeUndefined();
+    });
+  });
+
+  describe('prepare methods shared validation', () => {
+    it('throws on empty project for all prepare methods', () => {
+      const service = new BloomreachProjectSettingsService('test');
+
+      expect(() => service.prepareUpdateProjectName({ project: '', name: 'Name' })).toThrow(
+        'must not be empty',
+      );
+
+      expect(() =>
+        service.prepareUpdateCustomUrl({ project: '', customUrl: 'https://x.com' }),
+      ).toThrow('must not be empty');
+
+      expect(() =>
+        service.prepareUpdateTermsAndConditions({ project: '', accepted: true }),
+      ).toThrow('must not be empty');
+
+      expect(() => service.prepareCreateCustomTag({ project: '', name: 'Tag' })).toThrow(
+        'must not be empty',
+      );
+
+      expect(() =>
+        service.prepareUpdateCustomTag({ project: '', tagId: 'tag-1', name: 'Tag' }),
+      ).toThrow('must not be empty');
+
+      expect(() => service.prepareDeleteCustomTag({ project: '', tagId: 'tag-1' })).toThrow(
+        'must not be empty',
+      );
+
+      expect(() =>
+        service.prepareCreateProjectVariable({ project: '', name: 'var', value: 'val' }),
+      ).toThrow('must not be empty');
+
+      expect(() =>
+        service.prepareUpdateProjectVariable({ project: '', variableName: 'var', value: 'val' }),
+      ).toThrow('must not be empty');
+
+      expect(() =>
+        service.prepareDeleteProjectVariable({ project: '', variableName: 'var' }),
+      ).toThrow('must not be empty');
+    });
+  });
+
+  describe('prepare method boundary validation', () => {
+    it('accepts project name at exactly 200 characters', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      const result = service.prepareUpdateProjectName({
+        project: 'test',
+        name: 'x'.repeat(200),
+      });
+      expect(result.preview.name).toBe('x'.repeat(200));
+    });
+
+    it('rejects project name at 201 characters', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      expect(() =>
+        service.prepareUpdateProjectName({
+          project: 'test',
+          name: 'x'.repeat(201),
+        }),
+      ).toThrow('must not exceed 200 characters');
+    });
+
+    it('accepts tag name at exactly 100 characters', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      const result = service.prepareCreateCustomTag({
+        project: 'test',
+        name: 'x'.repeat(100),
+      });
+      expect(result.preview.name).toBe('x'.repeat(100));
+    });
+
+    it('rejects tag name at 101 characters', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      expect(() =>
+        service.prepareCreateCustomTag({
+          project: 'test',
+          name: 'x'.repeat(101),
+        }),
+      ).toThrow('must not exceed 100 characters');
+    });
+
+    it('accepts variable name at exactly 200 characters', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      const result = service.prepareCreateProjectVariable({
+        project: 'test',
+        name: 'x'.repeat(200),
+        value: 'val',
+      });
+      expect(result.preview.name).toBe('x'.repeat(200));
+    });
+
+    it('rejects variable name at 201 characters', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      expect(() =>
+        service.prepareCreateProjectVariable({
+          project: 'test',
+          name: 'x'.repeat(201),
+          value: 'val',
+        }),
+      ).toThrow('must not exceed 200 characters');
+    });
+
+    it('accepts variable value at exactly 5000 characters', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      const val = 'x'.repeat(5000);
+      const result = service.prepareCreateProjectVariable({
+        project: 'test',
+        name: 'var',
+        value: val,
+      });
+      expect(result.preview.value).toBe(val);
+    });
+
+    it('rejects variable value at 5001 characters', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      expect(() =>
+        service.prepareCreateProjectVariable({
+          project: 'test',
+          name: 'var',
+          value: 'x'.repeat(5001),
+        }),
+      ).toThrow('must not exceed 5000 characters');
+    });
+
+    it('accepts custom URL at exactly 500 characters', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      const result = service.prepareUpdateCustomUrl({
+        project: 'test',
+        customUrl: 'x'.repeat(500),
+      });
+      expect(result.preview.customUrl).toBe('x'.repeat(500));
+    });
+
+    it('rejects custom URL at 501 characters', () => {
+      const service = new BloomreachProjectSettingsService('test');
+      expect(() =>
+        service.prepareUpdateCustomUrl({
+          project: 'test',
+          customUrl: 'x'.repeat(501),
+        }),
+      ).toThrow('must not exceed 500 characters');
     });
   });
 });
