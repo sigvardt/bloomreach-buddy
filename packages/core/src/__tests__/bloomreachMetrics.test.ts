@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   CREATE_METRIC_ACTION_TYPE,
   EDIT_METRIC_ACTION_TYPE,
@@ -16,6 +16,18 @@ import {
   createMetricActionExecutors,
   BloomreachMetricsService,
 } from '../index.js';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 const validateMetricDescription = validateDescription;
 
@@ -77,6 +89,10 @@ describe('validateMetricName', () => {
     expect(validateMetricName(name)).toBe(name);
   });
 
+  it('accepts mixed whitespace around valid name', () => {
+    expect(validateMetricName(' \t  Revenue Metric \n ')).toBe('Revenue Metric');
+  });
+
   it('throws for empty string', () => {
     expect(() => validateMetricName('')).toThrow('must not be empty');
   });
@@ -87,6 +103,10 @@ describe('validateMetricName', () => {
 
   it('throws for tab-only string', () => {
     expect(() => validateMetricName('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateMetricName('\n\n')).toThrow('must not be empty');
   });
 
   it('throws for name exceeding maximum length', () => {
@@ -108,6 +128,10 @@ describe('validateMetricId', () => {
     expect(validateMetricId('metric/group/a')).toBe('metric/group/a');
   });
 
+  it('returns ID containing dots and dashes', () => {
+    expect(validateMetricId('metric.v2-alpha')).toBe('metric.v2-alpha');
+  });
+
   it('throws for empty string', () => {
     expect(() => validateMetricId('')).toThrow('must not be empty');
   });
@@ -118,6 +142,10 @@ describe('validateMetricId', () => {
 
   it('throws for newline-only string', () => {
     expect(() => validateMetricId('\n')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateMetricId('\t')).toThrow('must not be empty');
   });
 });
 
@@ -143,9 +171,7 @@ describe('validateDescription', () => {
 
   it('throws for description exceeding max length', () => {
     const description = 'x'.repeat(1001);
-    expect(() => validateMetricDescription(description)).toThrow(
-      'must not exceed 1000 characters',
-    );
+    expect(() => validateMetricDescription(description)).toThrow('must not exceed 1000 characters');
   });
 });
 
@@ -404,6 +430,31 @@ describe('createMetricActionExecutors', () => {
       'not yet implemented',
     );
   });
+
+  it('accepts optional apiConfig parameter', () => {
+    const executors = createMetricActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(3);
+  });
+
+  it('executors still throw not-yet-implemented with apiConfig', async () => {
+    const executors = createMetricActionExecutors(TEST_API_CONFIG);
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+    }
+  });
+
+  it('returns identical action keys with or without apiConfig', () => {
+    const withoutConfig = Object.keys(createMetricActionExecutors()).sort();
+    const withConfig = Object.keys(createMetricActionExecutors(TEST_API_CONFIG)).sort();
+    expect(withConfig).toEqual(withoutConfig);
+  });
+
+  it('preserves actionType mapping with apiConfig', () => {
+    const executors = createMetricActionExecutors(TEST_API_CONFIG);
+    for (const [key, executor] of Object.entries(executors)) {
+      expect(executor.actionType).toBe(key);
+    }
+  });
 });
 
 describe('BloomreachMetricsService', () => {
@@ -435,12 +486,32 @@ describe('BloomreachMetricsService', () => {
       const service = new BloomreachMetricsService('org/project');
       expect(service.metricsUrl).toBe('/p/org%2Fproject/data/metrics');
     });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachMetricsService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachMetricsService);
+    });
+
+    it('exposes metrics URL when constructed with apiConfig', () => {
+      const service = new BloomreachMetricsService('test', TEST_API_CONFIG);
+      expect(service.metricsUrl).toBe('/p/test/data/metrics');
+    });
+
+    it('encodes unicode project name in constructor URL', () => {
+      const service = new BloomreachMetricsService('projekt åäö');
+      expect(service.metricsUrl).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/data/metrics');
+    });
+
+    it('encodes hash in constructor URL', () => {
+      const service = new BloomreachMetricsService('my#project');
+      expect(service.metricsUrl).toBe('/p/my%23project/data/metrics');
+    });
   });
 
   describe('listMetrics', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachMetricsService('test');
-      await expect(service.listMetrics()).rejects.toThrow('not yet implemented');
+      await expect(service.listMetrics()).rejects.toThrow('does not provide an endpoint');
     });
 
     it('validates project when input is provided', async () => {
@@ -453,23 +524,35 @@ describe('BloomreachMetricsService', () => {
       await expect(service.listMetrics({ project: '   ' })).rejects.toThrow('must not be empty');
     });
 
-    it('throws not-yet-implemented error for valid project override', async () => {
+    it('throws no-API-endpoint error for valid project override', async () => {
       const service = new BloomreachMetricsService('test');
       await expect(service.listMetrics({ project: 'kingdom-of-joakim' })).rejects.toThrow(
-        'not yet implemented',
+        'does not provide an endpoint',
       );
+    });
+
+    it('throws no-API-endpoint error for trimmed project override', async () => {
+      const service = new BloomreachMetricsService('test');
+      await expect(service.listMetrics({ project: '  kingdom-of-joakim  ' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachMetricsService('test', TEST_API_CONFIG);
+      await expect(service.listMetrics()).rejects.toThrow('does not provide an endpoint');
     });
   });
 
   describe('viewMetricResults', () => {
-    it('throws not-yet-implemented error with valid minimal input', async () => {
+    it('throws no-API-endpoint error with valid minimal input', async () => {
       const service = new BloomreachMetricsService('test');
       await expect(
         service.viewMetricResults({
           project: 'test',
           metricId: 'metric-1',
         }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide an endpoint');
     });
 
     it('validates project input', async () => {
@@ -502,14 +585,90 @@ describe('BloomreachMetricsService', () => {
       ).rejects.toThrow('Metric ID must not be empty');
     });
 
-    it('accepts trimmed metricId and reaches not-yet-implemented', async () => {
+    it('accepts trimmed metricId and reaches no-API-endpoint error', async () => {
       const service = new BloomreachMetricsService('test');
       await expect(
         service.viewMetricResults({
           project: 'test',
           metricId: '  metric-99  ',
         }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('validates date range: malformed startDate', async () => {
+      const service = new BloomreachMetricsService('test');
+      await expect(
+        service.viewMetricResults({
+          project: 'test',
+          metricId: 'metric-1',
+          startDate: 'bad-date',
+        }),
+      ).rejects.toThrow('startDate must be a valid ISO-8601 date');
+    });
+
+    it('validates date range: malformed endDate', async () => {
+      const service = new BloomreachMetricsService('test');
+      await expect(
+        service.viewMetricResults({
+          project: 'test',
+          metricId: 'metric-1',
+          endDate: '31-01-2025',
+        }),
+      ).rejects.toThrow('endDate must be a valid ISO-8601 date');
+    });
+
+    it('validates date range: startDate must not be after endDate', async () => {
+      const service = new BloomreachMetricsService('test');
+      await expect(
+        service.viewMetricResults({
+          project: 'test',
+          metricId: 'metric-1',
+          startDate: '2025-02-01',
+          endDate: '2025-01-01',
+        }),
+      ).rejects.toThrow('must not be after');
+    });
+
+    it('accepts only startDate and still reaches no-API-endpoint error', async () => {
+      const service = new BloomreachMetricsService('test');
+      await expect(
+        service.viewMetricResults({
+          project: 'test',
+          metricId: 'metric-1',
+          startDate: '2025-01-01',
+        }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('accepts only endDate and still reaches no-API-endpoint error', async () => {
+      const service = new BloomreachMetricsService('test');
+      await expect(
+        service.viewMetricResults({
+          project: 'test',
+          metricId: 'metric-1',
+          endDate: '2025-01-31',
+        }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error with trimmed project and metricId', async () => {
+      const service = new BloomreachMetricsService('test');
+      await expect(
+        service.viewMetricResults({
+          project: '  test  ',
+          metricId: '  metric-1  ',
+        }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachMetricsService('test', TEST_API_CONFIG);
+      await expect(
+        service.viewMetricResults({
+          project: 'test',
+          metricId: 'metric-1',
+        }),
+      ).rejects.toThrow('does not provide an endpoint');
     });
   });
 
@@ -767,6 +926,40 @@ describe('BloomreachMetricsService', () => {
         }),
       );
     });
+
+    it('accepts slash-containing project after trim', () => {
+      const service = new BloomreachMetricsService('test');
+      const result = service.prepareCreateMetric({
+        project: '  org/project  ',
+        name: 'Metric',
+        aggregation: {
+          eventName: 'purchase',
+          aggregationType: 'count',
+        },
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          project: 'org/project',
+        }),
+      );
+    });
+
+    it('produces token fields with expected prefixes', () => {
+      const service = new BloomreachMetricsService('test');
+      const result = service.prepareCreateMetric({
+        project: 'test',
+        name: 'Metric',
+        aggregation: {
+          eventName: 'purchase',
+          aggregationType: 'count',
+        },
+      });
+
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.confirmToken).toMatch(/^ct_stub_/);
+      expect(result.expiresAtMs).toBeGreaterThan(Date.now());
+    });
   });
 
   describe('prepareEditMetric', () => {
@@ -896,6 +1089,74 @@ describe('BloomreachMetricsService', () => {
         }),
       ).toThrow('must not be empty');
     });
+
+    it('trims metricId in preview', () => {
+      const service = new BloomreachMetricsService('test');
+      const result = service.prepareEditMetric({
+        project: 'test',
+        metricId: '  metric-123  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          metricId: 'metric-123',
+        }),
+      );
+    });
+
+    it('trims project in preview', () => {
+      const service = new BloomreachMetricsService('test');
+      const result = service.prepareEditMetric({
+        project: '  my-project  ',
+        metricId: 'metric-123',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          project: 'my-project',
+        }),
+      );
+    });
+
+    it('accepts slash-containing metricId after trim', () => {
+      const service = new BloomreachMetricsService('test');
+      const result = service.prepareEditMetric({
+        project: 'test',
+        metricId: '  metric/group/a  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          metricId: 'metric/group/a',
+        }),
+      );
+    });
+
+    it('accepts dots and dashes in metricId after trim', () => {
+      const service = new BloomreachMetricsService('test');
+      const result = service.prepareEditMetric({
+        project: 'test',
+        metricId: '  metric.v2-alpha  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          metricId: 'metric.v2-alpha',
+        }),
+      );
+    });
+
+    it('produces token fields with expected prefixes', () => {
+      const service = new BloomreachMetricsService('test');
+      const result = service.prepareEditMetric({
+        project: 'test',
+        metricId: 'metric-123',
+      });
+
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.confirmToken).toMatch(/^ct_stub_/);
+      expect(result.expiresAtMs).toBeGreaterThan(Date.now());
+    });
   });
 
   describe('prepareDeleteMetric', () => {
@@ -983,6 +1244,89 @@ describe('BloomreachMetricsService', () => {
       expect(result.preview).toEqual(
         expect.objectContaining({
           metricId: 'metric-900',
+        }),
+      );
+    });
+
+    it('trims project in preview', () => {
+      const service = new BloomreachMetricsService('test');
+      const result = service.prepareDeleteMetric({
+        project: '  my-project  ',
+        metricId: 'metric-900',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          project: 'my-project',
+        }),
+      );
+    });
+
+    it('keeps slash-containing metricId after trim', () => {
+      const service = new BloomreachMetricsService('test');
+      const result = service.prepareDeleteMetric({
+        project: 'test',
+        metricId: '  metric/group/a  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          metricId: 'metric/group/a',
+        }),
+      );
+    });
+
+    it('produces token fields with expected prefixes', () => {
+      const service = new BloomreachMetricsService('test');
+      const result = service.prepareDeleteMetric({
+        project: 'test',
+        metricId: 'metric-900',
+      });
+
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.confirmToken).toMatch(/^ct_stub_/);
+      expect(result.expiresAtMs).toBeGreaterThan(Date.now());
+    });
+
+    it('accepts dotted metricId in delete preview', () => {
+      const service = new BloomreachMetricsService('test');
+      const result = service.prepareDeleteMetric({
+        project: 'test',
+        metricId: ' metric.v2-alpha ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          metricId: 'metric.v2-alpha',
+        }),
+      );
+    });
+
+    it('keeps operatorNote as-is in preview', () => {
+      const service = new BloomreachMetricsService('test');
+      const result = service.prepareDeleteMetric({
+        project: 'test',
+        metricId: 'metric-900',
+        operatorNote: '  remove after migration  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          operatorNote: '  remove after migration  ',
+        }),
+      );
+    });
+
+    it('accepts slash-containing project in preview', () => {
+      const service = new BloomreachMetricsService('test');
+      const result = service.prepareDeleteMetric({
+        project: ' org/project ',
+        metricId: 'metric-900',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          project: 'org/project',
         }),
       );
     });
