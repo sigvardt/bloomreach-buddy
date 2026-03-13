@@ -16,6 +16,7 @@ import {
   BloomreachFlowsService,
   BloomreachIntegrationsService,
   BloomreachInitiativesService,
+  BloomreachUseCasesService,
   BloomreachProjectSettingsService,
   BloomreachFunnelsService,
   BloomreachGeoAnalysesService,
@@ -10132,6 +10133,286 @@ imports
           console.log(`  Import: ${options.importId}`);
           console.log(`  Token:  ${result.confirmToken}`);
           console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const useCases = program
+  .command('use-cases')
+  .description('Browse and deploy Bloomreach Use Case Center templates');
+
+useCases
+  .command('list')
+  .description('List all available use case templates')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--category <category>', 'Filter by goal category (awareness, acquisition, retention, optimization)')
+  .option('--tag <tag>', 'Filter by tag (new, essentials, popular)')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; category?: string; tag?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachUseCasesService(options.project);
+        const input: { project: string; category?: string; tag?: string } = {
+          project: options.project,
+        };
+        if (options.category) input.category = options.category;
+        if (options.tag) input.tag = options.tag;
+
+        const result = await service.listUseCases(input);
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          if (result.length === 0) {
+            console.log('No use cases found.');
+            return;
+          }
+          for (const useCase of result) {
+            console.log(`  ${useCase.name}`);
+            console.log(`    Category: ${useCase.goalCategory}`);
+            console.log(`    Tags:     ${useCase.tags.join(', ')}`);
+            if (useCase.readinessStatus) {
+              console.log(`    Ready:    ${useCase.readinessStatus}`);
+            }
+            console.log(`    ID:       ${useCase.id}`);
+            console.log(`    URL:      ${useCase.url}`);
+          }
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+useCases
+  .command('search')
+  .description('Search use case templates by keyword')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--query <query>', 'Search keyword')
+  .option('--category <category>', 'Filter by goal category (awareness, acquisition, retention, optimization)')
+  .option('--tag <tag>', 'Filter by tag (new, essentials, popular)')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      query: string;
+      category?: string;
+      tag?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachUseCasesService(options.project);
+        const result = await service.searchUseCases({
+          project: options.project,
+          query: options.query,
+          category: options.category,
+          tag: options.tag,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          if (result.length === 0) {
+            console.log('No use cases match the search.');
+            return;
+          }
+          for (const useCase of result) {
+            console.log(`  ${useCase.name}`);
+            console.log(`    Category: ${useCase.goalCategory}`);
+            console.log(`    Tags:     ${useCase.tags.join(', ')}`);
+            if (useCase.readinessStatus) {
+              console.log(`    Ready:    ${useCase.readinessStatus}`);
+            }
+            console.log(`    ID:       ${useCase.id}`);
+            console.log(`    URL:      ${useCase.url}`);
+          }
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+useCases
+  .command('view')
+  .description('View details of a specific use case template')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--use-case-id <id>', 'Use case ID')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; useCaseId: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachUseCasesService(options.project);
+      const result = await service.viewUseCase({
+        project: options.project,
+        useCaseId: options.useCaseId,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Use Case: ${result.name}`);
+        console.log(`  Category:     ${result.goalCategory}`);
+        console.log(`  Tags:         ${result.tags.join(', ')}`);
+        console.log(`  Description:  ${result.description}`);
+        if (result.longDescription) {
+          console.log(`  Details:      ${result.longDescription}`);
+        }
+        if (result.requiredIntegrations.length > 0) {
+          console.log(`  Integrations: ${result.requiredIntegrations.join(', ')}`);
+        }
+        if (result.channelsUsed.length > 0) {
+          console.log(`  Channels:     ${result.channelsUsed.join(', ')}`);
+        }
+        if (result.readinessStatus) {
+          console.log(`  Readiness:    ${result.readinessStatus}`);
+        }
+        console.log(`  URL:          ${result.url}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+useCases
+  .command('project-list')
+  .description('List use cases deployed in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachUseCasesService(options.project);
+      const result = await service.listProjectUseCases({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No use cases deployed in this project.');
+          return;
+        }
+        for (const useCase of result) {
+          console.log(`  ${useCase.name}`);
+          console.log(`    Category: ${useCase.goalCategory}`);
+          if (useCase.status) {
+            console.log(`    Status:   ${useCase.status}`);
+          }
+          if (useCase.deployedAt) {
+            console.log(`    Deployed: ${useCase.deployedAt}`);
+          }
+          console.log(`    ID:       ${useCase.id}`);
+          console.log(`    URL:      ${useCase.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+useCases
+  .command('deploy')
+  .description('Prepare deployment of a use case template (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--use-case-id <id>', 'Use case ID to deploy')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; useCaseId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachUseCasesService(options.project);
+        const result = service.prepareDeployUseCase({
+          project: options.project,
+          useCaseId: options.useCaseId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Use case deployment prepared.');
+          console.log(`  Use Case: ${options.useCaseId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+useCases
+  .command('favorite')
+  .description('Prepare favoriting a use case (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--use-case-id <id>', 'Use case ID to favorite')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; useCaseId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachUseCasesService(options.project);
+        const result = service.prepareFavoriteUseCase({
+          project: options.project,
+          useCaseId: options.useCaseId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Use case favorite prepared.');
+          console.log(`  Use Case: ${options.useCaseId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+useCases
+  .command('unfavorite')
+  .description('Prepare unfavoriting a use case (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--use-case-id <id>', 'Use case ID to unfavorite')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; useCaseId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachUseCasesService(options.project);
+        const result = service.prepareUnfavoriteUseCase({
+          project: options.project,
+          useCaseId: options.useCaseId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Use case unfavorite prepared.');
+          console.log(`  Use Case: ${options.useCaseId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');
           console.log('To confirm, run:');
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);

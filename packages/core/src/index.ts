@@ -30,6 +30,7 @@ export * from './bloomreachChannelSettings.js';
 export * from './bloomreachSecuritySettings.js';
 export * from './bloomreachEvaluationSettings.js';
 export * from './bloomreachWeblayers.js';
+export * from './bloomreachUseCases.js';
 
 export interface BloomreachClientConfig {
   /** Bloomreach environment ID */
