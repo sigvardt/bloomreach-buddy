@@ -3,12 +3,13 @@
 import { Command } from 'commander';
 import {
   BloomreachAssetManagerService,
-  BloomreachClient,
   BloomreachCampaignCalendarService,
+  BloomreachClient,
   BloomreachCustomersService,
   BloomreachDataManagerService,
   BloomreachDashboardsService,
   BloomreachEmailCampaignsService,
+  BloomreachExportsService,
   BloomreachFlowsService,
   BloomreachFunnelsService,
   BloomreachGeoAnalysesService,
@@ -23,22 +24,25 @@ import {
 } from '@bloomreach-buddy/core';
 import type {
   CustomerIds,
-  EmailCampaignSchedule,
+  DataSelection,
   EmailCampaignABTestConfig,
+  EmailCampaignSchedule,
+  EventPropertyDefinition,
+  ExportDestination,
+  ExportSchedule,
   FlowEvent,
   FlowFilter,
-  FunnelStep,
   FunnelFilter,
+  FunnelStep,
   GeoFilter,
   MetricAggregation,
   MetricFilter,
-  SurveyQuestion,
-  SurveyDisplayConditions,
-  TagTriggerConditions,
-  RetentionFilter,
-  TrendFilter,
   RedemptionRules,
-  EventPropertyDefinition,
+  RetentionFilter,
+  SurveyDisplayConditions,
+  SurveyQuestion,
+  TagTriggerConditions,
+  TrendFilter,
 } from '@bloomreach-buddy/core';
 
 function printJson(value: unknown): void {
@@ -4803,6 +4807,270 @@ dataManager
       } else {
         console.log('Data Manager save prepared.');
         console.log(`  Project: ${options.project}`);
+        console.log(`  Token:   ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+const exportsCmd = program
+  .command('exports')
+  .description('Manage Bloomreach exports (list, status, history, create, run, schedule, delete)');
+
+exportsCmd
+  .command('list')
+  .description('List all configured exports')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachExportsService(options.project);
+      const result = await service.listExports({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No exports found.');
+          return;
+        }
+        for (const exportItem of result) {
+          console.log(`  ${exportItem.name}`);
+          console.log(`    Type:   ${exportItem.exportType}`);
+          console.log(`    Status: ${exportItem.status}`);
+          console.log(`    URL:    ${exportItem.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+exportsCmd
+  .command('status')
+  .description('View export status')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--export-id <id>', 'Export ID')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; exportId: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachExportsService(options.project);
+      const result = await service.viewExportStatus({
+        project: options.project,
+        exportId: options.exportId,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Export status for ${options.exportId}`);
+        console.log(`  Status:      ${result.status}`);
+        console.log(`  Started:     ${result.startedAt ?? 'N/A'}`);
+        console.log(`  Completed:   ${result.completedAt ?? 'N/A'}`);
+        console.log(`  File:        ${result.fileLocation ?? 'N/A'}`);
+        console.log(`  RecordCount: ${result.recordCount ?? 'N/A'}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+exportsCmd
+  .command('history')
+  .description('View export history')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--export-id <id>', 'Export ID')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; exportId: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachExportsService(options.project);
+      const result = await service.viewExportHistory({
+        project: options.project,
+        exportId: options.exportId,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No export history found.');
+          return;
+        }
+        console.log(`Export history for ${options.exportId}`);
+        for (const entry of result) {
+          console.log(`  ${entry.id}`);
+          console.log(`    Status:      ${entry.status}`);
+          console.log(`    Started:     ${entry.startedAt ?? 'N/A'}`);
+          console.log(`    Completed:   ${entry.completedAt ?? 'N/A'}`);
+          console.log(`    File:        ${entry.fileLocation ?? 'N/A'}`);
+          console.log(`    RecordCount: ${entry.recordCount ?? 'N/A'}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+exportsCmd
+  .command('create')
+  .description('Prepare creation of a new export (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Export name')
+  .requiredOption('--export-type <type>', 'Export type (customers, events)')
+  .requiredOption('--data-selection <json>', 'JSON object: {"attributes":["a"],"events":["b"],"segments":["c"]}')
+  .requiredOption('--destination <json>', 'JSON object: {"type":"sftp","host":"...","path":"..."}')
+  .option('--schedule <json>', 'JSON object: {"frequency":"daily","time":"09:00","timezone":"UTC"}')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      exportType: string;
+      dataSelection: string;
+      destination: string;
+      schedule?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const dataSelection = JSON.parse(options.dataSelection) as DataSelection;
+        const destination = JSON.parse(options.destination) as ExportDestination;
+        const schedule = options.schedule
+          ? (JSON.parse(options.schedule) as ExportSchedule)
+          : undefined;
+
+        const service = new BloomreachExportsService(options.project);
+        const result = service.prepareCreateExport({
+          project: options.project,
+          name: options.name,
+          exportType: options.exportType,
+          dataSelection,
+          destination,
+          schedule,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Export creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+exportsCmd
+  .command('run')
+  .description('Prepare triggering an immediate export (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--export-id <id>', 'Export ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; exportId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachExportsService(options.project);
+      const result = service.prepareRunExport({
+        project: options.project,
+        exportId: options.exportId,
+        operatorNote: options.note,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Export run prepared.');
+        console.log(`  Export:  ${options.exportId}`);
+        console.log(`  Token:   ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+exportsCmd
+  .command('schedule')
+  .description('Prepare configuring a recurring schedule (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--export-id <id>', 'Export ID')
+  .requiredOption('--schedule <json>', 'JSON object: {"frequency":"weekly","daysOfWeek":[1,3,5],"time":"08:00","timezone":"UTC"}')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; exportId: string; schedule: string; note?: string; json?: boolean }) => {
+      try {
+        const schedule = JSON.parse(options.schedule) as ExportSchedule;
+
+        const service = new BloomreachExportsService(options.project);
+        const result = service.prepareScheduleExport({
+          project: options.project,
+          exportId: options.exportId,
+          schedule,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Export schedule prepared.');
+          console.log(`  Export:  ${options.exportId}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+exportsCmd
+  .command('delete')
+  .description('Prepare deletion of an export (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--export-id <id>', 'Export ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; exportId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachExportsService(options.project);
+      const result = service.prepareDeleteExport({
+        project: options.project,
+        exportId: options.exportId,
+        operatorNote: options.note,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Export deletion prepared.');
+        console.log(`  Export:  ${options.exportId}`);
         console.log(`  Token:   ${result.confirmToken}`);
         console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
         console.log('');
