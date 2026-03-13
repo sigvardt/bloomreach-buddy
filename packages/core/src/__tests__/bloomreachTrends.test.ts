@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   CREATE_TREND_ACTION_TYPE,
   CLONE_TREND_ACTION_TYPE,
@@ -14,6 +14,18 @@ import {
   createTrendActionExecutors,
   BloomreachTrendsService,
 } from '../index.js';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_TREND_ACTION_TYPE', () => {
@@ -58,13 +70,29 @@ describe('validateTrendName', () => {
     expect(validateTrendName('  Revenue Trend  ')).toBe('Revenue Trend');
   });
 
+  it('returns trimmed name with tabs and newlines', () => {
+    expect(validateTrendName('\n\tRevenue Trend\t\n')).toBe('Revenue Trend');
+  });
+
   it('accepts single-character name', () => {
     expect(validateTrendName('A')).toBe('A');
+  });
+
+  it('accepts numeric name', () => {
+    expect(validateTrendName('123')).toBe('123');
+  });
+
+  it('accepts name with punctuation', () => {
+    expect(validateTrendName('Trend: Revenue v2')).toBe('Trend: Revenue v2');
   });
 
   it('accepts name at maximum length', () => {
     const name = 'x'.repeat(200);
     expect(validateTrendName(name)).toBe(name);
+  });
+
+  it('accepts mixed whitespace around valid name', () => {
+    expect(validateTrendName(' \t  Revenue Trend \n ')).toBe('Revenue Trend');
   });
 
   it('throws for empty string', () => {
@@ -73,6 +101,14 @@ describe('validateTrendName', () => {
 
   it('throws for whitespace-only string', () => {
     expect(() => validateTrendName('    ')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateTrendName('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateTrendName('\n\n')).toThrow('must not be empty');
   });
 
   it('throws for name exceeding maximum length', () => {
@@ -105,6 +141,14 @@ describe('validateTrendGranularity', () => {
   it('throws for empty granularity', () => {
     expect(() => validateTrendGranularity('')).toThrow('granularity must be one of');
   });
+
+  it('throws for incorrect casing', () => {
+    expect(() => validateTrendGranularity('Hourly')).toThrow('granularity must be one of');
+  });
+
+  it('throws for value with trailing space', () => {
+    expect(() => validateTrendGranularity('daily ')).toThrow('granularity must be one of');
+  });
 });
 
 describe('validateTrendAnalysisId', () => {
@@ -123,6 +167,22 @@ describe('validateTrendAnalysisId', () => {
   it('returns same value when already trimmed', () => {
     expect(validateTrendAnalysisId('trend-456')).toBe('trend-456');
   });
+
+  it('returns ID containing slashes', () => {
+    expect(validateTrendAnalysisId('trend/group/a')).toBe('trend/group/a');
+  });
+
+  it('returns ID containing dots and dashes', () => {
+    expect(validateTrendAnalysisId('trend.v2-alpha')).toBe('trend.v2-alpha');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateTrendAnalysisId('\n')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateTrendAnalysisId('\t')).toThrow('must not be empty');
+  });
 });
 
 describe('buildTrendsUrl', () => {
@@ -136,6 +196,18 @@ describe('buildTrendsUrl', () => {
 
   it('encodes slashes in project name', () => {
     expect(buildTrendsUrl('org/project')).toBe('/p/org%2Fproject/analytics/trends');
+  });
+
+  it('encodes unicode characters in project name', () => {
+    expect(buildTrendsUrl('projekt åäö')).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/analytics/trends');
+  });
+
+  it('encodes hash character in project name', () => {
+    expect(buildTrendsUrl('my#project')).toBe('/p/my%23project/analytics/trends');
+  });
+
+  it('keeps dashes unencoded in project name', () => {
+    expect(buildTrendsUrl('team-alpha')).toBe('/p/team-alpha/analytics/trends');
   });
 });
 
@@ -155,10 +227,49 @@ describe('createTrendActionExecutors', () => {
     }
   });
 
-  it('executors throw "not yet implemented" on execute', async () => {
+  it('create executor throws "not yet implemented" on execute', async () => {
     const executors = createTrendActionExecutors();
+    await expect(executors[CREATE_TREND_ACTION_TYPE].execute({})).rejects.toThrow(
+      'not yet implemented',
+    );
+  });
+
+  it('clone executor throws "not yet implemented" on execute', async () => {
+    const executors = createTrendActionExecutors();
+    await expect(executors[CLONE_TREND_ACTION_TYPE].execute({})).rejects.toThrow(
+      'not yet implemented',
+    );
+  });
+
+  it('archive executor throws "not yet implemented" on execute', async () => {
+    const executors = createTrendActionExecutors();
+    await expect(executors[ARCHIVE_TREND_ACTION_TYPE].execute({})).rejects.toThrow(
+      'not yet implemented',
+    );
+  });
+
+  it('accepts optional apiConfig parameter', () => {
+    const executors = createTrendActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(3);
+  });
+
+  it('executors still throw not-yet-implemented with apiConfig', async () => {
+    const executors = createTrendActionExecutors(TEST_API_CONFIG);
     for (const executor of Object.values(executors)) {
       await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+    }
+  });
+
+  it('returns identical action keys with or without apiConfig', () => {
+    const withoutConfig = Object.keys(createTrendActionExecutors()).sort();
+    const withConfig = Object.keys(createTrendActionExecutors(TEST_API_CONFIG)).sort();
+    expect(withConfig).toEqual(withoutConfig);
+  });
+
+  it('preserves actionType mapping with apiConfig', () => {
+    const executors = createTrendActionExecutors(TEST_API_CONFIG);
+    for (const [key, executor] of Object.entries(executors)) {
+      expect(executor.actionType).toBe(key);
     }
   });
 });
@@ -183,29 +294,82 @@ describe('BloomreachTrendsService', () => {
     it('throws for empty project', () => {
       expect(() => new BloomreachTrendsService('')).toThrow('must not be empty');
     });
+
+    it('throws for whitespace-only project', () => {
+      expect(() => new BloomreachTrendsService('   ')).toThrow('must not be empty');
+    });
+
+    it('encodes slashes in constructor project URL', () => {
+      const service = new BloomreachTrendsService('org/project');
+      expect(service.trendsUrl).toBe('/p/org%2Fproject/analytics/trends');
+    });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachTrendsService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachTrendsService);
+    });
+
+    it('exposes trends URL when constructed with apiConfig', () => {
+      const service = new BloomreachTrendsService('test', TEST_API_CONFIG);
+      expect(service.trendsUrl).toBe('/p/test/analytics/trends');
+    });
+
+    it('encodes unicode project name in constructor URL', () => {
+      const service = new BloomreachTrendsService('projekt åäö');
+      expect(service.trendsUrl).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/analytics/trends');
+    });
+
+    it('encodes hash in constructor URL', () => {
+      const service = new BloomreachTrendsService('my#project');
+      expect(service.trendsUrl).toBe('/p/my%23project/analytics/trends');
+    });
   });
 
   describe('listTrendAnalyses', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachTrendsService('test');
-      await expect(service.listTrendAnalyses()).rejects.toThrow('not yet implemented');
+      await expect(service.listTrendAnalyses()).rejects.toThrow('does not provide an endpoint');
     });
 
     it('validates project when input is provided', async () => {
       const service = new BloomreachTrendsService('test');
       await expect(service.listTrendAnalyses({ project: '' })).rejects.toThrow('must not be empty');
     });
+
+    it('throws no-API-endpoint error for valid project override', async () => {
+      const service = new BloomreachTrendsService('test');
+      await expect(service.listTrendAnalyses({ project: 'kingdom-of-joakim' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error for trimmed project override', async () => {
+      const service = new BloomreachTrendsService('test');
+      await expect(service.listTrendAnalyses({ project: '  kingdom-of-joakim  ' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('validates whitespace-only project override', async () => {
+      const service = new BloomreachTrendsService('test');
+      await expect(service.listTrendAnalyses({ project: '   ' })).rejects.toThrow('must not be empty');
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachTrendsService('test', TEST_API_CONFIG);
+      await expect(service.listTrendAnalyses()).rejects.toThrow('does not provide an endpoint');
+    });
   });
 
   describe('viewTrendResults', () => {
-    it('throws not-yet-implemented error with valid minimal input', async () => {
+    it('throws no-API-endpoint error with valid minimal input', async () => {
       const service = new BloomreachTrendsService('test');
       await expect(
         service.viewTrendResults({ project: 'test', analysisId: 'trend-1' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide an endpoint');
     });
 
-    it('throws not-yet-implemented error with full valid input', async () => {
+    it('throws no-API-endpoint error with full valid input', async () => {
       const service = new BloomreachTrendsService('test');
       await expect(
         service.viewTrendResults({
@@ -215,53 +379,41 @@ describe('BloomreachTrendsService', () => {
           startDate: '2025-01-01',
           endDate: '2025-01-31',
         }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide an endpoint');
     });
 
     it('validates project input', async () => {
       const service = new BloomreachTrendsService('test');
-      await expect(
-        service.viewTrendResults({ project: '', analysisId: 'trend-1' }),
-      ).rejects.toThrow('must not be empty');
+      await expect(service.viewTrendResults({ project: '', analysisId: 'trend-1' })).rejects.toThrow(
+        'must not be empty',
+      );
     });
 
     it('validates analysisId input', async () => {
       const service = new BloomreachTrendsService('test');
-      await expect(
-        service.viewTrendResults({ project: 'test', analysisId: '   ' }),
-      ).rejects.toThrow('Trend analysis ID must not be empty');
+      await expect(service.viewTrendResults({ project: 'test', analysisId: '   ' })).rejects.toThrow(
+        'Trend analysis ID must not be empty',
+      );
     });
 
     it('validates granularity when provided', async () => {
       const service = new BloomreachTrendsService('test');
       await expect(
-        service.viewTrendResults({
-          project: 'test',
-          analysisId: 'trend-1',
-          granularity: 'quarterly',
-        }),
+        service.viewTrendResults({ project: 'test', analysisId: 'trend-1', granularity: 'quarterly' }),
       ).rejects.toThrow('granularity must be one of');
     });
 
     it('validates date range: malformed startDate', async () => {
       const service = new BloomreachTrendsService('test');
       await expect(
-        service.viewTrendResults({
-          project: 'test',
-          analysisId: 'trend-1',
-          startDate: 'bad-date',
-        }),
+        service.viewTrendResults({ project: 'test', analysisId: 'trend-1', startDate: 'bad-date' }),
       ).rejects.toThrow('startDate must be a valid ISO-8601 date');
     });
 
     it('validates date range: malformed endDate', async () => {
       const service = new BloomreachTrendsService('test');
       await expect(
-        service.viewTrendResults({
-          project: 'test',
-          analysisId: 'trend-1',
-          endDate: '31-01-2025',
-        }),
+        service.viewTrendResults({ project: 'test', analysisId: 'trend-1', endDate: '31-01-2025' }),
       ).rejects.toThrow('endDate must be a valid ISO-8601 date');
     });
 
@@ -277,26 +429,32 @@ describe('BloomreachTrendsService', () => {
       ).rejects.toThrow('must not be after');
     });
 
-    it('accepts only startDate and still reaches not-yet-implemented', async () => {
+    it('accepts only startDate and still reaches no-API-endpoint error', async () => {
       const service = new BloomreachTrendsService('test');
       await expect(
-        service.viewTrendResults({
-          project: 'test',
-          analysisId: 'trend-1',
-          startDate: '2025-01-01',
-        }),
-      ).rejects.toThrow('not yet implemented');
+        service.viewTrendResults({ project: 'test', analysisId: 'trend-1', startDate: '2025-01-01' }),
+      ).rejects.toThrow('does not provide an endpoint');
     });
 
-    it('accepts only endDate and still reaches not-yet-implemented', async () => {
+    it('accepts only endDate and still reaches no-API-endpoint error', async () => {
       const service = new BloomreachTrendsService('test');
       await expect(
-        service.viewTrendResults({
-          project: 'test',
-          analysisId: 'trend-1',
-          endDate: '2025-01-31',
-        }),
-      ).rejects.toThrow('not yet implemented');
+        service.viewTrendResults({ project: 'test', analysisId: 'trend-1', endDate: '2025-01-31' }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error with trimmed project and analysisId', async () => {
+      const service = new BloomreachTrendsService('test');
+      await expect(
+        service.viewTrendResults({ project: '  test  ', analysisId: '  trend-1  ' }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachTrendsService('test', TEST_API_CONFIG);
+      await expect(
+        service.viewTrendResults({ project: 'test', analysisId: 'trend-1' }),
+      ).rejects.toThrow('does not provide an endpoint');
     });
   });
 
@@ -410,23 +568,45 @@ describe('BloomreachTrendsService', () => {
     it('throws for empty name', () => {
       const service = new BloomreachTrendsService('test');
       expect(() =>
-        service.prepareCreateTrendAnalysis({
-          project: 'test',
-          name: '',
-          events: ['purchase'],
-        }),
+        service.prepareCreateTrendAnalysis({ project: 'test', name: '', events: ['purchase'] }),
+      ).toThrow('must not be empty');
+    });
+
+    it('throws for whitespace-only name', () => {
+      const service = new BloomreachTrendsService('test');
+      expect(() =>
+        service.prepareCreateTrendAnalysis({ project: 'test', name: '   ', events: ['purchase'] }),
       ).toThrow('must not be empty');
     });
 
     it('throws for empty project', () => {
       const service = new BloomreachTrendsService('test');
       expect(() =>
-        service.prepareCreateTrendAnalysis({
-          project: '',
-          name: 'Trend',
-          events: ['purchase'],
-        }),
+        service.prepareCreateTrendAnalysis({ project: '', name: 'Trend', events: ['purchase'] }),
       ).toThrow('must not be empty');
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachTrendsService('test');
+      expect(() =>
+        service.prepareCreateTrendAnalysis({ project: '   ', name: 'Trend', events: ['purchase'] }),
+      ).toThrow('must not be empty');
+    });
+
+    it('trims project and name in preview', () => {
+      const service = new BloomreachTrendsService('test');
+      const result = service.prepareCreateTrendAnalysis({
+        project: '  my-project  ',
+        name: '  Revenue Trend  ',
+        events: ['purchase'],
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          project: 'my-project',
+          name: 'Revenue Trend',
+        }),
+      );
     });
 
     it('throws for too-long name', () => {
@@ -438,6 +618,22 @@ describe('BloomreachTrendsService', () => {
           events: ['purchase'],
         }),
       ).toThrow('must not exceed 200 characters');
+    });
+
+    it('accepts max-length name and still prepares action', () => {
+      const service = new BloomreachTrendsService('test');
+      const maxName = 'x'.repeat(200);
+      const result = service.prepareCreateTrendAnalysis({
+        project: 'test',
+        name: maxName,
+        events: ['purchase'],
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          name: maxName,
+        }),
+      );
     });
 
     it('throws for invalid granularity', () => {
@@ -473,6 +669,49 @@ describe('BloomreachTrendsService', () => {
         }),
       ).toThrow('events must contain at least one event name');
     });
+
+    it('keeps duplicate event names after trimming', () => {
+      const service = new BloomreachTrendsService('test');
+      const result = service.prepareCreateTrendAnalysis({
+        project: 'test',
+        name: 'Duplicate Events',
+        events: ['purchase', ' purchase '],
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          events: ['purchase', 'purchase'],
+        }),
+      );
+    });
+
+    it('accepts slash-containing project after trim', () => {
+      const service = new BloomreachTrendsService('test');
+      const result = service.prepareCreateTrendAnalysis({
+        project: '  org/project  ',
+        name: 'Trend',
+        events: ['purchase'],
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          project: 'org/project',
+        }),
+      );
+    });
+
+    it('produces token fields with expected prefixes', () => {
+      const service = new BloomreachTrendsService('test');
+      const result = service.prepareCreateTrendAnalysis({
+        project: 'test',
+        name: 'Trend',
+        events: ['purchase'],
+      });
+
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.confirmToken).toMatch(/^ct_stub_/);
+      expect(result.expiresAtMs).toBeGreaterThan(Date.now());
+    });
   });
 
   describe('prepareCloneTrendAnalysis', () => {
@@ -502,11 +741,7 @@ describe('BloomreachTrendsService', () => {
         newName: '  Cloned Trend  ',
       });
 
-      expect(result.preview).toEqual(
-        expect.objectContaining({
-          newName: 'Cloned Trend',
-        }),
-      );
+      expect(result.preview).toEqual(expect.objectContaining({ newName: 'Cloned Trend' }));
     });
 
     it('includes operatorNote in preview', () => {
@@ -526,21 +761,29 @@ describe('BloomreachTrendsService', () => {
 
     it('throws for empty analysisId', () => {
       const service = new BloomreachTrendsService('test');
-      expect(() =>
-        service.prepareCloneTrendAnalysis({
-          project: 'test',
-          analysisId: '',
-        }),
-      ).toThrow('must not be empty');
+      expect(() => service.prepareCloneTrendAnalysis({ project: 'test', analysisId: '' })).toThrow(
+        'must not be empty',
+      );
+    });
+
+    it('throws for whitespace-only analysisId', () => {
+      const service = new BloomreachTrendsService('test');
+      expect(() => service.prepareCloneTrendAnalysis({ project: 'test', analysisId: '   ' })).toThrow(
+        'must not be empty',
+      );
     });
 
     it('throws for empty project', () => {
       const service = new BloomreachTrendsService('test');
+      expect(() => service.prepareCloneTrendAnalysis({ project: '', analysisId: 'trend-789' })).toThrow(
+        'must not be empty',
+      );
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachTrendsService('test');
       expect(() =>
-        service.prepareCloneTrendAnalysis({
-          project: '',
-          analysisId: 'trend-789',
-        }),
+        service.prepareCloneTrendAnalysis({ project: '   ', analysisId: 'trend-789' }),
       ).toThrow('must not be empty');
     });
 
@@ -553,6 +796,97 @@ describe('BloomreachTrendsService', () => {
           newName: '   ',
         }),
       ).toThrow('must not be empty');
+    });
+
+    it('throws when newName exceeds maximum length', () => {
+      const service = new BloomreachTrendsService('test');
+      expect(() =>
+        service.prepareCloneTrendAnalysis({
+          project: 'test',
+          analysisId: 'trend-789',
+          newName: 'x'.repeat(201),
+        }),
+      ).toThrow('must not exceed 200 characters');
+    });
+
+    it('accepts max-length newName', () => {
+      const service = new BloomreachTrendsService('test');
+      const newName = 'x'.repeat(200);
+      const result = service.prepareCloneTrendAnalysis({
+        project: 'test',
+        analysisId: 'trend-789',
+        newName,
+      });
+
+      expect(result.preview).toEqual(expect.objectContaining({ newName }));
+    });
+
+    it('trims analysisId in preview', () => {
+      const service = new BloomreachTrendsService('test');
+      const result = service.prepareCloneTrendAnalysis({
+        project: 'test',
+        analysisId: '  trend-789  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          analysisId: 'trend-789',
+        }),
+      );
+    });
+
+    it('trims project in preview', () => {
+      const service = new BloomreachTrendsService('test');
+      const result = service.prepareCloneTrendAnalysis({
+        project: '  my-project  ',
+        analysisId: 'trend-789',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          project: 'my-project',
+        }),
+      );
+    });
+
+    it('accepts slash-containing analysisId after trim', () => {
+      const service = new BloomreachTrendsService('test');
+      const result = service.prepareCloneTrendAnalysis({
+        project: 'test',
+        analysisId: '  trend/group/a  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          analysisId: 'trend/group/a',
+        }),
+      );
+    });
+
+    it('accepts dots and dashes in analysisId after trim', () => {
+      const service = new BloomreachTrendsService('test');
+      const result = service.prepareCloneTrendAnalysis({
+        project: 'test',
+        analysisId: '  trend.v2-alpha  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          analysisId: 'trend.v2-alpha',
+        }),
+      );
+    });
+
+    it('produces token fields with expected prefixes', () => {
+      const service = new BloomreachTrendsService('test');
+      const result = service.prepareCloneTrendAnalysis({
+        project: 'test',
+        analysisId: 'trend-789',
+      });
+
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.confirmToken).toMatch(/^ct_stub_/);
+      expect(result.expiresAtMs).toBeGreaterThan(Date.now());
     });
   });
 
@@ -592,22 +926,127 @@ describe('BloomreachTrendsService', () => {
 
     it('throws for empty analysisId', () => {
       const service = new BloomreachTrendsService('test');
+      expect(() => service.prepareArchiveTrendAnalysis({ project: 'test', analysisId: '' })).toThrow(
+        'must not be empty',
+      );
+    });
+
+    it('throws for whitespace-only analysisId', () => {
+      const service = new BloomreachTrendsService('test');
       expect(() =>
-        service.prepareArchiveTrendAnalysis({
-          project: 'test',
-          analysisId: '',
-        }),
+        service.prepareArchiveTrendAnalysis({ project: 'test', analysisId: '   ' }),
       ).toThrow('must not be empty');
     });
 
     it('throws for empty project', () => {
       const service = new BloomreachTrendsService('test');
       expect(() =>
-        service.prepareArchiveTrendAnalysis({
-          project: '',
+        service.prepareArchiveTrendAnalysis({ project: '', analysisId: 'trend-900' }),
+      ).toThrow('must not be empty');
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachTrendsService('test');
+      expect(() =>
+        service.prepareArchiveTrendAnalysis({ project: '   ', analysisId: 'trend-900' }),
+      ).toThrow('must not be empty');
+    });
+
+    it('accepts trimmed analysisId and reaches prepared state', () => {
+      const service = new BloomreachTrendsService('test');
+      const result = service.prepareArchiveTrendAnalysis({
+        project: 'test',
+        analysisId: '  trend-900  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
           analysisId: 'trend-900',
         }),
-      ).toThrow('must not be empty');
+      );
+    });
+
+    it('trims project in preview', () => {
+      const service = new BloomreachTrendsService('test');
+      const result = service.prepareArchiveTrendAnalysis({
+        project: '  my-project  ',
+        analysisId: 'trend-900',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          project: 'my-project',
+        }),
+      );
+    });
+
+    it('keeps slash-containing analysisId after trim', () => {
+      const service = new BloomreachTrendsService('test');
+      const result = service.prepareArchiveTrendAnalysis({
+        project: 'test',
+        analysisId: '  trend/group/a  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          analysisId: 'trend/group/a',
+        }),
+      );
+    });
+
+    it('produces token fields with expected prefixes', () => {
+      const service = new BloomreachTrendsService('test');
+      const result = service.prepareArchiveTrendAnalysis({
+        project: 'test',
+        analysisId: 'trend-900',
+      });
+
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.confirmToken).toMatch(/^ct_stub_/);
+      expect(result.expiresAtMs).toBeGreaterThan(Date.now());
+    });
+
+    it('accepts dotted analysisId in archive preview', () => {
+      const service = new BloomreachTrendsService('test');
+      const result = service.prepareArchiveTrendAnalysis({
+        project: 'test',
+        analysisId: ' trend.v2-alpha ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          analysisId: 'trend.v2-alpha',
+        }),
+      );
+    });
+
+    it('keeps operatorNote as-is in preview', () => {
+      const service = new BloomreachTrendsService('test');
+      const result = service.prepareArchiveTrendAnalysis({
+        project: 'test',
+        analysisId: 'trend-900',
+        operatorNote: '  archive after migration  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          operatorNote: '  archive after migration  ',
+        }),
+      );
+    });
+
+    it('accepts slash-containing project in preview', () => {
+      const service = new BloomreachTrendsService('test');
+      const result = service.prepareArchiveTrendAnalysis({
+        project: ' org/project ',
+        analysisId: 'trend-900',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          project: 'org/project',
+        }),
+      );
     });
   });
 });

@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
 
@@ -121,6 +122,21 @@ export function buildTrendsUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/analytics/trends`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 export interface TrendActionExecutor {
   readonly actionType: string;
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -128,47 +144,72 @@ export interface TrendActionExecutor {
 
 class CreateTrendExecutor implements TrendActionExecutor {
   readonly actionType = CREATE_TREND_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateTrendExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateTrendExecutor: not yet implemented. ' +
+        'Trend creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CloneTrendExecutor implements TrendActionExecutor {
   readonly actionType = CLONE_TREND_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CloneTrendExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CloneTrendExecutor: not yet implemented. ' +
+        'Trend cloning is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ArchiveTrendExecutor implements TrendActionExecutor {
   readonly actionType = ARCHIVE_TREND_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ArchiveTrendExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ArchiveTrendExecutor: not yet implemented. ' +
+        'Trend archiving is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createTrendActionExecutors(): Record<string, TrendActionExecutor> {
+export function createTrendActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, TrendActionExecutor> {
   return {
-    [CREATE_TREND_ACTION_TYPE]: new CreateTrendExecutor(),
-    [CLONE_TREND_ACTION_TYPE]: new CloneTrendExecutor(),
-    [ARCHIVE_TREND_ACTION_TYPE]: new ArchiveTrendExecutor(),
+    [CREATE_TREND_ACTION_TYPE]: new CreateTrendExecutor(apiConfig),
+    [CLONE_TREND_ACTION_TYPE]: new CloneTrendExecutor(apiConfig),
+    [ARCHIVE_TREND_ACTION_TYPE]: new ArchiveTrendExecutor(apiConfig),
   };
 }
 
 export class BloomreachTrendsService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildTrendsUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get trendsUrl(): string {
@@ -176,16 +217,20 @@ export class BloomreachTrendsService {
   }
 
   async listTrendAnalyses(input?: ListTrendAnalysesInput): Promise<BloomreachTrendAnalysis[]> {
+    void this.apiConfig;
     if (input !== undefined) {
       validateProject(input.project);
     }
 
     throw new Error(
-      'listTrendAnalyses: not yet implemented. Requires browser automation infrastructure.',
+      'listTrendAnalyses: the Bloomreach API does not provide an endpoint for trend analyses. ' +
+        'Trend data must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Analytics > Trends in your project).',
     );
   }
 
   async viewTrendResults(input: ViewTrendResultsInput): Promise<TrendResults> {
+    void this.apiConfig;
     validateProject(input.project);
     validateTrendAnalysisId(input.analysisId);
 
@@ -202,7 +247,9 @@ export class BloomreachTrendsService {
     }
 
     throw new Error(
-      'viewTrendResults: not yet implemented. Requires browser automation infrastructure.',
+      'viewTrendResults: the Bloomreach API does not provide an endpoint for trend analysis results. ' +
+        'Trend results must be viewed in the Bloomreach Engagement UI ' +
+        '(navigate to Analytics > Trends and open the analysis).',
     );
   }
 
