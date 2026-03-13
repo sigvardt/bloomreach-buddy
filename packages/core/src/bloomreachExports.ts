@@ -1,4 +1,6 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
+import { bloomreachApiFetch, buildDataPath } from './bloomreachApiClient.js';
 
 export const CREATE_EXPORT_ACTION_TYPE = 'exports.create_export';
 export const RUN_EXPORT_ACTION_TYPE = 'exports.run_export';
@@ -413,69 +415,126 @@ export interface ExportActionExecutor {
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
 class CreateExportExecutor implements ExportActionExecutor {
   readonly actionType = CREATE_EXPORT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
-    throw new Error(
-      'CreateExportExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const config = requireApiConfig(this.apiConfig, 'CreateExportExecutor');
+    const path = buildDataPath(config, '/exports');
+
+    const response = await bloomreachApiFetch(config, path, {
+      body: {
+        name: payload.name,
+        export_type: payload.exportType,
+        data_selection: payload.dataSelection,
+        destination: payload.destination,
+        schedule: payload.schedule,
+      },
+    });
+
+    return { success: true, response };
   }
 }
 
 class RunExportExecutor implements ExportActionExecutor {
   readonly actionType = RUN_EXPORT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
-    throw new Error(
-      'RunExportExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const config = requireApiConfig(this.apiConfig, 'RunExportExecutor');
+    const exportId = String(payload.exportId ?? '');
+    const path = buildDataPath(config, `/exports/${encodeURIComponent(exportId)}/start`);
+
+    const response = await bloomreachApiFetch(config, path, {});
+
+    return { success: true, response };
   }
 }
 
 class ScheduleExportExecutor implements ExportActionExecutor {
   readonly actionType = SCHEDULE_EXPORT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
-    throw new Error(
-      'ScheduleExportExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const config = requireApiConfig(this.apiConfig, 'ScheduleExportExecutor');
+    const exportId = String(payload.exportId ?? '');
+    const path = buildDataPath(config, `/exports/${encodeURIComponent(exportId)}/schedule`);
+
+    const response = await bloomreachApiFetch(config, path, {
+      body: { schedule: payload.schedule },
+    });
+
+    return { success: true, response };
   }
 }
 
 class DeleteExportExecutor implements ExportActionExecutor {
   readonly actionType = DELETE_EXPORT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
-    throw new Error(
-      'DeleteExportExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const config = requireApiConfig(this.apiConfig, 'DeleteExportExecutor');
+    const exportId = String(payload.exportId ?? '');
+    const path = buildDataPath(config, `/exports/${encodeURIComponent(exportId)}`);
+
+    const response = await bloomreachApiFetch(config, path, {
+      method: 'POST',
+      body: { command: 'delete' },
+    });
+
+    return { success: true, response };
   }
 }
 
-export function createExportActionExecutors(): Record<string, ExportActionExecutor> {
+export function createExportActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, ExportActionExecutor> {
   return {
-    [CREATE_EXPORT_ACTION_TYPE]: new CreateExportExecutor(),
-    [RUN_EXPORT_ACTION_TYPE]: new RunExportExecutor(),
-    [SCHEDULE_EXPORT_ACTION_TYPE]: new ScheduleExportExecutor(),
-    [DELETE_EXPORT_ACTION_TYPE]: new DeleteExportExecutor(),
+    [CREATE_EXPORT_ACTION_TYPE]: new CreateExportExecutor(apiConfig),
+    [RUN_EXPORT_ACTION_TYPE]: new RunExportExecutor(apiConfig),
+    [SCHEDULE_EXPORT_ACTION_TYPE]: new ScheduleExportExecutor(apiConfig),
+    [DELETE_EXPORT_ACTION_TYPE]: new DeleteExportExecutor(apiConfig),
   };
 }
 
 export class BloomreachExportsService {
   private readonly exportsBaseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     const validatedProject = validateProject(project);
     this.exportsBaseUrl = buildExportsUrl(validatedProject);
+    this.apiConfig = apiConfig;
   }
 
   get exportsUrl(): string {
@@ -487,27 +546,136 @@ export class BloomreachExportsService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listExports: not yet implemented. Requires browser automation infrastructure.',
-    );
+    const config = requireApiConfig(this.apiConfig, 'listExports');
+    const path = buildDataPath(config, '/exports');
+
+    const response = await bloomreachApiFetch(config, path, {
+      body: { command: 'list' },
+    });
+
+    const data = response as Record<string, unknown>;
+    const items = Array.isArray(data.results) ? data.results : Array.isArray(response) ? response : [];
+
+    return items.map((rawItem: unknown) => {
+      const item =
+        typeof rawItem === 'object' && rawItem !== null
+          ? (rawItem as Record<string, unknown>)
+          : {};
+
+      return {
+        id: String(item.id ?? ''),
+        name: String(item.name ?? ''),
+        exportType: String(item.export_type ?? item.exportType ?? ''),
+        dataSelection: (item.data_selection ?? item.dataSelection ?? { attributes: [] }) as DataSelection,
+        destination: (item.destination ?? { type: 'unknown' }) as ExportDestination,
+        schedule: item.schedule as ExportSchedule | undefined,
+        status: String(item.status ?? 'unknown'),
+        createdAt: String(item.created_at ?? item.createdAt ?? ''),
+        updatedAt: String(item.updated_at ?? item.updatedAt ?? ''),
+        url: buildExportDetailUrl(input?.project ?? '', String(item.id ?? '')),
+      };
+    });
   }
 
   async viewExportStatus(input: ViewExportStatusInput): Promise<ExportStatus> {
     validateProject(input.project);
     validateExportId(input.exportId);
 
-    throw new Error(
-      'viewExportStatus: not yet implemented. Requires browser automation infrastructure.',
-    );
+    const config = requireApiConfig(this.apiConfig, 'viewExportStatus');
+    const path = buildDataPath(config, `/exports/${encodeURIComponent(input.exportId)}/status`);
+
+    const response = await bloomreachApiFetch(config, path, {
+      body: { export_id: input.exportId },
+    });
+
+    const data = response as Record<string, unknown>;
+
+    return {
+      exportId: String(data.export_id ?? data.exportId ?? input.exportId),
+      status: String(data.status ?? 'unknown'),
+      startedAt:
+        data.started_at !== undefined
+          ? String(data.started_at)
+          : data.startedAt !== undefined
+            ? String(data.startedAt)
+            : undefined,
+      completedAt:
+        data.completed_at !== undefined
+          ? String(data.completed_at)
+          : data.completedAt !== undefined
+            ? String(data.completedAt)
+            : undefined,
+      fileLocation:
+        data.file_location !== undefined
+          ? String(data.file_location)
+          : data.fileLocation !== undefined
+            ? String(data.fileLocation)
+            : undefined,
+      recordCount:
+        typeof data.record_count === 'number'
+          ? data.record_count
+          : typeof data.recordCount === 'number'
+            ? data.recordCount
+            : undefined,
+      errorMessage:
+        data.error_message !== undefined
+          ? String(data.error_message)
+          : data.errorMessage !== undefined
+            ? String(data.errorMessage)
+            : undefined,
+    };
   }
 
   async viewExportHistory(input: ViewExportHistoryInput): Promise<ExportHistoryEntry[]> {
     validateProject(input.project);
     validateExportId(input.exportId);
 
-    throw new Error(
-      'viewExportHistory: not yet implemented. Requires browser automation infrastructure.',
-    );
+    const config = requireApiConfig(this.apiConfig, 'viewExportHistory');
+    const path = buildDataPath(config, `/exports/${encodeURIComponent(input.exportId)}/history`);
+
+    const response = await bloomreachApiFetch(config, path, {
+      body: { export_id: input.exportId },
+    });
+
+    const data = response as Record<string, unknown>;
+    const items = Array.isArray(data.results) ? data.results : Array.isArray(response) ? response : [];
+
+    return items.map((rawItem: unknown) => {
+      const item =
+        typeof rawItem === 'object' && rawItem !== null
+          ? (rawItem as Record<string, unknown>)
+          : {};
+
+      return {
+        id: String(item.id ?? ''),
+        exportId: String(item.export_id ?? item.exportId ?? input.exportId),
+        status: String(item.status ?? 'unknown'),
+        startedAt:
+          item.started_at !== undefined
+            ? String(item.started_at)
+            : item.startedAt !== undefined
+              ? String(item.startedAt)
+              : undefined,
+        completedAt:
+          item.completed_at !== undefined
+            ? String(item.completed_at)
+            : item.completedAt !== undefined
+              ? String(item.completedAt)
+              : undefined,
+        fileLocation:
+          item.file_location !== undefined
+            ? String(item.file_location)
+            : item.fileLocation !== undefined
+              ? String(item.fileLocation)
+              : undefined,
+        recordCount:
+          typeof item.record_count === 'number'
+            ? item.record_count
+            : typeof item.recordCount === 'number'
+              ? item.recordCount
+              : undefined,
+      };
+    });
   }
 
   prepareCreateExport(input: CreateExportInput): PreparedExportAction {
