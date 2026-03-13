@@ -2,6 +2,7 @@
 
 import { Command } from 'commander';
 import {
+  BloomreachAssetManagerService,
   BloomreachClient,
   BloomreachCampaignCalendarService,
   BloomreachCustomersService,
@@ -3029,6 +3030,671 @@ vouchers
           console.log(`  Pool:    ${options.poolId}`);
           console.log(`  Token:   ${result.confirmToken}`);
           console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const assets = program
+  .command('assets')
+  .description('Manage Asset Manager templates, snippets, and files');
+
+const assetEmailTemplates = assets
+  .command('email-templates')
+  .description('Manage email templates');
+
+assetEmailTemplates
+  .command('list')
+  .description('List all email templates in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachAssetManagerService(options.project);
+      const result = await service.listEmailTemplates({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No email templates found.');
+          return;
+        }
+
+        for (const template of result) {
+          console.log(`  ${template.name}`);
+          console.log(`    Status:  ${template.status}`);
+          console.log(`    Builder: ${template.builderType ?? 'n/a'}`);
+          console.log(`    ID:      ${template.id}`);
+          console.log(`    URL:     ${template.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+assetEmailTemplates
+  .command('create')
+  .description('Prepare creation of an email template (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Template name')
+  .option('--builder-type <type>', 'Builder type (visual, html)')
+  .option('--html-content <html>', 'Initial HTML content')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      builderType?: string;
+      htmlContent?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachAssetManagerService(options.project);
+        const result = service.prepareCreateEmailTemplate({
+          project: options.project,
+          name: options.name,
+          builderType: options.builderType,
+          htmlContent: options.htmlContent,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Email template creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const assetWeblayerTemplates = assets
+  .command('weblayer-templates')
+  .description('Manage weblayer templates');
+
+assetWeblayerTemplates
+  .command('list')
+  .description('List all weblayer templates in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachAssetManagerService(options.project);
+      const result = await service.listWeblayerTemplates({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No weblayer templates found.');
+          return;
+        }
+
+        for (const template of result) {
+          console.log(`  ${template.name}`);
+          console.log(`    Status: ${template.status}`);
+          console.log(`    ID:     ${template.id}`);
+          console.log(`    URL:    ${template.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+assetWeblayerTemplates
+  .command('create')
+  .description('Prepare creation of a weblayer template (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Template name')
+  .option('--html-content <html>', 'Initial HTML content')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      htmlContent?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachAssetManagerService(options.project);
+        const result = service.prepareCreateWeblayerTemplate({
+          project: options.project,
+          name: options.name,
+          htmlContent: options.htmlContent,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Weblayer template creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const assetBlocks = assets.command('blocks').description('Manage content blocks');
+
+assetBlocks
+  .command('list')
+  .description('List all blocks in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachAssetManagerService(options.project);
+      const result = await service.listBlocks({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No blocks found.');
+          return;
+        }
+
+        for (const block of result) {
+          console.log(`  ${block.name}`);
+          console.log(`    Status: ${block.status}`);
+          console.log(`    ID:     ${block.id}`);
+          console.log(`    URL:    ${block.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+assetBlocks
+  .command('create')
+  .description('Prepare creation of a block (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Block name')
+  .option('--html-content <html>', 'Initial HTML content')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      htmlContent?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachAssetManagerService(options.project);
+        const result = service.prepareCreateBlock({
+          project: options.project,
+          name: options.name,
+          htmlContent: options.htmlContent,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Block creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const assetCustomRows = assets
+  .command('custom-rows')
+  .description('Manage custom rows');
+
+assetCustomRows
+  .command('list')
+  .description('List all custom rows in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachAssetManagerService(options.project);
+      const result = await service.listCustomRows({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No custom rows found.');
+          return;
+        }
+
+        for (const customRow of result) {
+          console.log(`  ${customRow.name}`);
+          console.log(`    Status: ${customRow.status}`);
+          console.log(`    ID:     ${customRow.id}`);
+          console.log(`    URL:    ${customRow.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+assetCustomRows
+  .command('create')
+  .description('Prepare creation of a custom row (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Custom row name')
+  .option('--html-content <html>', 'Initial HTML content')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      htmlContent?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachAssetManagerService(options.project);
+        const result = service.prepareCreateCustomRow({
+          project: options.project,
+          name: options.name,
+          htmlContent: options.htmlContent,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Custom row creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const assetSnippets = assets.command('snippets').description('Manage snippets');
+
+assetSnippets
+  .command('list')
+  .description('List all snippets in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachAssetManagerService(options.project);
+      const result = await service.listSnippets({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No snippets found.');
+          return;
+        }
+
+        for (const snippet of result) {
+          console.log(`  ${snippet.name}`);
+          console.log(`    Language: ${snippet.language}`);
+          console.log(`    ID:       ${snippet.id}`);
+          console.log(`    URL:      ${snippet.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+assetSnippets
+  .command('create')
+  .description('Prepare creation of a snippet (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Snippet name')
+  .requiredOption('--language <language>', 'Snippet language (jinja, html)')
+  .requiredOption('--content <content>', 'Snippet content')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      language: string;
+      content: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachAssetManagerService(options.project);
+        const result = service.prepareCreateSnippet({
+          project: options.project,
+          name: options.name,
+          language: options.language,
+          content: options.content,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Snippet creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+assetSnippets
+  .command('edit')
+  .description('Prepare editing a snippet (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--snippet-id <id>', 'Snippet ID')
+  .option('--name <name>', 'Snippet name')
+  .option('--language <language>', 'Snippet language (jinja, html)')
+  .option('--content <content>', 'Snippet content')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      snippetId: string;
+      name?: string;
+      language?: string;
+      content?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachAssetManagerService(options.project);
+        const result = service.prepareEditSnippet({
+          project: options.project,
+          snippetId: options.snippetId,
+          name: options.name,
+          language: options.language,
+          content: options.content,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Snippet edit prepared.');
+          console.log(`  Snippet: ${options.snippetId}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const assetFiles = assets.command('files').description('Manage files');
+
+assetFiles
+  .command('list')
+  .description('List all files in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--category <category>', 'File category (image, document, font, other)')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; category?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachAssetManagerService(options.project);
+      const input: { project: string; category?: string } = { project: options.project };
+      if (options.category) input.category = options.category;
+
+      const result = await service.listFiles(input);
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No files found.');
+          return;
+        }
+
+        for (const file of result) {
+          console.log(`  ${file.name}`);
+          console.log(`    Category: ${file.category}`);
+          console.log(`    MIME:     ${file.mimeType}`);
+          console.log(`    ID:       ${file.id}`);
+          console.log(`    URL:      ${file.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+assetFiles
+  .command('upload')
+  .description('Prepare uploading a file (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'File name')
+  .requiredOption('--mime-type <type>', 'MIME type')
+  .option('--file-size <size>', 'File size in bytes')
+  .option('--category <category>', 'File category (image, document, font, other)')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      mimeType: string;
+      fileSize?: string;
+      category?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const fileSize = options.fileSize ? parseInt(options.fileSize, 10) : undefined;
+
+        const service = new BloomreachAssetManagerService(options.project);
+        const result = service.prepareUploadFile({
+          project: options.project,
+          name: options.name,
+          mimeType: options.mimeType,
+          fileSize,
+          category: options.category,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('File upload prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+assetFiles
+  .command('delete')
+  .description('Prepare deleting a file (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--file-id <id>', 'File ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; fileId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachAssetManagerService(options.project);
+        const result = service.prepareDeleteFile({
+          project: options.project,
+          fileId: options.fileId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('File deletion prepared.');
+          console.log(`  File:    ${options.fileId}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+assets
+  .command('clone')
+  .description('Prepare cloning a template (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--template-id <id>', 'Template ID')
+  .requiredOption(
+    '--asset-type <type>',
+    'Asset type (email_template, weblayer_template, block, custom_row)',
+  )
+  .option('--new-name <name>', 'Name for the cloned template')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      templateId: string;
+      assetType: string;
+      newName?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachAssetManagerService(options.project);
+        const result = service.prepareCloneTemplate({
+          project: options.project,
+          templateId: options.templateId,
+          assetType: options.assetType,
+          newName: options.newName,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Template clone prepared.');
+          console.log(`  Template: ${options.templateId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+assets
+  .command('archive')
+  .description('Prepare archiving a template (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--template-id <id>', 'Template ID')
+  .requiredOption(
+    '--asset-type <type>',
+    'Asset type (email_template, weblayer_template, block, custom_row)',
+  )
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      templateId: string;
+      assetType: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachAssetManagerService(options.project);
+        const result = service.prepareArchiveTemplate({
+          project: options.project,
+          templateId: options.templateId,
+          assetType: options.assetType,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Template archive prepared.');
+          console.log(`  Template: ${options.templateId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');
           console.log('To confirm, run:');
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
