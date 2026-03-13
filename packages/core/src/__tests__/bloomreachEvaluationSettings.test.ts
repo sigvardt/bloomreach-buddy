@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
 import {
   CONFIGURE_REVENUE_ATTRIBUTION_ACTION_TYPE,
   SET_CURRENCY_ACTION_TYPE,
@@ -18,6 +19,17 @@ import {
   createEvaluationSettingsActionExecutors,
   BloomreachEvaluationSettingsService,
 } from '../index.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CONFIGURE_REVENUE_ATTRIBUTION_ACTION_TYPE', () => {
@@ -75,6 +87,26 @@ describe('validateAttributionModel', () => {
     const model = 'x'.repeat(101);
     expect(() => validateAttributionModel(model)).toThrow('must not exceed 100 characters');
   });
+
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateAttributionModel('\n\tfirst-touch\t\n')).toBe('first-touch');
+  });
+
+  it('accepts single-character model', () => {
+    expect(validateAttributionModel('x')).toBe('x');
+  });
+
+  it('accepts unicode model', () => {
+    expect(validateAttributionModel('příjmový model')).toBe('příjmový model');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateAttributionModel('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateAttributionModel('\n\n')).toThrow('must not be empty');
+  });
 });
 
 describe('validateAttributionWindow', () => {
@@ -104,6 +136,10 @@ describe('validateAttributionWindow', () => {
 
   it('accepts a typical value', () => {
     expect(validateAttributionWindow(30)).toBe(30);
+  });
+
+  it('throws for NaN', () => {
+    expect(() => validateAttributionWindow(NaN)).toThrow();
   });
 });
 
@@ -147,6 +183,22 @@ describe('validateCurrencyCode', () => {
   it('accepts lower-case input with trimming and uppercasing', () => {
     expect(validateCurrencyCode(' eur ')).toBe('EUR');
   });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateCurrencyCode('\t\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateCurrencyCode('\n\n\n')).toThrow('must not be empty');
+  });
+
+  it('throws for numeric currency code', () => {
+    expect(() => validateCurrencyCode('123')).toThrow('uppercase letters only');
+  });
+
+  it('throws for mixed alphanumeric code', () => {
+    expect(() => validateCurrencyCode('U2D')).toThrow('uppercase letters only');
+  });
 });
 
 describe('validateDashboardId', () => {
@@ -160,6 +212,26 @@ describe('validateDashboardId', () => {
 
   it('returns trimmed dashboard ID for valid input', () => {
     expect(validateDashboardId('  dashboard-123  ')).toBe('dashboard-123');
+  });
+
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateDashboardId('\n\tdashboard-abc\t\n')).toBe('dashboard-abc');
+  });
+
+  it('accepts single-character ID', () => {
+    expect(validateDashboardId('d')).toBe('d');
+  });
+
+  it('accepts unicode dashboard ID', () => {
+    expect(validateDashboardId('přehled-č123')).toBe('přehled-č123');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateDashboardId('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateDashboardId('\n\n')).toThrow('must not be empty');
   });
 });
 
@@ -184,6 +256,26 @@ describe('validateMappingField', () => {
   it('throws for mapping field exceeding maximum length', () => {
     const mappingField = 'x'.repeat(201);
     expect(() => validateMappingField(mappingField)).toThrow('must not exceed 200 characters');
+  });
+
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateMappingField('\n\tvoucher_code\t\n')).toBe('voucher_code');
+  });
+
+  it('accepts single-character field', () => {
+    expect(validateMappingField('v')).toBe('v');
+  });
+
+  it('accepts unicode mapping field', () => {
+    expect(validateMappingField('kód_poukazu')).toBe('kód_poukazu');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateMappingField('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateMappingField('\n\n')).toThrow('must not be empty');
   });
 });
 
@@ -224,6 +316,26 @@ describe('URL builders', () => {
       '/p/org%2Fproject/project-settings/vouchers',
     );
   });
+
+  it('encodes unicode project names in URLs', () => {
+    expect(buildRevenueAttributionUrl('projekt åäö')).toContain('%C3%A5');
+    expect(buildCurrencyUrl('projekt åäö')).toContain('%C3%A5');
+    expect(buildEvaluationDashboardsUrl('projekt åäö')).toContain('%C3%A5');
+    expect(buildVoucherMappingUrl('projekt åäö')).toContain('%C3%A5');
+  });
+
+  it('encodes hash in URLs', () => {
+    expect(buildRevenueAttributionUrl('my#project')).toBe(
+      '/p/my%23project/project-settings/project-revenue-attribution',
+    );
+    expect(buildCurrencyUrl('my#project')).toBe('/p/my%23project/project-settings/currency');
+    expect(buildEvaluationDashboardsUrl('my#project')).toBe(
+      '/p/my%23project/project-settings/evaluation-dashboards',
+    );
+    expect(buildVoucherMappingUrl('my#project')).toBe(
+      '/p/my%23project/project-settings/vouchers',
+    );
+  });
 });
 
 describe('createEvaluationSettingsActionExecutors', () => {
@@ -249,6 +361,69 @@ describe('createEvaluationSettingsActionExecutors', () => {
       await expect(executor.execute({})).rejects.toThrow('not yet implemented');
     }
   });
+
+  it('executors throw UI-only availability message on execute', async () => {
+    const executors = createEvaluationSettingsActionExecutors();
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow(
+        'only available through the Bloomreach Engagement UI',
+      );
+    }
+  });
+
+  it('ConfigureRevenueAttributionExecutor mentions UI-only availability', async () => {
+    const executors = createEvaluationSettingsActionExecutors();
+    await expect(executors[CONFIGURE_REVENUE_ATTRIBUTION_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('SetCurrencyExecutor mentions UI-only availability', async () => {
+    const executors = createEvaluationSettingsActionExecutors();
+    await expect(executors[SET_CURRENCY_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('ConfigureEvaluationDashboardsExecutor mentions UI-only availability', async () => {
+    const executors = createEvaluationSettingsActionExecutors();
+    await expect(executors[CONFIGURE_EVALUATION_DASHBOARDS_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('ConfigureVoucherMappingExecutor mentions UI-only availability', async () => {
+    const executors = createEvaluationSettingsActionExecutors();
+    await expect(executors[CONFIGURE_VOUCHER_MAPPING_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+});
+
+describe('apiConfig acceptance', () => {
+  it('createEvaluationSettingsActionExecutors accepts apiConfig', () => {
+    const executors = createEvaluationSettingsActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(4);
+  });
+
+  it('createEvaluationSettingsActionExecutors works without apiConfig', () => {
+    const executors = createEvaluationSettingsActionExecutors();
+    expect(Object.keys(executors)).toHaveLength(4);
+  });
+
+  it('BloomreachEvaluationSettingsService accepts apiConfig', () => {
+    const service = new BloomreachEvaluationSettingsService('test', TEST_API_CONFIG);
+    expect(service.revenueAttributionUrl).toBe(
+      '/p/test/project-settings/project-revenue-attribution',
+    );
+  });
+
+  it('BloomreachEvaluationSettingsService works without apiConfig', () => {
+    const service = new BloomreachEvaluationSettingsService('test');
+    expect(service.revenueAttributionUrl).toBe(
+      '/p/test/project-settings/project-revenue-attribution',
+    );
+  });
 });
 
 describe('BloomreachEvaluationSettingsService', () => {
@@ -267,6 +442,25 @@ describe('BloomreachEvaluationSettingsService', () => {
 
     it('throws for empty project', () => {
       expect(() => new BloomreachEvaluationSettingsService('')).toThrow('must not be empty');
+    });
+
+    it('encodes spaces in URL', () => {
+      const service = new BloomreachEvaluationSettingsService('my project');
+      expect(service.revenueAttributionUrl).toBe(
+        '/p/my%20project/project-settings/project-revenue-attribution',
+      );
+    });
+
+    it('encodes unicode in URL', () => {
+      const service = new BloomreachEvaluationSettingsService('projekt åäö');
+      expect(service.revenueAttributionUrl).toContain('%C3%A5');
+    });
+
+    it('encodes hash in URL', () => {
+      const service = new BloomreachEvaluationSettingsService('my#project');
+      expect(service.revenueAttributionUrl).toBe(
+        '/p/my%23project/project-settings/project-revenue-attribution',
+      );
     });
   });
 
@@ -303,6 +497,46 @@ describe('BloomreachEvaluationSettingsService', () => {
     it('viewVoucherMapping throws not-yet-implemented error', async () => {
       const service = new BloomreachEvaluationSettingsService('test');
       await expect(service.viewVoucherMapping()).rejects.toThrow('not yet implemented');
+    });
+
+    it('viewRevenueAttribution throws descriptive UI-only error', async () => {
+      const service = new BloomreachEvaluationSettingsService('test');
+      await expect(service.viewRevenueAttribution()).rejects.toThrow('Bloomreach Engagement UI');
+    });
+
+    it('viewCurrency throws descriptive UI-only error', async () => {
+      const service = new BloomreachEvaluationSettingsService('test');
+      await expect(service.viewCurrency()).rejects.toThrow('Bloomreach Engagement UI');
+    });
+
+    it('viewEvaluationDashboards throws descriptive UI-only error', async () => {
+      const service = new BloomreachEvaluationSettingsService('test');
+      await expect(service.viewEvaluationDashboards()).rejects.toThrow('Bloomreach Engagement UI');
+    });
+
+    it('viewVoucherMapping throws descriptive UI-only error', async () => {
+      const service = new BloomreachEvaluationSettingsService('test');
+      await expect(service.viewVoucherMapping()).rejects.toThrow('Bloomreach Engagement UI');
+    });
+
+    it('viewRevenueAttribution validates project when input provided', async () => {
+      const service = new BloomreachEvaluationSettingsService('test');
+      await expect(service.viewRevenueAttribution({ project: '' })).rejects.toThrow('must not be empty');
+    });
+
+    it('viewCurrency validates project when input provided', async () => {
+      const service = new BloomreachEvaluationSettingsService('test');
+      await expect(service.viewCurrency({ project: '' })).rejects.toThrow('must not be empty');
+    });
+
+    it('viewEvaluationDashboards validates project when input provided', async () => {
+      const service = new BloomreachEvaluationSettingsService('test');
+      await expect(service.viewEvaluationDashboards({ project: '' })).rejects.toThrow('must not be empty');
+    });
+
+    it('viewVoucherMapping validates project when input provided', async () => {
+      const service = new BloomreachEvaluationSettingsService('test');
+      await expect(service.viewVoucherMapping({ project: '' })).rejects.toThrow('must not be empty');
     });
   });
 
@@ -531,6 +765,38 @@ describe('BloomreachEvaluationSettingsService', () => {
         mappingField: '',
       } as Parameters<BloomreachEvaluationSettingsService['prepareConfigureVoucherMapping']>[0];
       expect(() => service.prepareConfigureVoucherMapping(input)).toThrow('must not be empty');
+    });
+  });
+
+  describe('token expiry consistency', () => {
+    it('all prepare methods set expiry ~30 minutes in the future', () => {
+      const service = new BloomreachEvaluationSettingsService('test');
+      const now = Date.now();
+      const thirtyMinMs = 30 * 60 * 1000;
+
+      const results = [
+        service.prepareConfigureRevenueAttribution({
+          project: 'test',
+          model: 'first-touch',
+        }),
+        service.prepareSetCurrency({
+          project: 'test',
+          currencyCode: 'USD',
+        }),
+        service.prepareConfigureEvaluationDashboards({
+          project: 'test',
+          dashboards: [{ id: 'dashboard-1', enabled: true }],
+        }),
+        service.prepareConfigureVoucherMapping({
+          project: 'test',
+          mappingField: 'voucherCode',
+        }),
+      ];
+
+      for (const result of results) {
+        expect(result.expiresAtMs).toBeGreaterThanOrEqual(now + thirtyMinMs - 1000);
+        expect(result.expiresAtMs).toBeLessThanOrEqual(now + thirtyMinMs + 5000);
+      }
     });
   });
 });
