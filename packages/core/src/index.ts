@@ -6,6 +6,7 @@ export * from './bloomreachFlows.js';
 export * from './bloomreachFunnels.js';
 export * from './bloomreachPerformance.js';
 export * from './bloomreachRecommendations.js';
+export * from './bloomreachReports.js';
 export * from './bloomreachScenarios.js';
 export * from './bloomreachSurveys.js';
 export * from './bloomreachRetentions.js';
