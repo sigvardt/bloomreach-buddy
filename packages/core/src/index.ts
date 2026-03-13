@@ -1,5 +1,6 @@
 export * from './bloomreachCampaignCalendar.js';
 export * from './bloomreachCampaignSettings.js';
+export * from './bloomreachCatalogs.js';
 export * from './bloomreachDashboards.js';
 export * from './bloomreachEmailCampaigns.js';
 export * from './bloomreachFlows.js';
