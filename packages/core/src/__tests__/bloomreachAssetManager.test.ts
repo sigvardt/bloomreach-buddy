@@ -382,6 +382,14 @@ describe('BloomreachAssetManagerService', () => {
     it('throws for empty project', () => {
       expect(() => new BloomreachAssetManagerService('')).toThrow('must not be empty');
     });
+
+    it('encodes special characters in project name', () => {
+      const service = new BloomreachAssetManagerService('my project');
+      expect(service.emailTemplatesUrl).toContain('my%20project');
+
+      const service2 = new BloomreachAssetManagerService('org/proj');
+      expect(service2.emailTemplatesUrl).toContain('org%2Fproj');
+    });
   });
 
   describe('list methods', () => {
@@ -691,6 +699,38 @@ describe('BloomreachAssetManagerService', () => {
         }),
       ).toThrow('cloneable types');
     });
+
+    it('throws for file asset type', () => {
+      const service = new BloomreachAssetManagerService('test');
+      expect(() =>
+        service.prepareCloneTemplate({
+          project: 'test',
+          templateId: 'tmpl-1',
+          assetType: 'file',
+        }),
+      ).toThrow('cloneable types');
+    });
+
+    it('succeeds without newName', () => {
+      const service = new BloomreachAssetManagerService('test');
+      const result = service.prepareCloneTemplate({
+        project: 'test',
+        templateId: 'tmpl-1',
+        assetType: 'weblayer_template',
+      });
+
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.confirmToken).toMatch(/^ct_stub_/);
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'asset_manager.clone_template',
+          project: 'test',
+          templateId: 'tmpl-1',
+          assetType: 'weblayer_template',
+        }),
+      );
+      expect(result.preview.newName).toBeUndefined();
+    });
   });
 
   describe('prepareArchiveTemplate', () => {
@@ -721,6 +761,17 @@ describe('BloomreachAssetManagerService', () => {
           project: 'test',
           templateId: 'tmpl-2',
           assetType: 'file',
+        }),
+      ).toThrow('cloneable types');
+    });
+
+    it('throws for snippet asset type', () => {
+      const service = new BloomreachAssetManagerService('test');
+      expect(() =>
+        service.prepareArchiveTemplate({
+          project: 'test',
+          templateId: 'tmpl-2',
+          assetType: 'snippet',
         }),
       ).toThrow('cloneable types');
     });
@@ -804,6 +855,234 @@ describe('BloomreachAssetManagerService', () => {
           assetType: 'email_template',
         }),
       ).toThrow('must not be empty');
+    });
+  });
+
+  describe('token expiry', () => {
+    it('sets expiresAtMs to approximately 30 minutes from now', () => {
+      const service = new BloomreachAssetManagerService('test');
+      const before = Date.now();
+      const result = service.prepareCreateEmailTemplate({
+        project: 'test',
+        name: 'Expiry Test',
+      });
+      const after = Date.now();
+
+      const expectedTtl = 30 * 60 * 1000;
+      expect(result.expiresAtMs).toBeGreaterThanOrEqual(before + expectedTtl);
+      expect(result.expiresAtMs).toBeLessThanOrEqual(after + expectedTtl);
+    });
+
+    it('all prepare methods set consistent expiry', () => {
+      const service = new BloomreachAssetManagerService('test');
+      const tolerance = 1000;
+      const expectedTtl = 30 * 60 * 1000;
+
+      const results = [
+        service.prepareCreateEmailTemplate({ project: 'test', name: 'Email' }),
+        service.prepareCreateWeblayerTemplate({ project: 'test', name: 'Weblayer' }),
+        service.prepareCreateBlock({ project: 'test', name: 'Block' }),
+        service.prepareCreateCustomRow({ project: 'test', name: 'Row' }),
+        service.prepareCreateSnippet({
+          project: 'test',
+          name: 'Snippet',
+          language: 'jinja',
+          content: 'x',
+        }),
+        service.prepareEditSnippet({ project: 'test', snippetId: 'snippet-1' }),
+        service.prepareUploadFile({ project: 'test', name: 'file.png', mimeType: 'image/png' }),
+        service.prepareDeleteFile({ project: 'test', fileId: 'file-1' }),
+        service.prepareCloneTemplate({
+          project: 'test',
+          templateId: 'tmpl-1',
+          assetType: 'email_template',
+        }),
+        service.prepareArchiveTemplate({
+          project: 'test',
+          templateId: 'tmpl-2',
+          assetType: 'weblayer_template',
+        }),
+      ];
+
+      for (const result of results) {
+        const now = Date.now();
+        expect(result.expiresAtMs).toBeGreaterThanOrEqual(now + expectedTtl - tolerance);
+        expect(result.expiresAtMs).toBeLessThanOrEqual(now + expectedTtl + tolerance);
+      }
+    });
+  });
+
+  describe('optional fields in preview', () => {
+    it('prepareCreateEmailTemplate includes all optional fields when provided', () => {
+      const service = new BloomreachAssetManagerService('test');
+      const result = service.prepareCreateEmailTemplate({
+        project: 'test',
+        name: 'Email With Optional Fields',
+        builderType: 'html',
+        htmlContent: '<html><body>Hello</body></html>',
+        operatorNote: 'optional-fields-test',
+      });
+
+      expect(result.preview.builderType).toBe('html');
+      expect(result.preview.htmlContent).toBe('<html><body>Hello</body></html>');
+      expect(result.preview.operatorNote).toBe('optional-fields-test');
+    });
+
+    it('prepareCreateEmailTemplate excludes optional fields when omitted', () => {
+      const service = new BloomreachAssetManagerService('test');
+      const result = service.prepareCreateEmailTemplate({
+        project: 'test',
+        name: 'Email Without Optional Fields',
+      });
+
+      expect(result.preview.builderType).toBeUndefined();
+      expect(result.preview.htmlContent).toBeUndefined();
+      expect(result.preview.operatorNote).toBeUndefined();
+    });
+
+    it('prepareCreateWeblayerTemplate includes htmlContent when provided', () => {
+      const service = new BloomreachAssetManagerService('test');
+      const result = service.prepareCreateWeblayerTemplate({
+        project: 'test',
+        name: 'Weblayer',
+        htmlContent: '<div>banner</div>',
+      });
+
+      expect(result.preview.htmlContent).toBe('<div>banner</div>');
+    });
+
+    it('prepareUploadFile includes all optional fields when provided', () => {
+      const service = new BloomreachAssetManagerService('test');
+      const result = service.prepareUploadFile({
+        project: 'test',
+        name: 'asset.pdf',
+        mimeType: 'application/pdf',
+        fileSize: 12345,
+        category: 'document',
+        operatorNote: 'upload-optional-fields-test',
+      });
+
+      expect(result.preview.fileSize).toBe(12345);
+      expect(result.preview.category).toBe('document');
+      expect(result.preview.operatorNote).toBe('upload-optional-fields-test');
+    });
+
+    it('prepareUploadFile omits optional fields when not provided', () => {
+      const service = new BloomreachAssetManagerService('test');
+      const result = service.prepareUploadFile({
+        project: 'test',
+        name: 'logo.png',
+        mimeType: 'image/png',
+      });
+
+      expect(result.preview.fileSize).toBeUndefined();
+      expect(result.preview.category).toBeUndefined();
+      expect(result.preview.operatorNote).toBeUndefined();
+    });
+  });
+
+  describe('edit snippet partial updates', () => {
+    it('accepts update with only name', () => {
+      const service = new BloomreachAssetManagerService('test');
+      const result = service.prepareEditSnippet({
+        project: 'test',
+        snippetId: 'snippet-1',
+        name: 'New Name',
+      });
+
+      expect(result.preview.name).toBe('New Name');
+      expect(result.preview.language).toBeUndefined();
+      expect(result.preview.content).toBeUndefined();
+    });
+
+    it('accepts update with only language', () => {
+      const service = new BloomreachAssetManagerService('test');
+      const result = service.prepareEditSnippet({
+        project: 'test',
+        snippetId: 'snippet-1',
+        language: 'html',
+      });
+
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.preview.language).toBe('html');
+    });
+
+    it('accepts update with only content', () => {
+      const service = new BloomreachAssetManagerService('test');
+      const result = service.prepareEditSnippet({
+        project: 'test',
+        snippetId: 'snippet-1',
+        content: '<p>new</p>',
+      });
+
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.preview.content).toBe('<p>new</p>');
+    });
+
+    it('accepts update with no optional fields', () => {
+      const service = new BloomreachAssetManagerService('test');
+      const result = service.prepareEditSnippet({
+        project: 'test',
+        snippetId: 'snippet-1',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'asset_manager.edit_snippet',
+          project: 'test',
+          snippetId: 'snippet-1',
+        }),
+      );
+      expect(result.preview.name).toBeUndefined();
+      expect(result.preview.language).toBeUndefined();
+      expect(result.preview.content).toBeUndefined();
+    });
+  });
+
+  describe('prepare method boundary validation', () => {
+    it('accepts asset name at exactly 200 characters', () => {
+      const service = new BloomreachAssetManagerService('test');
+      const result = service.prepareCreateEmailTemplate({
+        project: 'test',
+        name: 'x'.repeat(200),
+      });
+
+      expect(result.preview.name).toBe('x'.repeat(200));
+    });
+
+    it('rejects asset name at 201 characters', () => {
+      const service = new BloomreachAssetManagerService('test');
+      expect(() =>
+        service.prepareCreateEmailTemplate({
+          project: 'test',
+          name: 'x'.repeat(201),
+        }),
+      ).toThrow('must not exceed 200 characters');
+    });
+
+    it('accepts snippet content at exactly 100000 characters', () => {
+      const service = new BloomreachAssetManagerService('test');
+      const content = 'x'.repeat(100_000);
+      const result = service.prepareCreateSnippet({
+        project: 'test',
+        name: 'Boundary Snippet',
+        language: 'jinja',
+        content,
+      });
+
+      expect(result.preview.content).toBe(content);
+    });
+
+    it('rejects snippet content at 100001 characters', () => {
+      const service = new BloomreachAssetManagerService('test');
+      expect(() =>
+        service.prepareCreateSnippet({
+          project: 'test',
+          name: 'Too Long Snippet',
+          language: 'jinja',
+          content: 'x'.repeat(100_001),
+        }),
+      ).toThrow('must not exceed 100000 characters');
     });
   });
 });
