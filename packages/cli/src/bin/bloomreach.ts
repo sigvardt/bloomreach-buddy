@@ -8,6 +8,7 @@ import {
   BloomreachEmailCampaignsService,
   BloomreachFlowsService,
   BloomreachFunnelsService,
+  BloomreachGeoAnalysesService,
   BloomreachPerformanceService,
   BloomreachRetentionsService,
   BloomreachScenariosService,
@@ -21,6 +22,7 @@ import type {
   FlowFilter,
   FunnelStep,
   FunnelFilter,
+  GeoFilter,
   SurveyQuestion,
   SurveyDisplayConditions,
   RetentionFilter,
@@ -2270,6 +2272,235 @@ flows
           printJson(result);
         } else {
           console.log('Flow analysis archive prepared.');
+          console.log(`  Analysis: ${options.analysisId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const geoAnalyses = program
+  .command('geo-analyses')
+  .description('Manage Bloomreach Engagement geo analyses');
+
+geoAnalyses
+  .command('list')
+  .description('List all geo analyses in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachGeoAnalysesService(options.project);
+      const result = await service.listGeoAnalyses({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No geo analyses found.');
+          return;
+        }
+        for (const analysis of result) {
+          console.log(`  ${analysis.name}`);
+          console.log(`    Attribute:   ${analysis.attribute}`);
+          console.log(`    Granularity: ${analysis.granularity}`);
+          console.log(`    ID:          ${analysis.id}`);
+          console.log(`    URL:         ${analysis.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+geoAnalyses
+  .command('view-results')
+  .description('View geographic distribution data for a geo analysis')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--analysis-id <id>', 'Geo analysis ID')
+  .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
+  .option('--end-date <date>', 'End date (YYYY-MM-DD)')
+  .option('--granularity <granularity>', 'Geographic granularity (country, region, city)')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      analysisId: string;
+      startDate?: string;
+      endDate?: string;
+      granularity?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachGeoAnalysesService(options.project);
+        const result = await service.viewGeoResults({
+          project: options.project,
+          analysisId: options.analysisId,
+          startDate: options.startDate,
+          endDate: options.endDate,
+          granularity: options.granularity,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log(`Geo Analysis: ${result.analysisName}`);
+          console.log(`  Attribute:   ${result.attribute}`);
+          console.log(`  Granularity: ${result.granularity}`);
+          console.log(`  Date range:  ${result.startDate} to ${result.endDate}`);
+          if (result.dataPoints.length === 0) {
+            console.log('  Data points: none');
+          } else {
+            console.log('  Data points:');
+            for (const dataPoint of result.dataPoints) {
+              console.log(
+                `    ${dataPoint.location}: count=${dataPoint.count}, percentage=${dataPoint.percentage}%`,
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+geoAnalyses
+  .command('create')
+  .description('Prepare creation of a new geo analysis (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Geo analysis name')
+  .requiredOption('--attribute <attribute>', 'Event or customer attribute for geographic mapping')
+  .option('--granularity <granularity>', 'Geographic granularity (country, region, city)', 'country')
+  .option('--customer-attributes <json>', 'JSON object of customer attribute filters')
+  .option('--event-properties <json>', 'JSON object of event property filters')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      attribute: string;
+      granularity: string;
+      customerAttributes?: string;
+      eventProperties?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const filters: GeoFilter = {};
+        if (options.customerAttributes) {
+          filters.customerAttributes = JSON.parse(options.customerAttributes) as Record<
+            string,
+            string
+          >;
+        }
+        if (options.eventProperties) {
+          filters.eventProperties = JSON.parse(options.eventProperties) as Record<string, string>;
+        }
+
+        const service = new BloomreachGeoAnalysesService(options.project);
+        const result = service.prepareCreateGeoAnalysis({
+          project: options.project,
+          name: options.name,
+          attribute: options.attribute,
+          granularity: options.granularity,
+          filters: Object.keys(filters).length > 0 ? filters : undefined,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Geo analysis creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+geoAnalyses
+  .command('clone')
+  .description('Prepare cloning a geo analysis (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--analysis-id <id>', 'Geo analysis ID to clone')
+  .option('--new-name <name>', 'Name for the cloned analysis')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      analysisId: string;
+      newName?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachGeoAnalysesService(options.project);
+        const result = service.prepareCloneGeoAnalysis({
+          project: options.project,
+          analysisId: options.analysisId,
+          newName: options.newName,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Geo analysis clone prepared.');
+          console.log(`  Source:   ${options.analysisId}`);
+          console.log(`  New name: ${options.newName ?? '(auto-generated)'}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+geoAnalyses
+  .command('archive')
+  .description('Prepare archiving a geo analysis (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--analysis-id <id>', 'Geo analysis ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; analysisId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachGeoAnalysesService(options.project);
+        const result = service.prepareArchiveGeoAnalysis({
+          project: options.project,
+          analysisId: options.analysisId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Geo analysis archive prepared.');
           console.log(`  Analysis: ${options.analysisId}`);
           console.log(`  Token:    ${result.confirmToken}`);
           console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
