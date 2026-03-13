@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const ADD_CUSTOMER_PROPERTY_ACTION_TYPE = 'dataManager.add_customer_property';
 export const EDIT_CUSTOMER_PROPERTY_ACTION_TYPE = 'dataManager.edit_customer_property';
@@ -456,6 +457,21 @@ export function buildContentSourcesUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/data/management/content-sources`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 export interface DataManagerActionExecutor {
   readonly actionType: string;
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -463,126 +479,191 @@ export interface DataManagerActionExecutor {
 
 class AddCustomerPropertyExecutor implements DataManagerActionExecutor {
   readonly actionType = ADD_CUSTOMER_PROPERTY_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'AddCustomerPropertyExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'AddCustomerPropertyExecutor: not yet implemented. ' +
+        'Customer property addition is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class EditCustomerPropertyExecutor implements DataManagerActionExecutor {
   readonly actionType = EDIT_CUSTOMER_PROPERTY_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'EditCustomerPropertyExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'EditCustomerPropertyExecutor: not yet implemented. ' +
+        'Customer property editing is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class AddEventDefinitionExecutor implements DataManagerActionExecutor {
   readonly actionType = ADD_EVENT_DEFINITION_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'AddEventDefinitionExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'AddEventDefinitionExecutor: not yet implemented. ' +
+        'Event definition creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class AddFieldDefinitionExecutor implements DataManagerActionExecutor {
   readonly actionType = ADD_FIELD_DEFINITION_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'AddFieldDefinitionExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'AddFieldDefinitionExecutor: not yet implemented. ' +
+        'Field definition creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class EditFieldDefinitionExecutor implements DataManagerActionExecutor {
   readonly actionType = EDIT_FIELD_DEFINITION_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'EditFieldDefinitionExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'EditFieldDefinitionExecutor: not yet implemented. ' +
+        'Field definition editing is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ConfigureMappingExecutor implements DataManagerActionExecutor {
   readonly actionType = CONFIGURE_MAPPING_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ConfigureMappingExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ConfigureMappingExecutor: not yet implemented. ' +
+        'Mapping configuration is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class AddContentSourceExecutor implements DataManagerActionExecutor {
   readonly actionType = ADD_CONTENT_SOURCE_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'AddContentSourceExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'AddContentSourceExecutor: not yet implemented. ' +
+        'Content source addition is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class EditContentSourceExecutor implements DataManagerActionExecutor {
   readonly actionType = EDIT_CONTENT_SOURCE_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'EditContentSourceExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'EditContentSourceExecutor: not yet implemented. ' +
+        'Content source editing is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class SaveChangesExecutor implements DataManagerActionExecutor {
   readonly actionType = SAVE_CHANGES_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'SaveChangesExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'SaveChangesExecutor: not yet implemented. ' +
+        'Saving data manager changes is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createDataManagerActionExecutors(): Record<
+export function createDataManagerActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<
   string,
   DataManagerActionExecutor
 > {
   return {
-    [ADD_CUSTOMER_PROPERTY_ACTION_TYPE]: new AddCustomerPropertyExecutor(),
-    [EDIT_CUSTOMER_PROPERTY_ACTION_TYPE]: new EditCustomerPropertyExecutor(),
-    [ADD_EVENT_DEFINITION_ACTION_TYPE]: new AddEventDefinitionExecutor(),
-    [ADD_FIELD_DEFINITION_ACTION_TYPE]: new AddFieldDefinitionExecutor(),
-    [EDIT_FIELD_DEFINITION_ACTION_TYPE]: new EditFieldDefinitionExecutor(),
-    [CONFIGURE_MAPPING_ACTION_TYPE]: new ConfigureMappingExecutor(),
-    [ADD_CONTENT_SOURCE_ACTION_TYPE]: new AddContentSourceExecutor(),
-    [EDIT_CONTENT_SOURCE_ACTION_TYPE]: new EditContentSourceExecutor(),
-    [SAVE_CHANGES_ACTION_TYPE]: new SaveChangesExecutor(),
+    [ADD_CUSTOMER_PROPERTY_ACTION_TYPE]: new AddCustomerPropertyExecutor(apiConfig),
+    [EDIT_CUSTOMER_PROPERTY_ACTION_TYPE]: new EditCustomerPropertyExecutor(apiConfig),
+    [ADD_EVENT_DEFINITION_ACTION_TYPE]: new AddEventDefinitionExecutor(apiConfig),
+    [ADD_FIELD_DEFINITION_ACTION_TYPE]: new AddFieldDefinitionExecutor(apiConfig),
+    [EDIT_FIELD_DEFINITION_ACTION_TYPE]: new EditFieldDefinitionExecutor(apiConfig),
+    [CONFIGURE_MAPPING_ACTION_TYPE]: new ConfigureMappingExecutor(apiConfig),
+    [ADD_CONTENT_SOURCE_ACTION_TYPE]: new AddContentSourceExecutor(apiConfig),
+    [EDIT_CONTENT_SOURCE_ACTION_TYPE]: new EditContentSourceExecutor(apiConfig),
+    [SAVE_CHANGES_ACTION_TYPE]: new SaveChangesExecutor(apiConfig),
   };
 }
 
@@ -592,14 +673,16 @@ export class BloomreachDataManagerService {
   private readonly definitionsBaseUrl: string;
   private readonly mappingBaseUrl: string;
   private readonly contentSourcesBaseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     const validatedProject = validateProject(project);
     this.customerPropertiesBaseUrl = buildCustomerPropertiesUrl(validatedProject);
     this.eventsBaseUrl = buildEventsUrl(validatedProject);
     this.definitionsBaseUrl = buildDefinitionsUrl(validatedProject);
     this.mappingBaseUrl = buildMappingUrl(validatedProject);
     this.contentSourcesBaseUrl = buildContentSourcesUrl(validatedProject);
+    this.apiConfig = apiConfig;
   }
 
   get customerPropertiesUrl(): string {
@@ -625,56 +708,71 @@ export class BloomreachDataManagerService {
   async listCustomerProperties(
     input?: ListCustomerPropertiesInput,
   ): Promise<CustomerProperty[]> {
+    void this.apiConfig;
     if (input !== undefined) {
       validateProject(input.project);
     }
 
     throw new Error(
-      'listCustomerProperties: not yet implemented. Requires browser automation infrastructure.',
+      'listCustomerProperties: the Bloomreach API does not provide an endpoint for customer properties. ' +
+        'Customer property data must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Data & Assets > Data Manager in your project).',
     );
   }
 
   async listEvents(input?: ListEventsInput): Promise<EventDefinition[]> {
+    void this.apiConfig;
     if (input !== undefined) {
       validateProject(input.project);
     }
 
     throw new Error(
-      'listEvents: not yet implemented. Requires browser automation infrastructure.',
+      'listEvents: the Bloomreach API does not provide an endpoint for event definitions. ' +
+        'Event definition data must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Data & Assets > Data Manager > Events in your project).',
     );
   }
 
   async listFieldDefinitions(
     input?: ListFieldDefinitionsInput,
   ): Promise<FieldDefinition[]> {
+    void this.apiConfig;
     if (input !== undefined) {
       validateProject(input.project);
     }
 
     throw new Error(
-      'listFieldDefinitions: not yet implemented. Requires browser automation infrastructure.',
+      'listFieldDefinitions: the Bloomreach API does not provide an endpoint for field definitions. ' +
+        'Field definition data must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Data & Assets > Data Manager > Definitions in your project).',
     );
   }
 
   async listMappings(input?: ListMappingsInput): Promise<DataMapping[]> {
+    void this.apiConfig;
     if (input !== undefined) {
       validateProject(input.project);
     }
 
     throw new Error(
-      'listMappings: not yet implemented. Requires browser automation infrastructure.',
+      'listMappings: the Bloomreach API does not provide an endpoint for data mappings. ' +
+        'Data mapping information must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Data & Assets > Data Manager > Mapping in your project).',
     );
   }
 
   async listContentSources(
     input?: ListContentSourcesInput,
   ): Promise<ContentSource[]> {
+    void this.apiConfig;
     if (input !== undefined) {
       validateProject(input.project);
     }
 
     throw new Error(
-      'listContentSources: not yet implemented. Requires browser automation infrastructure.',
+      'listContentSources: the Bloomreach API does not provide an endpoint for content sources. ' +
+        'Content source data must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Data & Assets > Data Manager > Content Sources in your project).',
     );
   }
 
