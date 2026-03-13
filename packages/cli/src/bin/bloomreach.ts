@@ -2189,8 +2189,10 @@ const flows = program
 
 flows
   .command('list')
-  .description('List all flow analyses in the project')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description(
+    'List all flow analyses in the project (note: the Bloomreach API does not provide a flows endpoint — requires browser automation)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -2221,11 +2223,16 @@ flows
 
 flows
   .command('view-results')
-  .description('View journey paths, volumes and drop-offs for a flow analysis')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--analysis-id <id>', 'Flow analysis ID')
-  .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
-  .option('--end-date <date>', 'End date (YYYY-MM-DD)')
+  .description(
+    'View journey paths, volumes and drop-offs for a flow analysis (note: the Bloomreach API does not provide a flows endpoint — requires browser automation)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption(
+    '--analysis-id <id>',
+    'Flow analysis ID (hex string from Bloomreach UI URL, e.g. "606488856f8cf6f848b20af8")',
+  )
+  .option('--start-date <date>', 'Start date in ISO-8601 format (YYYY-MM-DD)')
+  .option('--end-date <date>', 'End date in ISO-8601 format (YYYY-MM-DD)')
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -2280,14 +2287,23 @@ flows
 
 flows
   .command('create')
-  .description('Prepare creation of a new flow analysis (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--name <name>', 'Flow analysis name')
-  .requiredOption('--starting-event <event>', 'Starting event for the journey')
-  .requiredOption('--events <json>', 'JSON array of events to track [{order, eventName, label?}]')
-  .option('--max-journey-depth <n>', 'Maximum journey depth (1-20)')
-  .option('--customer-attributes <json>', 'JSON object of customer attribute filters')
-  .option('--event-properties <json>', 'JSON object of event property filters')
+  .description('Prepare creation of a new flow analysis (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--name <name>', 'Flow analysis name (max 200 characters)')
+  .requiredOption('--starting-event <event>', 'Starting event for the journey (e.g. "session_start")')
+  .requiredOption(
+    '--events <json>',
+    'JSON array of events to track (e.g. \'[{"order":1,"eventName":"purchase"},{"order":2,"eventName":"refund"}]\')',
+  )
+  .option('--max-journey-depth <n>', 'Maximum journey depth (integer 1-20)')
+  .option(
+    '--customer-attributes <json>',
+    'Customer attribute filters as JSON (e.g. \'{"segment":"vip","locale":"en_US"}\')',
+  )
+  .option(
+    '--event-properties <json>',
+    'Event property filters as JSON (e.g. \'{"currency":"USD"}\')',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -2349,9 +2365,12 @@ flows
 
 flows
   .command('clone')
-  .description('Prepare cloning a flow analysis (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--analysis-id <id>', 'Flow analysis ID to clone')
+  .description('Prepare cloning a flow analysis (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption(
+    '--analysis-id <id>',
+    'Flow analysis ID to clone (hex string from Bloomreach UI URL)',
+  )
   .option('--new-name <name>', 'Name for the cloned analysis')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
@@ -2393,9 +2412,12 @@ flows
 
 flows
   .command('archive')
-  .description('Prepare archiving a flow analysis (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--analysis-id <id>', 'Flow analysis ID')
+  .description('Prepare archiving a flow analysis (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption(
+    '--analysis-id <id>',
+    'Flow analysis ID (hex string from Bloomreach UI URL)',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(

@@ -1,5 +1,6 @@
 import { validateProject } from './bloomreachDashboards.js';
 import { validateDateRange } from './bloomreachPerformance.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
 
 export const CREATE_FLOW_ACTION_TYPE = 'flows.create_flow';
@@ -176,6 +177,21 @@ export function buildFlowsUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/analytics/flows`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 export interface FlowActionExecutor {
   readonly actionType: string;
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -183,47 +199,72 @@ export interface FlowActionExecutor {
 
 class CreateFlowExecutor implements FlowActionExecutor {
   readonly actionType = CREATE_FLOW_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateFlowExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateFlowExecutor: not yet implemented. ' +
+        'Flow creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CloneFlowExecutor implements FlowActionExecutor {
   readonly actionType = CLONE_FLOW_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CloneFlowExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CloneFlowExecutor: not yet implemented. ' +
+        'Flow cloning is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ArchiveFlowExecutor implements FlowActionExecutor {
   readonly actionType = ARCHIVE_FLOW_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ArchiveFlowExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ArchiveFlowExecutor: not yet implemented. ' +
+        'Flow archiving is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createFlowActionExecutors(): Record<string, FlowActionExecutor> {
+export function createFlowActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, FlowActionExecutor> {
   return {
-    [CREATE_FLOW_ACTION_TYPE]: new CreateFlowExecutor(),
-    [CLONE_FLOW_ACTION_TYPE]: new CloneFlowExecutor(),
-    [ARCHIVE_FLOW_ACTION_TYPE]: new ArchiveFlowExecutor(),
+    [CREATE_FLOW_ACTION_TYPE]: new CreateFlowExecutor(apiConfig),
+    [CLONE_FLOW_ACTION_TYPE]: new CloneFlowExecutor(apiConfig),
+    [ARCHIVE_FLOW_ACTION_TYPE]: new ArchiveFlowExecutor(apiConfig),
   };
 }
 
 export class BloomreachFlowsService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildFlowsUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get flowsUrl(): string {
@@ -231,16 +272,20 @@ export class BloomreachFlowsService {
   }
 
   async listFlowAnalyses(input?: ListFlowAnalysesInput): Promise<BloomreachFlowAnalysis[]> {
+    void this.apiConfig;
     if (input !== undefined) {
       validateProject(input.project);
     }
 
     throw new Error(
-      'listFlowAnalyses: not yet implemented. Requires browser automation infrastructure.',
+      'listFlowAnalyses: the Bloomreach API does not provide an endpoint for flow analyses. ' +
+        'Flow data must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Analytics > Flows in your project).',
     );
   }
 
   async viewFlowResults(input: ViewFlowResultsInput): Promise<FlowResults> {
+    void this.apiConfig;
     validateProject(input.project);
     validateFlowAnalysisId(input.analysisId);
 
@@ -253,7 +298,9 @@ export class BloomreachFlowsService {
     }
 
     throw new Error(
-      'viewFlowResults: not yet implemented. Requires browser automation infrastructure.',
+      'viewFlowResults: the Bloomreach API does not provide an endpoint for flow analysis results. ' +
+        'Flow results must be viewed in the Bloomreach Engagement UI ' +
+        '(navigate to Analytics > Flows and open the analysis).',
     );
   }
 

@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
 import {
   CREATE_FLOW_ACTION_TYPE,
   CLONE_FLOW_ACTION_TYPE,
@@ -15,6 +16,17 @@ import {
   createFlowActionExecutors,
   BloomreachFlowsService,
 } from '../index.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_FLOW_ACTION_TYPE', () => {
@@ -74,6 +86,22 @@ describe('validateFlowName', () => {
     expect(validateFlowName('Flow 🚀')).toBe('Flow 🚀');
   });
 
+  it('accepts mixed whitespace around valid name', () => {
+    expect(validateFlowName(' \t  Checkout Flow \n ')).toBe('Checkout Flow');
+  });
+
+  it('preserves internal spacing in valid name', () => {
+    expect(validateFlowName('Checkout   Flow')).toBe('Checkout   Flow');
+  });
+
+  it('accepts punctuation-heavy name after trim', () => {
+    expect(validateFlowName('  [Q1] Checkout Flow (v2)  ')).toBe('[Q1] Checkout Flow (v2)');
+  });
+
+  it('throws for too-long name even with surrounding whitespace', () => {
+    expect(() => validateFlowName(`  ${'x'.repeat(201)}  `)).toThrow('must not exceed 200 characters');
+  });
+
   it('throws for empty string', () => {
     expect(() => validateFlowName('')).toThrow('must not be empty');
   });
@@ -117,6 +145,22 @@ describe('validateFlowAnalysisId', () => {
     expect(validateFlowAnalysisId('  flow segment 1  ')).toBe('flow segment 1');
   });
 
+  it('returns ID containing dots and dashes', () => {
+    expect(validateFlowAnalysisId('flow.v2-alpha')).toBe('flow.v2-alpha');
+  });
+
+  it('returns ID containing colons', () => {
+    expect(validateFlowAnalysisId('flow:checkout:1')).toBe('flow:checkout:1');
+  });
+
+  it('returns trimmed ID with mixed whitespace', () => {
+    expect(validateFlowAnalysisId(' \n\tflow-789\t ')).toBe('flow-789');
+  });
+
+  it('returns unicode ID', () => {
+    expect(validateFlowAnalysisId('analyse-åäö')).toBe('analyse-åäö');
+  });
+
   it('throws for empty string', () => {
     expect(() => validateFlowAnalysisId('')).toThrow('must not be empty');
   });
@@ -127,6 +171,14 @@ describe('validateFlowAnalysisId', () => {
 
   it('throws for newline-only string', () => {
     expect(() => validateFlowAnalysisId('\n')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateFlowAnalysisId('\t')).toThrow('must not be empty');
+  });
+
+  it('throws for mixed-whitespace-only string', () => {
+    expect(() => validateFlowAnalysisId(' \n\t ')).toThrow('must not be empty');
   });
 });
 
@@ -218,6 +270,13 @@ describe('validateFlowEvents', () => {
 
   it('converts whitespace-only label to undefined', () => {
     const events = [{ order: 1, eventName: 'entry', label: '   ' }];
+    expect(validateFlowEvents(events)).toEqual([
+      { order: 1, eventName: 'entry', label: undefined },
+    ]);
+  });
+
+  it('normalizes tab/newline-only label to undefined', () => {
+    const events = [{ order: 1, eventName: 'entry', label: '\n\t' }];
     expect(validateFlowEvents(events)).toEqual([
       { order: 1, eventName: 'entry', label: undefined },
     ]);
@@ -335,6 +394,15 @@ describe('validateFlowEvents', () => {
       validateFlowEvents([
         { order: 1, eventName: 'entry' },
         { order: 2, eventName: '' },
+      ]),
+    ).toThrow('must not be empty');
+  });
+
+  it('throws for whitespace-only eventName in second event with tabs/newlines', () => {
+    expect(() =>
+      validateFlowEvents([
+        { order: 1, eventName: 'entry' },
+        { order: 2, eventName: '\n\t' },
       ]),
     ).toThrow('must not be empty');
   });
@@ -476,6 +544,93 @@ describe('createFlowActionExecutors', () => {
       'not yet implemented',
     );
   });
+
+  it('create executor mentions UI-only in error', async () => {
+    const executors = createFlowActionExecutors();
+    await expect(executors[CREATE_FLOW_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('clone executor mentions UI-only in error', async () => {
+    const executors = createFlowActionExecutors();
+    await expect(executors[CLONE_FLOW_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('archive executor mentions UI-only in error', async () => {
+    const executors = createFlowActionExecutors();
+    await expect(executors[ARCHIVE_FLOW_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('accepts optional apiConfig parameter', () => {
+    const executors = createFlowActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(3);
+  });
+
+  it('executors still throw not-yet-implemented with apiConfig', async () => {
+    const executors = createFlowActionExecutors(TEST_API_CONFIG);
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+    }
+  });
+
+  it('returns identical action keys with or without apiConfig', () => {
+    const withoutConfig = Object.keys(createFlowActionExecutors()).sort();
+    const withConfig = Object.keys(createFlowActionExecutors(TEST_API_CONFIG)).sort();
+    expect(withConfig).toEqual(withoutConfig);
+  });
+
+  it('preserves actionType mapping with apiConfig', () => {
+    const executors = createFlowActionExecutors(TEST_API_CONFIG);
+    for (const [key, executor] of Object.entries(executors)) {
+      expect(executor.actionType).toBe(key);
+    }
+  });
+
+  it('returns expected action keys', () => {
+    const keys = Object.keys(createFlowActionExecutors()).sort();
+    expect(keys).toEqual(
+      [ARCHIVE_FLOW_ACTION_TYPE, CLONE_FLOW_ACTION_TYPE, CREATE_FLOW_ACTION_TYPE].sort(),
+    );
+  });
+
+  it('returns new executor instances on each call', () => {
+    const first = createFlowActionExecutors(TEST_API_CONFIG);
+    const second = createFlowActionExecutors(TEST_API_CONFIG);
+    expect(first[CREATE_FLOW_ACTION_TYPE]).not.toBe(second[CREATE_FLOW_ACTION_TYPE]);
+    expect(first[CLONE_FLOW_ACTION_TYPE]).not.toBe(second[CLONE_FLOW_ACTION_TYPE]);
+    expect(first[ARCHIVE_FLOW_ACTION_TYPE]).not.toBe(second[ARCHIVE_FLOW_ACTION_TYPE]);
+  });
+
+  it('all executors mention UI-only guidance with apiConfig', async () => {
+    const executors = createFlowActionExecutors(TEST_API_CONFIG);
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow(
+        'only available through the Bloomreach Engagement UI',
+      );
+    }
+  });
+
+  it('uses independent executor maps for configured and unconfigured calls', () => {
+    const withoutConfig = createFlowActionExecutors();
+    const withConfig = createFlowActionExecutors(TEST_API_CONFIG);
+    expect(withoutConfig).not.toBe(withConfig);
+  });
+
+  it('supports custom apiConfig values without changing key set', () => {
+    const executors = createFlowActionExecutors({
+      ...TEST_API_CONFIG,
+      baseUrl: 'https://api-alt.test.com',
+      projectToken: 'another-token',
+    });
+    expect(Object.keys(executors).sort()).toEqual(
+      [CREATE_FLOW_ACTION_TYPE, CLONE_FLOW_ACTION_TYPE, ARCHIVE_FLOW_ACTION_TYPE].sort(),
+    );
+  });
 });
 
 describe('BloomreachFlowsService', () => {
@@ -516,6 +671,42 @@ describe('BloomreachFlowsService', () => {
       const service = new BloomreachFlowsService('my project');
       expect(service.flowsUrl).toBe('/p/my%20project/analytics/flows');
     });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachFlowsService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachFlowsService);
+    });
+
+    it('exposes flows URL when constructed with apiConfig', () => {
+      const service = new BloomreachFlowsService('test', TEST_API_CONFIG);
+      expect(service.flowsUrl).toBe('/p/test/analytics/flows');
+    });
+
+    it('encodes unicode project name in constructor URL', () => {
+      const service = new BloomreachFlowsService('projekt åäö');
+      expect(service.flowsUrl).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/analytics/flows');
+    });
+
+    it('encodes hash in constructor URL', () => {
+      const service = new BloomreachFlowsService('my#project');
+      expect(service.flowsUrl).toBe('/p/my%23project/analytics/flows');
+    });
+
+    it('trims and encodes unicode project in constructor URL', () => {
+      const service = new BloomreachFlowsService('  projekt åäö  ');
+      expect(service.flowsUrl).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/analytics/flows');
+    });
+
+    it('encodes plus sign in constructor URL', () => {
+      const service = new BloomreachFlowsService('project+beta');
+      expect(service.flowsUrl).toBe('/p/project%2Bbeta/analytics/flows');
+    });
+
+    it('returns stable flowsUrl with apiConfig across reads', () => {
+      const service = new BloomreachFlowsService('alpha', TEST_API_CONFIG);
+      expect(service.flowsUrl).toBe('/p/alpha/analytics/flows');
+      expect(service.flowsUrl).toBe('/p/alpha/analytics/flows');
+    });
   });
 
   describe('flowsUrl getter', () => {
@@ -527,9 +718,9 @@ describe('BloomreachFlowsService', () => {
   });
 
   describe('listFlowAnalyses', () => {
-    it('throws not-yet-implemented error without input', async () => {
+    it('throws no-API-endpoint error without input', async () => {
       const service = new BloomreachFlowsService('test');
-      await expect(service.listFlowAnalyses()).rejects.toThrow('not yet implemented');
+      await expect(service.listFlowAnalyses()).rejects.toThrow('does not provide an endpoint');
     });
 
     it('validates project when input is provided', async () => {
@@ -551,30 +742,56 @@ describe('BloomreachFlowsService', () => {
       );
     });
 
-    it('throws not-yet-implemented error for valid project override', async () => {
+    it('throws no-API-endpoint error for valid project override', async () => {
       const service = new BloomreachFlowsService('test');
       await expect(service.listFlowAnalyses({ project: 'kingdom-of-joakim' })).rejects.toThrow(
-        'not yet implemented',
+        'does not provide an endpoint',
       );
     });
 
-    it('throws not-yet-implemented error for trimmed project override', async () => {
+    it('throws no-API-endpoint error for trimmed project override', async () => {
       const service = new BloomreachFlowsService('test');
       await expect(service.listFlowAnalyses({ project: '  kingdom-of-joakim  ' })).rejects.toThrow(
-        'not yet implemented',
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachFlowsService('test', TEST_API_CONFIG);
+      await expect(service.listFlowAnalyses()).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error for unicode project override', async () => {
+      const service = new BloomreachFlowsService('test');
+      await expect(service.listFlowAnalyses({ project: 'projekt åäö' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error for slash project override', async () => {
+      const service = new BloomreachFlowsService('test');
+      await expect(service.listFlowAnalyses({ project: 'org/project' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error for trimmed project override with tabs/newlines', async () => {
+      const service = new BloomreachFlowsService('test');
+      await expect(service.listFlowAnalyses({ project: '\n\tkingdom\t\n' })).rejects.toThrow(
+        'does not provide an endpoint',
       );
     });
   });
 
   describe('viewFlowResults', () => {
-    it('throws not-yet-implemented error with valid minimal input', async () => {
+    it('throws no-API-endpoint error with valid minimal input', async () => {
       const service = new BloomreachFlowsService('test');
       await expect(
         service.viewFlowResults({ project: 'test', analysisId: 'flow-1' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide an endpoint');
     });
 
-    it('throws not-yet-implemented error with valid full input', async () => {
+    it('throws no-API-endpoint error with valid full input', async () => {
       const service = new BloomreachFlowsService('test');
       await expect(
         service.viewFlowResults({
@@ -583,7 +800,7 @@ describe('BloomreachFlowsService', () => {
           startDate: '2025-01-01',
           endDate: '2025-01-31',
         }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide an endpoint');
     });
 
     it('validates project input', async () => {
@@ -614,11 +831,70 @@ describe('BloomreachFlowsService', () => {
       );
     });
 
-    it('accepts trimmed analysisId and reaches not-yet-implemented', async () => {
+    it('accepts trimmed analysisId and reaches no-API-endpoint error', async () => {
       const service = new BloomreachFlowsService('test');
       await expect(
         service.viewFlowResults({ project: 'test', analysisId: '  flow-99  ' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('accepts only startDate and still reaches no-API-endpoint error', async () => {
+      const service = new BloomreachFlowsService('test');
+      await expect(
+        service.viewFlowResults({ project: 'test', analysisId: 'flow-1', startDate: '2025-01-01' }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('accepts only endDate and still reaches no-API-endpoint error', async () => {
+      const service = new BloomreachFlowsService('test');
+      await expect(
+        service.viewFlowResults({ project: 'test', analysisId: 'flow-1', endDate: '2025-01-31' }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error with trimmed project and analysisId', async () => {
+      const service = new BloomreachFlowsService('test');
+      await expect(
+        service.viewFlowResults({ project: '  test  ', analysisId: '  flow-1  ' }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachFlowsService('test', TEST_API_CONFIG);
+      await expect(
+        service.viewFlowResults({ project: 'test', analysisId: 'flow-1' }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error for same-day date range', async () => {
+      const service = new BloomreachFlowsService('test');
+      await expect(
+        service.viewFlowResults({
+          project: 'test',
+          analysisId: 'flow-1',
+          startDate: '2025-01-01',
+          endDate: '2025-01-01',
+        }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error for encoded-looking analysisId', async () => {
+      const service = new BloomreachFlowsService('test');
+      await expect(
+        service.viewFlowResults({ project: 'test', analysisId: 'flow%2Fencoded' }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error with apiConfig and full valid input', async () => {
+      const service = new BloomreachFlowsService('test', TEST_API_CONFIG);
+      await expect(
+        service.viewFlowResults({
+          project: 'test',
+          analysisId: 'flow-1',
+          startDate: '2025-01-01',
+          endDate: '2025-01-31',
+        }),
+      ).rejects.toThrow('does not provide an endpoint');
     });
 
     it('validates malformed startDate when provided', async () => {
