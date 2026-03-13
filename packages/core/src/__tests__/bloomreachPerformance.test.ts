@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   PERFORMANCE_DASHBOARD_TYPES,
   CHANNEL_TYPES,
@@ -11,6 +11,18 @@ import {
   buildProjectHealthUrl,
   BloomreachPerformanceService,
 } from '../index.js';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('PERFORMANCE_DASHBOARD_TYPES', () => {
   it('contains exactly 5 dashboard types', () => {
@@ -104,7 +116,7 @@ describe('validateDateRange', () => {
 describe('validateChannel', () => {
   it.each(['email', 'sms', 'push', 'whatsapp', 'weblayer', 'in_app_message'] as const)(
     'accepts "%s"',
-    (channel) => {
+    (channel: (typeof CHANNEL_TYPES)[number]) => {
       expect(validateChannel(channel)).toBe(channel);
     },
   );
@@ -205,10 +217,40 @@ describe('BloomreachPerformanceService', () => {
     it('throws for whitespace-only project', () => {
       expect(() => new BloomreachPerformanceService('   ')).toThrow('must not be empty');
     });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachPerformanceService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachPerformanceService);
+    });
+
+    it('exposes projectPerformanceUrl when constructed with apiConfig', () => {
+      const service = new BloomreachPerformanceService('test', TEST_API_CONFIG);
+      expect(service.projectPerformanceUrl).toBe('/p/test/overview/performance-dashboards/project');
+    });
+
+    it('encodes unicode project name in constructor URL', () => {
+      const service = new BloomreachPerformanceService('projekt åäö');
+      expect(service.projectPerformanceUrl).toBe(
+        '/p/projekt%20%C3%A5%C3%A4%C3%B6/overview/performance-dashboards/project',
+      );
+    });
+
+    it('encodes hash in constructor URL', () => {
+      const service = new BloomreachPerformanceService('my#project');
+      expect(service.projectPerformanceUrl).toBe('/p/my%23project/overview/performance-dashboards/project');
+    });
+
+    it('encodes slashes in constructor project URL', () => {
+      const service = new BloomreachPerformanceService('org/project');
+      expect(service.projectPerformanceUrl).toBe(
+        '/p/org%2Fproject/overview/performance-dashboards/project',
+      );
+    });
   });
 
   describe('URL getters', () => {
     const service = new BloomreachPerformanceService('test-proj');
+    const serviceWithApiConfig = new BloomreachPerformanceService('test-proj', TEST_API_CONFIG);
 
     it('exposes projectPerformanceUrl', () => {
       expect(service.projectPerformanceUrl).toBe(
@@ -222,24 +264,49 @@ describe('BloomreachPerformanceService', () => {
       );
     });
 
+    it('exposes channelPerformanceUrl when constructed with apiConfig', () => {
+      expect(serviceWithApiConfig.channelPerformanceUrl).toBe(
+        '/p/test-proj/overview/performance-dashboards/channel',
+      );
+    });
+
     it('exposes usageUrl', () => {
       expect(service.usageUrl).toBe('/p/test-proj/overview/pricing-dashboard-v2');
+    });
+
+    it('exposes usageUrl when constructed with apiConfig', () => {
+      expect(serviceWithApiConfig.usageUrl).toBe('/p/test-proj/overview/pricing-dashboard-v2');
     });
 
     it('exposes overviewUrl', () => {
       expect(service.overviewUrl).toBe('/p/test-proj/overview/project');
     });
 
+    it('exposes overviewUrl when constructed with apiConfig', () => {
+      expect(serviceWithApiConfig.overviewUrl).toBe('/p/test-proj/overview/project');
+    });
+
     it('exposes healthUrl', () => {
       expect(service.healthUrl).toBe('/p/test-proj/overview/health-dashboard');
+    });
+
+    it('exposes healthUrl when constructed with apiConfig', () => {
+      expect(serviceWithApiConfig.healthUrl).toBe('/p/test-proj/overview/health-dashboard');
     });
   });
 
   describe('viewProjectPerformance', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachPerformanceService('test');
       await expect(service.viewProjectPerformance({ project: 'test' })).rejects.toThrow(
-        'not yet implemented',
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachPerformanceService('test', TEST_API_CONFIG);
+      await expect(service.viewProjectPerformance({ project: 'test' })).rejects.toThrow(
+        'does not provide an endpoint',
       );
     });
 
@@ -259,13 +326,37 @@ describe('BloomreachPerformanceService', () => {
         }),
       ).rejects.toThrow('startDate must be a valid ISO-8601 date');
     });
+
+    it('throws no-API-endpoint error with valid full input', async () => {
+      const service = new BloomreachPerformanceService('test');
+      await expect(
+        service.viewProjectPerformance({
+          project: 'test',
+          dateRange: { startDate: '2025-01-01', endDate: '2025-01-31' },
+        }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error for trimmed project', async () => {
+      const service = new BloomreachPerformanceService('test');
+      await expect(service.viewProjectPerformance({ project: '  test  ' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
   });
 
   describe('viewChannelPerformance', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachPerformanceService('test');
       await expect(service.viewChannelPerformance({ project: 'test' })).rejects.toThrow(
-        'not yet implemented',
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachPerformanceService('test', TEST_API_CONFIG);
+      await expect(service.viewChannelPerformance({ project: 'test' })).rejects.toThrow(
+        'does not provide an endpoint',
       );
     });
 
@@ -295,13 +386,48 @@ describe('BloomreachPerformanceService', () => {
         }),
       ).rejects.toThrow('channel must be one of');
     });
+
+    it('throws no-API-endpoint error with valid full input', async () => {
+      const service = new BloomreachPerformanceService('test');
+      await expect(
+        service.viewChannelPerformance({
+          project: 'test',
+          dateRange: { startDate: '2025-02-01', endDate: '2025-02-28' },
+        }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error for trimmed project', async () => {
+      const service = new BloomreachPerformanceService('test');
+      await expect(service.viewChannelPerformance({ project: '  test  ' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error with valid channel and dateRange', async () => {
+      const service = new BloomreachPerformanceService('test');
+      await expect(
+        service.viewChannelPerformance({
+          project: 'test',
+          channel: 'email',
+          dateRange: { startDate: '2025-01-01', endDate: '2025-01-31' },
+        }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
   });
 
   describe('viewBloomreachUsage', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachPerformanceService('test');
       await expect(service.viewBloomreachUsage({ project: 'test' })).rejects.toThrow(
-        'not yet implemented',
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachPerformanceService('test', TEST_API_CONFIG);
+      await expect(service.viewBloomreachUsage({ project: 'test' })).rejects.toThrow(
+        'does not provide an endpoint',
       );
     });
 
@@ -311,13 +437,34 @@ describe('BloomreachPerformanceService', () => {
         'must not be empty',
       );
     });
+
+    it('throws no-API-endpoint error for trimmed project', async () => {
+      const service = new BloomreachPerformanceService('test');
+      await expect(service.viewBloomreachUsage({ project: '  test  ' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws for whitespace-only project', async () => {
+      const service = new BloomreachPerformanceService('test');
+      await expect(service.viewBloomreachUsage({ project: '   ' })).rejects.toThrow(
+        'must not be empty',
+      );
+    });
   });
 
   describe('viewProjectOverview', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachPerformanceService('test');
       await expect(service.viewProjectOverview({ project: 'test' })).rejects.toThrow(
-        'not yet implemented',
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachPerformanceService('test', TEST_API_CONFIG);
+      await expect(service.viewProjectOverview({ project: 'test' })).rejects.toThrow(
+        'does not provide an endpoint',
       );
     });
 
@@ -327,19 +474,54 @@ describe('BloomreachPerformanceService', () => {
         'must not be empty',
       );
     });
+
+    it('throws no-API-endpoint error for trimmed project', async () => {
+      const service = new BloomreachPerformanceService('test');
+      await expect(service.viewProjectOverview({ project: '  test  ' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws for whitespace-only project', async () => {
+      const service = new BloomreachPerformanceService('test');
+      await expect(service.viewProjectOverview({ project: '   ' })).rejects.toThrow(
+        'must not be empty',
+      );
+    });
   });
 
   describe('viewProjectHealth', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachPerformanceService('test');
       await expect(service.viewProjectHealth({ project: 'test' })).rejects.toThrow(
-        'not yet implemented',
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachPerformanceService('test', TEST_API_CONFIG);
+      await expect(service.viewProjectHealth({ project: 'test' })).rejects.toThrow(
+        'does not provide an endpoint',
       );
     });
 
     it('validates project before throwing', async () => {
       const service = new BloomreachPerformanceService('test');
       await expect(service.viewProjectHealth({ project: '' })).rejects.toThrow('must not be empty');
+    });
+
+    it('throws no-API-endpoint error for trimmed project', async () => {
+      const service = new BloomreachPerformanceService('test');
+      await expect(service.viewProjectHealth({ project: '  test  ' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws for whitespace-only project', async () => {
+      const service = new BloomreachPerformanceService('test');
+      await expect(service.viewProjectHealth({ project: '   ' })).rejects.toThrow(
+        'must not be empty',
+      );
     });
   });
 });
