@@ -156,9 +156,9 @@ describe('validateFunnelSteps', () => {
   });
 
   it('throws for single step', () => {
-    expect(() =>
-      validateFunnelSteps([{ order: 1, eventName: 'only-step' }]),
-    ).toThrow('at least two funnel steps');
+    expect(() => validateFunnelSteps([{ order: 1, eventName: 'only-step' }])).toThrow(
+      'at least two funnel steps',
+    );
   });
 
   it('throws when order does not start at 1', () => {
@@ -288,15 +288,11 @@ describe('validateTimeLimitMs', () => {
   });
 
   it('throws for positive infinity', () => {
-    expect(() => validateTimeLimitMs(Number.POSITIVE_INFINITY)).toThrow(
-      'positive integer',
-    );
+    expect(() => validateTimeLimitMs(Number.POSITIVE_INFINITY)).toThrow('positive integer');
   });
 
   it('throws for negative infinity', () => {
-    expect(() => validateTimeLimitMs(Number.NEGATIVE_INFINITY)).toThrow(
-      'positive integer',
-    );
+    expect(() => validateTimeLimitMs(Number.NEGATIVE_INFINITY)).toThrow('positive integer');
   });
 
   it('throws for Number.MIN_VALUE', () => {
@@ -310,9 +306,7 @@ describe('validateTimeLimitMs', () => {
 
 describe('buildFunnelsUrl', () => {
   it('builds URL for a simple project name', () => {
-    expect(buildFunnelsUrl('kingdom-of-joakim')).toBe(
-      '/p/kingdom-of-joakim/analytics/funnels',
-    );
+    expect(buildFunnelsUrl('kingdom-of-joakim')).toBe('/p/kingdom-of-joakim/analytics/funnels');
   });
 
   it('encodes spaces in project name', () => {
@@ -324,7 +318,9 @@ describe('buildFunnelsUrl', () => {
   });
 
   it('encodes unicode characters in project name', () => {
-    expect(buildFunnelsUrl('projekt åäö')).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/analytics/funnels');
+    expect(buildFunnelsUrl('projekt åäö')).toBe(
+      '/p/projekt%20%C3%A5%C3%A4%C3%B6/analytics/funnels',
+    );
   });
 
   it('encodes hash character in project name', () => {
@@ -427,9 +423,9 @@ describe('BloomreachFunnelsService', () => {
 
     it('throws not-yet-implemented error for valid project override', async () => {
       const service = new BloomreachFunnelsService('test');
-      await expect(
-        service.listFunnelAnalyses({ project: 'kingdom-of-joakim' }),
-      ).rejects.toThrow('not yet implemented');
+      await expect(service.listFunnelAnalyses({ project: 'kingdom-of-joakim' })).rejects.toThrow(
+        'not yet implemented',
+      );
     });
 
     it('throws not-yet-implemented error for trimmed project override', async () => {
@@ -481,9 +477,9 @@ describe('BloomreachFunnelsService', () => {
 
     it('validates empty analysisId input', async () => {
       const service = new BloomreachFunnelsService('test');
-      await expect(
-        service.viewFunnelResults({ project: 'test', analysisId: '' }),
-      ).rejects.toThrow('Funnel analysis ID must not be empty');
+      await expect(service.viewFunnelResults({ project: 'test', analysisId: '' })).rejects.toThrow(
+        'Funnel analysis ID must not be empty',
+      );
     });
 
     it('accepts trimmed analysisId and reaches not-yet-implemented', async () => {

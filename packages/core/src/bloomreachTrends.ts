@@ -10,12 +10,7 @@ export const TREND_RATE_LIMIT_WINDOW_MS = 3_600_000;
 export const TREND_CREATE_RATE_LIMIT = 10;
 export const TREND_MODIFY_RATE_LIMIT = 20;
 
-export const TREND_GRANULARITIES = [
-  'hourly',
-  'daily',
-  'weekly',
-  'monthly',
-] as const;
+export const TREND_GRANULARITIES = ['hourly', 'daily', 'weekly', 'monthly'] as const;
 export type TrendGranularity = (typeof TREND_GRANULARITIES)[number];
 
 export interface BloomreachTrendAnalysis {
@@ -134,9 +129,7 @@ export interface TrendActionExecutor {
 class CreateTrendExecutor implements TrendActionExecutor {
   readonly actionType = CREATE_TREND_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'CreateTrendExecutor: not yet implemented. Requires browser automation infrastructure.',
     );
@@ -146,9 +139,7 @@ class CreateTrendExecutor implements TrendActionExecutor {
 class CloneTrendExecutor implements TrendActionExecutor {
   readonly actionType = CLONE_TREND_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'CloneTrendExecutor: not yet implemented. Requires browser automation infrastructure.',
     );
@@ -158,9 +149,7 @@ class CloneTrendExecutor implements TrendActionExecutor {
 class ArchiveTrendExecutor implements TrendActionExecutor {
   readonly actionType = ARCHIVE_TREND_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'ArchiveTrendExecutor: not yet implemented. Requires browser automation infrastructure.',
     );
@@ -186,9 +175,7 @@ export class BloomreachTrendsService {
     return this.baseUrl;
   }
 
-  async listTrendAnalyses(
-    input?: ListTrendAnalysesInput,
-  ): Promise<BloomreachTrendAnalysis[]> {
+  async listTrendAnalyses(input?: ListTrendAnalysesInput): Promise<BloomreachTrendAnalysis[]> {
     if (input !== undefined) {
       validateProject(input.project);
     }
@@ -223,9 +210,7 @@ export class BloomreachTrendsService {
     const project = validateProject(input.project);
     const name = validateTrendName(input.name);
     const granularity =
-      input.granularity !== undefined
-        ? validateTrendGranularity(input.granularity)
-        : undefined;
+      input.granularity !== undefined ? validateTrendGranularity(input.granularity) : undefined;
 
     const events = input.events.map((event) => event.trim()).filter(Boolean);
     if (events.length === 0) {
@@ -253,8 +238,7 @@ export class BloomreachTrendsService {
   prepareCloneTrendAnalysis(input: CloneTrendAnalysisInput): PreparedTrendAction {
     const project = validateProject(input.project);
     const analysisId = validateTrendAnalysisId(input.analysisId);
-    const newName =
-      input.newName !== undefined ? validateTrendName(input.newName) : undefined;
+    const newName = input.newName !== undefined ? validateTrendName(input.newName) : undefined;
 
     const preview = {
       action: CLONE_TREND_ACTION_TYPE,
@@ -272,9 +256,7 @@ export class BloomreachTrendsService {
     };
   }
 
-  prepareArchiveTrendAnalysis(
-    input: ArchiveTrendAnalysisInput,
-  ): PreparedTrendAction {
+  prepareArchiveTrendAnalysis(input: ArchiveTrendAnalysisInput): PreparedTrendAction {
     const project = validateProject(input.project);
     const analysisId = validateTrendAnalysisId(input.analysisId);
 

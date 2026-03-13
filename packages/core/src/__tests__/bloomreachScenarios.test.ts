@@ -207,16 +207,16 @@ describe('BloomreachScenariosService', () => {
 
     it('validates status when provided', async () => {
       const service = new BloomreachScenariosService('test');
-      await expect(
-        service.listScenarios({ project: 'test', status: 'paused' }),
-      ).rejects.toThrow('status must be one of');
+      await expect(service.listScenarios({ project: 'test', status: 'paused' })).rejects.toThrow(
+        'status must be one of',
+      );
     });
 
     it('validates project when input is provided', async () => {
       const service = new BloomreachScenariosService('test');
-      await expect(
-        service.listScenarios({ project: '', status: 'active' }),
-      ).rejects.toThrow('must not be empty');
+      await expect(service.listScenarios({ project: '', status: 'active' })).rejects.toThrow(
+        'must not be empty',
+      );
     });
   });
 
@@ -230,16 +230,16 @@ describe('BloomreachScenariosService', () => {
 
     it('validates project input', async () => {
       const service = new BloomreachScenariosService('test');
-      await expect(
-        service.viewScenario({ project: '', scenarioId: 'scenario-1' }),
-      ).rejects.toThrow('must not be empty');
+      await expect(service.viewScenario({ project: '', scenarioId: 'scenario-1' })).rejects.toThrow(
+        'must not be empty',
+      );
     });
 
     it('validates scenarioId input', async () => {
       const service = new BloomreachScenariosService('test');
-      await expect(
-        service.viewScenario({ project: 'test', scenarioId: '   ' }),
-      ).rejects.toThrow('Scenario ID must not be empty');
+      await expect(service.viewScenario({ project: 'test', scenarioId: '   ' })).rejects.toThrow(
+        'Scenario ID must not be empty',
+      );
     });
   });
 
@@ -271,9 +271,7 @@ describe('BloomreachScenariosService', () => {
         tags: ['welcome', 'high-value'],
       });
 
-      expect(result.preview).toEqual(
-        expect.objectContaining({ tags: ['welcome', 'high-value'] }),
-      );
+      expect(result.preview).toEqual(expect.objectContaining({ tags: ['welcome', 'high-value'] }));
     });
 
     it('includes templateId in preview', () => {
@@ -284,9 +282,7 @@ describe('BloomreachScenariosService', () => {
         templateId: 'template-123',
       });
 
-      expect(result.preview).toEqual(
-        expect.objectContaining({ templateId: 'template-123' }),
-      );
+      expect(result.preview).toEqual(expect.objectContaining({ templateId: 'template-123' }));
     });
 
     it('includes operatorNote in preview', () => {
@@ -311,9 +307,9 @@ describe('BloomreachScenariosService', () => {
 
     it('throws for empty project', () => {
       const service = new BloomreachScenariosService('test');
-      expect(() =>
-        service.prepareCreateScenario({ project: '', name: 'Scenario' }),
-      ).toThrow('must not be empty');
+      expect(() => service.prepareCreateScenario({ project: '', name: 'Scenario' })).toThrow(
+        'must not be empty',
+      );
     });
 
     it('throws for too-long name', () => {
@@ -361,9 +357,9 @@ describe('BloomreachScenariosService', () => {
 
     it('throws for empty scenarioId', () => {
       const service = new BloomreachScenariosService('test');
-      expect(() =>
-        service.prepareStartScenario({ project: 'test', scenarioId: '' }),
-      ).toThrow('must not be empty');
+      expect(() => service.prepareStartScenario({ project: 'test', scenarioId: '' })).toThrow(
+        'must not be empty',
+      );
     });
 
     it('throws for empty project', () => {
@@ -408,9 +404,9 @@ describe('BloomreachScenariosService', () => {
 
     it('throws for empty scenarioId', () => {
       const service = new BloomreachScenariosService('test');
-      expect(() =>
-        service.prepareStopScenario({ project: 'test', scenarioId: '' }),
-      ).toThrow('must not be empty');
+      expect(() => service.prepareStopScenario({ project: 'test', scenarioId: '' })).toThrow(
+        'must not be empty',
+      );
     });
 
     it('throws for empty project', () => {
@@ -448,16 +444,14 @@ describe('BloomreachScenariosService', () => {
         newName: '  Cloned Scenario  ',
       });
 
-      expect(result.preview).toEqual(
-        expect.objectContaining({ newName: 'Cloned Scenario' }),
-      );
+      expect(result.preview).toEqual(expect.objectContaining({ newName: 'Cloned Scenario' }));
     });
 
     it('throws for empty scenarioId', () => {
       const service = new BloomreachScenariosService('test');
-      expect(() =>
-        service.prepareCloneScenario({ project: 'test', scenarioId: '' }),
-      ).toThrow('must not be empty');
+      expect(() => service.prepareCloneScenario({ project: 'test', scenarioId: '' })).toThrow(
+        'must not be empty',
+      );
     });
 
     it('throws for empty project', () => {
@@ -513,9 +507,9 @@ describe('BloomreachScenariosService', () => {
 
     it('throws for empty scenarioId', () => {
       const service = new BloomreachScenariosService('test');
-      expect(() =>
-        service.prepareArchiveScenario({ project: 'test', scenarioId: '' }),
-      ).toThrow('must not be empty');
+      expect(() => service.prepareArchiveScenario({ project: 'test', scenarioId: '' })).toThrow(
+        'must not be empty',
+      );
     });
 
     it('throws for empty project', () => {

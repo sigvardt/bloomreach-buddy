@@ -9,6 +9,7 @@ If you discover a security vulnerability, please report it responsibly.
 Instead, email: joakim@sigvardt.eu
 
 Include:
+
 - Description of the vulnerability
 - Steps to reproduce
 - Impact assessment

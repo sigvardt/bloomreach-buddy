@@ -91,9 +91,7 @@ export function validateProject(project: string): string {
 }
 
 /** @throws {Error} If column count is not an integer between 1 and 6. */
-export function validateLayoutConfig(
-  layout: DashboardLayoutConfig,
-): DashboardLayoutConfig {
+export function validateLayoutConfig(layout: DashboardLayoutConfig): DashboardLayoutConfig {
   if (layout.columns !== undefined) {
     if (
       !Number.isInteger(layout.columns) ||
@@ -124,9 +122,7 @@ export interface DashboardActionExecutor {
 class CreateDashboardExecutor implements DashboardActionExecutor {
   readonly actionType = CREATE_DASHBOARD_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'CreateDashboardExecutor: not yet implemented. Requires browser automation infrastructure.',
     );
@@ -136,9 +132,7 @@ class CreateDashboardExecutor implements DashboardActionExecutor {
 class SetHomeDashboardExecutor implements DashboardActionExecutor {
   readonly actionType = SET_HOME_DASHBOARD_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'SetHomeDashboardExecutor: not yet implemented. Requires browser automation infrastructure.',
     );
@@ -148,19 +142,14 @@ class SetHomeDashboardExecutor implements DashboardActionExecutor {
 class DeleteDashboardExecutor implements DashboardActionExecutor {
   readonly actionType = DELETE_DASHBOARD_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'DeleteDashboardExecutor: not yet implemented. Requires browser automation infrastructure.',
     );
   }
 }
 
-export function createDashboardActionExecutors(): Record<
-  string,
-  DashboardActionExecutor
-> {
+export function createDashboardActionExecutors(): Record<string, DashboardActionExecutor> {
   return {
     [CREATE_DASHBOARD_ACTION_TYPE]: new CreateDashboardExecutor(),
     [SET_HOME_DASHBOARD_ACTION_TYPE]: new SetHomeDashboardExecutor(),
@@ -185,9 +174,7 @@ export class BloomreachDashboardsService {
   }
 
   /** @throws {Error} Browser automation not yet available. */
-  async listDashboards(
-    _input?: ListDashboardsInput,
-  ): Promise<BloomreachDashboard[]> {
+  async listDashboards(_input?: ListDashboardsInput): Promise<BloomreachDashboard[]> {
     throw new Error(
       'listDashboards: not yet implemented. Requires browser automation infrastructure.',
     );
@@ -220,9 +207,7 @@ export class BloomreachDashboardsService {
   }
 
   /** @throws {Error} If input validation fails. */
-  prepareSetHomeDashboard(
-    input: SetHomeDashboardInput,
-  ): PreparedDashboardAction {
+  prepareSetHomeDashboard(input: SetHomeDashboardInput): PreparedDashboardAction {
     const project = validateProject(input.project);
     const dashboardId = input.dashboardId.trim();
     if (dashboardId.length === 0) {

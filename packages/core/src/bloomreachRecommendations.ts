@@ -1,24 +1,15 @@
 import { validateProject } from './bloomreachDashboards.js';
 
-export const CREATE_RECOMMENDATION_MODEL_ACTION_TYPE =
-  'recommendations.create_model';
-export const CONFIGURE_RECOMMENDATION_MODEL_ACTION_TYPE =
-  'recommendations.configure_model';
-export const DELETE_RECOMMENDATION_MODEL_ACTION_TYPE =
-  'recommendations.delete_model';
+export const CREATE_RECOMMENDATION_MODEL_ACTION_TYPE = 'recommendations.create_model';
+export const CONFIGURE_RECOMMENDATION_MODEL_ACTION_TYPE = 'recommendations.configure_model';
+export const DELETE_RECOMMENDATION_MODEL_ACTION_TYPE = 'recommendations.delete_model';
 
 export const RECOMMENDATION_RATE_LIMIT_WINDOW_MS = 3_600_000;
 export const RECOMMENDATION_CREATE_RATE_LIMIT = 10;
 export const RECOMMENDATION_MODIFY_RATE_LIMIT = 20;
 
-export const RECOMMENDATION_MODEL_STATUSES = [
-  'active',
-  'inactive',
-  'training',
-  'draft',
-] as const;
-export type RecommendationModelStatus =
-  (typeof RECOMMENDATION_MODEL_STATUSES)[number];
+export const RECOMMENDATION_MODEL_STATUSES = ['active', 'inactive', 'training', 'draft'] as const;
+export type RecommendationModelStatus = (typeof RECOMMENDATION_MODEL_STATUSES)[number];
 
 export const RECOMMENDATION_ALGORITHM_TYPES = [
   'collaborative_filtering',
@@ -27,8 +18,7 @@ export const RECOMMENDATION_ALGORITHM_TYPES = [
   'trending',
   'personalized',
 ] as const;
-export type RecommendationAlgorithmType =
-  (typeof RECOMMENDATION_ALGORITHM_TYPES)[number];
+export type RecommendationAlgorithmType = (typeof RECOMMENDATION_ALGORITHM_TYPES)[number];
 
 export interface RecommendationFilterRule {
   field: string;
@@ -146,14 +136,8 @@ export function validateModelId(id: string): string {
   return trimmed;
 }
 
-export function validateRecommendationModelStatus(
-  status: string,
-): RecommendationModelStatus {
-  if (
-    !RECOMMENDATION_MODEL_STATUSES.includes(
-      status as RecommendationModelStatus,
-    )
-  ) {
+export function validateRecommendationModelStatus(status: string): RecommendationModelStatus {
+  if (!RECOMMENDATION_MODEL_STATUSES.includes(status as RecommendationModelStatus)) {
     throw new Error(
       `status must be one of: ${RECOMMENDATION_MODEL_STATUSES.join(', ')} (got "${status}").`,
     );
@@ -161,14 +145,8 @@ export function validateRecommendationModelStatus(
   return status as RecommendationModelStatus;
 }
 
-export function validateAlgorithmType(
-  algorithm: string,
-): RecommendationAlgorithmType {
-  if (
-    !RECOMMENDATION_ALGORITHM_TYPES.includes(
-      algorithm as RecommendationAlgorithmType,
-    )
-  ) {
+export function validateAlgorithmType(algorithm: string): RecommendationAlgorithmType {
+  if (!RECOMMENDATION_ALGORITHM_TYPES.includes(algorithm as RecommendationAlgorithmType)) {
     throw new Error(
       `algorithm must be one of: ${RECOMMENDATION_ALGORITHM_TYPES.join(', ')} (got "${algorithm}").`,
     );
@@ -223,10 +201,7 @@ export function validateBoostRules(
       throw new Error(`boostRules[${index}].field must not be empty.`);
     }
 
-    if (
-      boostRule.weight < MIN_BOOST_WEIGHT ||
-      boostRule.weight > MAX_BOOST_WEIGHT
-    ) {
+    if (boostRule.weight < MIN_BOOST_WEIGHT || boostRule.weight > MAX_BOOST_WEIGHT) {
       throw new Error(
         `boostRules[${index}].weight must be between ${MIN_BOOST_WEIGHT} and ${MAX_BOOST_WEIGHT} (got ${boostRule.weight}).`,
       );
@@ -240,11 +215,7 @@ export function validateBoostRules(
 }
 
 export function validateMaxItems(maxItems: number): number {
-  if (
-    !Number.isInteger(maxItems) ||
-    maxItems < MIN_MAX_ITEMS ||
-    maxItems > MAX_MAX_ITEMS
-  ) {
+  if (!Number.isInteger(maxItems) || maxItems < MIN_MAX_ITEMS || maxItems > MAX_MAX_ITEMS) {
     throw new Error(
       `maxItems must be an integer between ${MIN_MAX_ITEMS} and ${MAX_MAX_ITEMS} (got ${maxItems}).`,
     );
@@ -272,9 +243,7 @@ class CreateRecommendationModelExecutor implements RecommendationActionExecutor 
   }
 }
 
-class ConfigureRecommendationModelExecutor
-  implements RecommendationActionExecutor
-{
+class ConfigureRecommendationModelExecutor implements RecommendationActionExecutor {
   readonly actionType = CONFIGURE_RECOMMENDATION_MODEL_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
@@ -299,12 +268,9 @@ export function createRecommendationActionExecutors(): Record<
   RecommendationActionExecutor
 > {
   return {
-    [CREATE_RECOMMENDATION_MODEL_ACTION_TYPE]:
-      new CreateRecommendationModelExecutor(),
-    [CONFIGURE_RECOMMENDATION_MODEL_ACTION_TYPE]:
-      new ConfigureRecommendationModelExecutor(),
-    [DELETE_RECOMMENDATION_MODEL_ACTION_TYPE]:
-      new DeleteRecommendationModelExecutor(),
+    [CREATE_RECOMMENDATION_MODEL_ACTION_TYPE]: new CreateRecommendationModelExecutor(),
+    [CONFIGURE_RECOMMENDATION_MODEL_ACTION_TYPE]: new ConfigureRecommendationModelExecutor(),
+    [DELETE_RECOMMENDATION_MODEL_ACTION_TYPE]: new DeleteRecommendationModelExecutor(),
   };
 }
 
@@ -355,9 +321,7 @@ export class BloomreachRecommendationsService {
       throw new Error('Model type must not be empty.');
     }
     const algorithm =
-      input.algorithm !== undefined
-        ? validateAlgorithmType(input.algorithm)
-        : undefined;
+      input.algorithm !== undefined ? validateAlgorithmType(input.algorithm) : undefined;
 
     const preview = {
       action: CREATE_RECOMMENDATION_MODEL_ACTION_TYPE,
@@ -383,17 +347,11 @@ export class BloomreachRecommendationsService {
     const project = validateProject(input.project);
     const modelId = validateModelId(input.modelId);
     const algorithm =
-      input.algorithm !== undefined
-        ? validateAlgorithmType(input.algorithm)
-        : undefined;
-    const filters =
-      input.filters !== undefined ? validateFilterRules(input.filters) : undefined;
+      input.algorithm !== undefined ? validateAlgorithmType(input.algorithm) : undefined;
+    const filters = input.filters !== undefined ? validateFilterRules(input.filters) : undefined;
     const boostRules =
-      input.boostRules !== undefined
-        ? validateBoostRules(input.boostRules)
-        : undefined;
-    const maxItems =
-      input.maxItems !== undefined ? validateMaxItems(input.maxItems) : undefined;
+      input.boostRules !== undefined ? validateBoostRules(input.boostRules) : undefined;
+    const maxItems = input.maxItems !== undefined ? validateMaxItems(input.maxItems) : undefined;
 
     const preview = {
       action: CONFIGURE_RECOMMENDATION_MODEL_ACTION_TYPE,

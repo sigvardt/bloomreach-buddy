@@ -290,9 +290,7 @@ describe('buildRecommendationsUrl', () => {
   });
 
   it('encodes spaces in project name', () => {
-    expect(buildRecommendationsUrl('my project')).toBe(
-      '/p/my%20project/campaigns/recommendations',
-    );
+    expect(buildRecommendationsUrl('my project')).toBe('/p/my%20project/campaigns/recommendations');
   });
 
   it('encodes slashes in project name', () => {

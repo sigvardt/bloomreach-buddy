@@ -2,7 +2,7 @@ name: AI CI Failure Recovery
 
 on:
   workflow_run:
-    workflows: ["CI"]
+    workflows: ['CI']
     types: [completed]
 
 permissions:
@@ -44,7 +44,7 @@ jobs:
 
           # Try to get the actual error output
           ERROR_LOG=$(gh run view "$RUN_ID" --repo "$REPO" --log-failed 2>/dev/null | grep -E "(error|Error|FAIL|✖)" | head -10 | sed 's/"/\\"/g' || echo "Could not retrieve error details")
-          
+
           # Write to file to avoid shell escaping issues
           echo "$ERROR_LOG" > /tmp/error_log.txt
 

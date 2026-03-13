@@ -49,12 +49,7 @@ describe('TREND_GRANULARITIES', () => {
   });
 
   it('contains expected granularity values in order', () => {
-    expect(TREND_GRANULARITIES).toEqual([
-      'hourly',
-      'daily',
-      'weekly',
-      'monthly',
-    ]);
+    expect(TREND_GRANULARITIES).toEqual(['hourly', 'daily', 'weekly', 'monthly']);
   });
 });
 
@@ -82,9 +77,7 @@ describe('validateTrendName', () => {
 
   it('throws for name exceeding maximum length', () => {
     const tooLong = 'x'.repeat(201);
-    expect(() => validateTrendName(tooLong)).toThrow(
-      'must not exceed 200 characters',
-    );
+    expect(() => validateTrendName(tooLong)).toThrow('must not exceed 200 characters');
   });
 });
 
@@ -106,15 +99,11 @@ describe('validateTrendGranularity', () => {
   });
 
   it('throws for unknown granularity', () => {
-    expect(() => validateTrendGranularity('quarterly')).toThrow(
-      'granularity must be one of',
-    );
+    expect(() => validateTrendGranularity('quarterly')).toThrow('granularity must be one of');
   });
 
   it('throws for empty granularity', () => {
-    expect(() => validateTrendGranularity('')).toThrow(
-      'granularity must be one of',
-    );
+    expect(() => validateTrendGranularity('')).toThrow('granularity must be one of');
   });
 });
 
@@ -138,9 +127,7 @@ describe('validateTrendAnalysisId', () => {
 
 describe('buildTrendsUrl', () => {
   it('builds URL for a simple project name', () => {
-    expect(buildTrendsUrl('kingdom-of-joakim')).toBe(
-      '/p/kingdom-of-joakim/analytics/trends',
-    );
+    expect(buildTrendsUrl('kingdom-of-joakim')).toBe('/p/kingdom-of-joakim/analytics/trends');
   });
 
   it('encodes spaces in project name', () => {
@@ -201,16 +188,12 @@ describe('BloomreachTrendsService', () => {
   describe('listTrendAnalyses', () => {
     it('throws not-yet-implemented error', async () => {
       const service = new BloomreachTrendsService('test');
-      await expect(service.listTrendAnalyses()).rejects.toThrow(
-        'not yet implemented',
-      );
+      await expect(service.listTrendAnalyses()).rejects.toThrow('not yet implemented');
     });
 
     it('validates project when input is provided', async () => {
       const service = new BloomreachTrendsService('test');
-      await expect(service.listTrendAnalyses({ project: '' })).rejects.toThrow(
-        'must not be empty',
-      );
+      await expect(service.listTrendAnalyses({ project: '' })).rejects.toThrow('must not be empty');
     });
   });
 

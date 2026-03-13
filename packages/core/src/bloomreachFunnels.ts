@@ -124,9 +124,7 @@ export function validateFunnelSteps(steps: FunnelStep[]): FunnelStep[] {
   return steps.map((step, index) => {
     const expectedOrder = index + 1;
     if (step.order !== expectedOrder) {
-      throw new Error(
-        `steps[${index}].order must be ${expectedOrder} (got ${step.order}).`,
-      );
+      throw new Error(`steps[${index}].order must be ${expectedOrder} (got ${step.order}).`);
     }
 
     const eventName = step.eventName.trim();
@@ -168,9 +166,7 @@ export interface FunnelActionExecutor {
 class CreateFunnelExecutor implements FunnelActionExecutor {
   readonly actionType = CREATE_FUNNEL_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'CreateFunnelExecutor: not yet implemented. Requires browser automation infrastructure.',
     );
@@ -180,9 +176,7 @@ class CreateFunnelExecutor implements FunnelActionExecutor {
 class CloneFunnelExecutor implements FunnelActionExecutor {
   readonly actionType = CLONE_FUNNEL_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'CloneFunnelExecutor: not yet implemented. Requires browser automation infrastructure.',
     );
@@ -192,9 +186,7 @@ class CloneFunnelExecutor implements FunnelActionExecutor {
 class ArchiveFunnelExecutor implements FunnelActionExecutor {
   readonly actionType = ARCHIVE_FUNNEL_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'ArchiveFunnelExecutor: not yet implemented. Requires browser automation infrastructure.',
     );
@@ -220,9 +212,7 @@ export class BloomreachFunnelsService {
     return this.baseUrl;
   }
 
-  async listFunnelAnalyses(
-    input?: ListFunnelAnalysesInput,
-  ): Promise<BloomreachFunnelAnalysis[]> {
+  async listFunnelAnalyses(input?: ListFunnelAnalysesInput): Promise<BloomreachFunnelAnalysis[]> {
     if (input !== undefined) {
       validateProject(input.project);
     }
@@ -249,9 +239,7 @@ export class BloomreachFunnelsService {
     );
   }
 
-  prepareCreateFunnelAnalysis(
-    input: CreateFunnelAnalysisInput,
-  ): PreparedFunnelAction {
+  prepareCreateFunnelAnalysis(input: CreateFunnelAnalysisInput): PreparedFunnelAction {
     const project = validateProject(input.project);
     const name = validateFunnelName(input.name);
     const steps = validateFunnelSteps(input.steps);
@@ -278,8 +266,7 @@ export class BloomreachFunnelsService {
   prepareCloneFunnelAnalysis(input: CloneFunnelAnalysisInput): PreparedFunnelAction {
     const project = validateProject(input.project);
     const analysisId = validateFunnelAnalysisId(input.analysisId);
-    const newName =
-      input.newName !== undefined ? validateFunnelName(input.newName) : undefined;
+    const newName = input.newName !== undefined ? validateFunnelName(input.newName) : undefined;
 
     const preview = {
       action: CLONE_FUNNEL_ACTION_TYPE,
@@ -297,9 +284,7 @@ export class BloomreachFunnelsService {
     };
   }
 
-  prepareArchiveFunnelAnalysis(
-    input: ArchiveFunnelAnalysisInput,
-  ): PreparedFunnelAction {
+  prepareArchiveFunnelAnalysis(input: ArchiveFunnelAnalysisInput): PreparedFunnelAction {
     const project = validateProject(input.project);
     const analysisId = validateFunnelAnalysisId(input.analysisId);
 
