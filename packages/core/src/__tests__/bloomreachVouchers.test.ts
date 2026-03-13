@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   CREATE_VOUCHER_POOL_ACTION_TYPE,
   ADD_VOUCHERS_ACTION_TYPE,
@@ -17,6 +17,18 @@ import {
   createVoucherActionExecutors,
   BloomreachVouchersService,
 } from '../index.js';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_VOUCHER_POOL_ACTION_TYPE', () => {
@@ -70,6 +82,22 @@ describe('validatePoolName', () => {
   it('accepts name at exactly 200 characters', () => {
     expect(validatePoolName('x'.repeat(200))).toBe('x'.repeat(200));
   });
+
+  it('returns name at exactly 1 character', () => {
+    expect(validatePoolName('x')).toBe('x');
+  });
+
+  it('handles mixed whitespace (tabs and spaces)', () => {
+    expect(validatePoolName('\t Pool \t')).toBe('Pool');
+  });
+
+  it('handles newline-only input', () => {
+    expect(() => validatePoolName('\n\n')).toThrow('Pool name must not be empty');
+  });
+
+  it('handles tab-only input', () => {
+    expect(() => validatePoolName('\t\t')).toThrow('Pool name must not be empty');
+  });
 });
 
 describe('validatePoolId', () => {
@@ -91,6 +119,26 @@ describe('validatePoolId', () => {
 
   it('returns same value when already trimmed', () => {
     expect(validatePoolId('pool-456')).toBe('pool-456');
+  });
+
+  it('accepts pool ID with dots and dashes', () => {
+    expect(validatePoolId('pool-123.abc')).toBe('pool-123.abc');
+  });
+
+  it('accepts ID at exactly 500 characters', () => {
+    expect(validatePoolId('x'.repeat(500))).toBe('x'.repeat(500));
+  });
+
+  it('handles mixed whitespace (tabs and spaces)', () => {
+    expect(validatePoolId('\t pool-1 \t')).toBe('pool-1');
+  });
+
+  it('handles newline-only input', () => {
+    expect(() => validatePoolId('\n\n')).toThrow('Pool ID must not be empty');
+  });
+
+  it('handles tab-only input', () => {
+    expect(() => validatePoolId('\t\t')).toThrow('Pool ID must not be empty');
   });
 });
 
@@ -138,6 +186,18 @@ describe('validateVoucherCodes', () => {
     const codes = Array.from({ length: 10_000 }, (_, i) => `CODE-${i}`);
     expect(validateVoucherCodes(codes)).toHaveLength(10_000);
   });
+
+  it('handles codes with mixed whitespace', () => {
+    expect(validateVoucherCodes(['\t ABC \t', '\n DEF \n'])).toEqual(['ABC', 'DEF']);
+  });
+
+  it('throws for tab-only code', () => {
+    expect(() => validateVoucherCodes(['ABC', '\t\t'])).toThrow('Voucher code must not be empty');
+  });
+
+  it('throws for newline-only code', () => {
+    expect(() => validateVoucherCodes(['ABC', '\n'])).toThrow('Voucher code must not be empty');
+  });
 });
 
 describe('validateAutoGenerateCount', () => {
@@ -163,6 +223,18 @@ describe('validateAutoGenerateCount', () => {
 
   it('accepts exactly 100,000', () => {
     expect(validateAutoGenerateCount(100_000)).toBe(100_000);
+  });
+
+  it('accepts exactly 1', () => {
+    expect(validateAutoGenerateCount(1)).toBe(1);
+  });
+
+  it('throws for NaN', () => {
+    expect(() => validateAutoGenerateCount(NaN)).toThrow('positive integer');
+  });
+
+  it('throws for Infinity', () => {
+    expect(() => validateAutoGenerateCount(Infinity)).toThrow('positive integer');
   });
 });
 
@@ -210,6 +282,32 @@ describe('validateRedemptionRules', () => {
     const rules = { expiresAt: '2026-12-31T23:59:59Z' };
     expect(validateRedemptionRules(rules)).toEqual(rules);
   });
+
+  it('accepts maxRedemptions at exactly 1,000,000', () => {
+    expect(validateRedemptionRules({ maxRedemptions: 1_000_000 })).toEqual({
+      maxRedemptions: 1_000_000,
+    });
+  });
+
+  it('accepts maxRedemptions at exactly 1', () => {
+    expect(validateRedemptionRules({ maxRedemptions: 1 })).toEqual({ maxRedemptions: 1 });
+  });
+
+  it('throws for NaN maxRedemptions', () => {
+    expect(() => validateRedemptionRules({ maxRedemptions: NaN })).toThrow('positive integer');
+  });
+
+  it('throws for fractional maxRedemptions', () => {
+    expect(() => validateRedemptionRules({ maxRedemptions: 2.5 })).toThrow('positive integer');
+  });
+
+  it('accepts singleUse without other fields', () => {
+    expect(validateRedemptionRules({ singleUse: true })).toEqual({ singleUse: true });
+  });
+
+  it('accepts singleUse false', () => {
+    expect(validateRedemptionRules({ singleUse: false })).toEqual({ singleUse: false });
+  });
 });
 
 describe('validateVoucherSource', () => {
@@ -252,6 +350,18 @@ describe('buildVouchersUrl', () => {
   it('encodes slashes in project name', () => {
     expect(buildVouchersUrl('org/project')).toBe('/p/org%2Fproject/crm/vouchers');
   });
+
+  it('encodes unicode characters in project name', () => {
+    expect(buildVouchersUrl('projekt åäö')).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/crm/vouchers');
+  });
+
+  it('encodes hash character in project name', () => {
+    expect(buildVouchersUrl('my#project')).toBe('/p/my%23project/crm/vouchers');
+  });
+
+  it('keeps dashes unencoded in project name', () => {
+    expect(buildVouchersUrl('team-alpha')).toBe('/p/team-alpha/crm/vouchers');
+  });
 });
 
 describe('createVoucherActionExecutors', () => {
@@ -273,8 +383,44 @@ describe('createVoucherActionExecutors', () => {
   it('executors throw not yet implemented on execute', async () => {
     const executors = createVoucherActionExecutors();
     for (const executor of Object.values(executors)) {
-      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+      await expect(executor.execute({})).rejects.toThrow(
+        'only available through the Bloomreach Engagement UI',
+      );
     }
+  });
+
+  it('accepts optional apiConfig parameter', () => {
+    const executors = createVoucherActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(3);
+  });
+
+  it('executors still throw with apiConfig', async () => {
+    const executors = createVoucherActionExecutors(TEST_API_CONFIG);
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow(
+        'only available through the Bloomreach Engagement UI',
+      );
+    }
+  });
+
+  it('executor actionType stays stable with apiConfig', () => {
+    const executors = createVoucherActionExecutors(TEST_API_CONFIG);
+    expect(executors[CREATE_VOUCHER_POOL_ACTION_TYPE].actionType).toBe(
+      CREATE_VOUCHER_POOL_ACTION_TYPE,
+    );
+    expect(executors[ADD_VOUCHERS_ACTION_TYPE].actionType).toBe(ADD_VOUCHERS_ACTION_TYPE);
+    expect(executors[DELETE_VOUCHER_POOL_ACTION_TYPE].actionType).toBe(
+      DELETE_VOUCHER_POOL_ACTION_TYPE,
+    );
+  });
+
+  it('executor map keys are exactly the 3 action types', () => {
+    const executors = createVoucherActionExecutors();
+    expect(Object.keys(executors)).toEqual([
+      CREATE_VOUCHER_POOL_ACTION_TYPE,
+      ADD_VOUCHERS_ACTION_TYPE,
+      DELETE_VOUCHER_POOL_ACTION_TYPE,
+    ]);
   });
 });
 
@@ -298,12 +444,53 @@ describe('BloomreachVouchersService', () => {
     it('throws for empty project', () => {
       expect(() => new BloomreachVouchersService('')).toThrow('must not be empty');
     });
+
+    it('throws for whitespace-only project', () => {
+      expect(() => new BloomreachVouchersService('   ')).toThrow('must not be empty');
+    });
+
+    it('encodes slashes in constructor project URL', () => {
+      const service = new BloomreachVouchersService('org/project');
+      expect(service.vouchersUrl).toBe('/p/org%2Fproject/crm/vouchers');
+    });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachVouchersService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachVouchersService);
+    });
+
+    it('exposes vouchers URL when constructed with apiConfig', () => {
+      const service = new BloomreachVouchersService('test', TEST_API_CONFIG);
+      expect(service.vouchersUrl).toBe('/p/test/crm/vouchers');
+    });
+
+    it('encodes unicode in constructor project URL', () => {
+      const service = new BloomreachVouchersService('projekt åäö');
+      expect(service.vouchersUrl).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/crm/vouchers');
+    });
+
+    it('encodes hash in constructor project URL', () => {
+      const service = new BloomreachVouchersService('my#project');
+      expect(service.vouchersUrl).toBe('/p/my%23project/crm/vouchers');
+    });
   });
 
   describe('listVoucherPools', () => {
     it('throws not-yet-implemented error', async () => {
       const service = new BloomreachVouchersService('test');
-      await expect(service.listVoucherPools()).rejects.toThrow('not yet implemented');
+      await expect(service.listVoucherPools()).rejects.toThrow('does not provide');
+    });
+
+    it('throws no-API-endpoint error even with apiConfig', async () => {
+      const service = new BloomreachVouchersService('test', TEST_API_CONFIG);
+      await expect(service.listVoucherPools()).rejects.toThrow('does not provide');
+    });
+
+    it('throws no-API-endpoint error for trimmed project', async () => {
+      const service = new BloomreachVouchersService('test');
+      await expect(service.listVoucherPools({ project: '  test  ' })).rejects.toThrow(
+        'does not provide',
+      );
     });
 
     it('validates limit when input is provided', async () => {
@@ -326,6 +513,13 @@ describe('BloomreachVouchersService', () => {
         service.listVoucherPools({ project: '', limit: 10, offset: 0 }),
       ).rejects.toThrow('must not be empty');
     });
+
+    it('validates whitespace-only project when input is provided', async () => {
+      const service = new BloomreachVouchersService('test');
+      await expect(
+        service.listVoucherPools({ project: '   ', limit: 10, offset: 0 }),
+      ).rejects.toThrow('must not be empty');
+    });
   });
 
   describe('viewVoucherStatus', () => {
@@ -333,7 +527,14 @@ describe('BloomreachVouchersService', () => {
       const service = new BloomreachVouchersService('test');
       await expect(
         service.viewVoucherStatus({ project: 'test', poolId: 'pool-1' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide');
+    });
+
+    it('throws no-API-endpoint error even with apiConfig', async () => {
+      const service = new BloomreachVouchersService('test', TEST_API_CONFIG);
+      await expect(
+        service.viewVoucherStatus({ project: 'test', poolId: 'pool-1' }),
+      ).rejects.toThrow('does not provide');
     });
 
     it('validates poolId', async () => {
@@ -348,6 +549,20 @@ describe('BloomreachVouchersService', () => {
       await expect(
         service.viewVoucherStatus({ project: '', poolId: 'pool-1' }),
       ).rejects.toThrow('must not be empty');
+    });
+
+    it('validates whitespace-only project', async () => {
+      const service = new BloomreachVouchersService('test');
+      await expect(
+        service.viewVoucherStatus({ project: '   ', poolId: 'pool-1' }),
+      ).rejects.toThrow('must not be empty');
+    });
+
+    it('validates pool ID with dots and dashes', async () => {
+      const service = new BloomreachVouchersService('test');
+      await expect(
+        service.viewVoucherStatus({ project: 'test', poolId: 'pool-1.abc' }),
+      ).rejects.toThrow('does not provide');
     });
   });
 
@@ -474,6 +689,118 @@ describe('BloomreachVouchersService', () => {
         }),
       ).toThrow('positive integer');
     });
+
+    it('creates different prepared action ids across calls', () => {
+      const service = new BloomreachVouchersService('test');
+      const nowSpy = vi.spyOn(Date, 'now');
+      nowSpy.mockReturnValueOnce(1_700_000_000_000);
+      nowSpy.mockReturnValueOnce(1_700_000_000_001);
+      nowSpy.mockReturnValueOnce(1_700_000_000_002);
+      nowSpy.mockReturnValueOnce(1_700_000_000_003);
+      nowSpy.mockReturnValueOnce(1_700_000_000_004);
+      nowSpy.mockReturnValueOnce(1_700_000_000_005);
+
+      const first = service.prepareCreateVoucherPool({
+        project: 'test',
+        name: 'Pool A',
+        autoGenerateCount: 10,
+      });
+      const second = service.prepareCreateVoucherPool({
+        project: 'test',
+        name: 'Pool B',
+        autoGenerateCount: 20,
+      });
+
+      expect(first.preparedActionId).not.toBe(second.preparedActionId);
+    });
+
+    it('creates different confirm tokens across calls', () => {
+      const service = new BloomreachVouchersService('test');
+      const nowSpy = vi.spyOn(Date, 'now');
+      nowSpy.mockReturnValueOnce(1_700_000_000_100);
+      nowSpy.mockReturnValueOnce(1_700_000_000_101);
+      nowSpy.mockReturnValueOnce(1_700_000_000_102);
+      nowSpy.mockReturnValueOnce(1_700_000_000_103);
+      nowSpy.mockReturnValueOnce(1_700_000_000_104);
+      nowSpy.mockReturnValueOnce(1_700_000_000_105);
+
+      const first = service.prepareCreateVoucherPool({
+        project: 'test',
+        name: 'Pool A',
+        autoGenerateCount: 10,
+      });
+      const second = service.prepareCreateVoucherPool({
+        project: 'test',
+        name: 'Pool B',
+        autoGenerateCount: 20,
+      });
+
+      expect(first.confirmToken).not.toBe(second.confirmToken);
+    });
+
+    it('trims project in preview', () => {
+      const service = new BloomreachVouchersService('test');
+      const result = service.prepareCreateVoucherPool({
+        project: '  my-project  ',
+        name: 'Test Pool',
+        autoGenerateCount: 10,
+      });
+
+      expect(result.preview).toEqual(expect.objectContaining({ project: 'my-project' }));
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachVouchersService('test');
+      expect(() =>
+        service.prepareCreateVoucherPool({
+          project: '   ',
+          name: 'Test Pool',
+          autoGenerateCount: 100,
+        }),
+      ).toThrow('must not be empty');
+    });
+
+    it('accepts apiConfig in service and still prepares action', () => {
+      const service = new BloomreachVouchersService('test', TEST_API_CONFIG);
+      const result = service.prepareCreateVoucherPool({
+        project: 'test',
+        name: 'API Test Pool',
+        autoGenerateCount: 50,
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'vouchers.create_pool',
+          project: 'test',
+          name: 'API Test Pool',
+        }),
+      );
+    });
+
+    it('keeps empty operatorNote in preview', () => {
+      const service = new BloomreachVouchersService('test');
+      const result = service.prepareCreateVoucherPool({
+        project: 'test',
+        name: 'Test Pool',
+        autoGenerateCount: 10,
+        operatorNote: '',
+      });
+
+      expect(result.preview).toEqual(expect.objectContaining({ operatorNote: '' }));
+    });
+
+    it('keeps multiline operatorNote in preview', () => {
+      const service = new BloomreachVouchersService('test');
+      const note = 'Line 1\nLine 2';
+      const result = service.prepareCreateVoucherPool({
+        project: 'test',
+        name: 'Test Pool',
+        autoGenerateCount: 10,
+        operatorNote: note,
+      });
+
+      expect(result.preview).toEqual(expect.objectContaining({ operatorNote: note }));
+    });
   });
 
   describe('prepareAddVouchers', () => {
@@ -548,6 +875,69 @@ describe('BloomreachVouchersService', () => {
         }),
       ).toThrow('must not be empty');
     });
+
+    it('creates different prepared action ids across calls', () => {
+      const service = new BloomreachVouchersService('test');
+      const nowSpy = vi.spyOn(Date, 'now');
+      nowSpy.mockReturnValueOnce(1_700_000_000_000);
+      nowSpy.mockReturnValueOnce(1_700_000_000_001);
+      nowSpy.mockReturnValueOnce(1_700_000_000_002);
+      nowSpy.mockReturnValueOnce(1_700_000_000_003);
+      nowSpy.mockReturnValueOnce(1_700_000_000_004);
+      nowSpy.mockReturnValueOnce(1_700_000_000_005);
+
+      const first = service.prepareAddVouchers({
+        project: 'test',
+        poolId: 'pool-1',
+        autoGenerateCount: 10,
+      });
+      const second = service.prepareAddVouchers({
+        project: 'test',
+        poolId: 'pool-1',
+        autoGenerateCount: 20,
+      });
+
+      expect(first.preparedActionId).not.toBe(second.preparedActionId);
+    });
+
+    it('accepts apiConfig in service and still prepares action', () => {
+      const service = new BloomreachVouchersService('test', TEST_API_CONFIG);
+      const result = service.prepareAddVouchers({
+        project: 'test',
+        poolId: 'pool-1',
+        autoGenerateCount: 50,
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'vouchers.add_vouchers',
+          project: 'test',
+          poolId: 'pool-1',
+        }),
+      );
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachVouchersService('test');
+      expect(() =>
+        service.prepareAddVouchers({
+          project: '   ',
+          poolId: 'pool-1',
+          autoGenerateCount: 100,
+        }),
+      ).toThrow('must not be empty');
+    });
+
+    it('trims pool ID in preview', () => {
+      const service = new BloomreachVouchersService('test');
+      const result = service.prepareAddVouchers({
+        project: 'test',
+        poolId: '  pool-1  ',
+        autoGenerateCount: 10,
+      });
+
+      expect(result.preview).toEqual(expect.objectContaining({ poolId: 'pool-1' }));
+    });
   });
 
   describe('prepareDeleteVoucherPool', () => {
@@ -590,6 +980,87 @@ describe('BloomreachVouchersService', () => {
           poolId: 'pool-3',
         }),
       ).toThrow('must not be empty');
+    });
+
+    it('creates different prepared action ids across calls', () => {
+      const service = new BloomreachVouchersService('test');
+      const nowSpy = vi.spyOn(Date, 'now');
+      nowSpy.mockReturnValueOnce(1_700_000_000_000);
+      nowSpy.mockReturnValueOnce(1_700_000_000_001);
+      nowSpy.mockReturnValueOnce(1_700_000_000_002);
+      nowSpy.mockReturnValueOnce(1_700_000_000_003);
+      nowSpy.mockReturnValueOnce(1_700_000_000_004);
+      nowSpy.mockReturnValueOnce(1_700_000_000_005);
+
+      const first = service.prepareDeleteVoucherPool({
+        project: 'test',
+        poolId: 'pool-1',
+      });
+      const second = service.prepareDeleteVoucherPool({
+        project: 'test',
+        poolId: 'pool-2',
+      });
+
+      expect(first.preparedActionId).not.toBe(second.preparedActionId);
+    });
+
+    it('accepts apiConfig in service and still prepares action', () => {
+      const service = new BloomreachVouchersService('test', TEST_API_CONFIG);
+      const result = service.prepareDeleteVoucherPool({
+        project: 'test',
+        poolId: 'pool-3',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'vouchers.delete_pool',
+          project: 'test',
+          poolId: 'pool-3',
+        }),
+      );
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachVouchersService('test');
+      expect(() =>
+        service.prepareDeleteVoucherPool({
+          project: '   ',
+          poolId: 'pool-3',
+        }),
+      ).toThrow('must not be empty');
+    });
+
+    it('keeps empty operatorNote in preview', () => {
+      const service = new BloomreachVouchersService('test');
+      const result = service.prepareDeleteVoucherPool({
+        project: 'test',
+        poolId: 'pool-3',
+        operatorNote: '',
+      });
+
+      expect(result.preview).toEqual(expect.objectContaining({ operatorNote: '' }));
+    });
+
+    it('keeps multiline operatorNote in preview', () => {
+      const service = new BloomreachVouchersService('test');
+      const note = 'Line 1\nLine 2';
+      const result = service.prepareDeleteVoucherPool({
+        project: 'test',
+        poolId: 'pool-3',
+        operatorNote: note,
+      });
+
+      expect(result.preview).toEqual(expect.objectContaining({ operatorNote: note }));
+    });
+
+    it('trims project in preview', () => {
+      const service = new BloomreachVouchersService('test');
+      const result = service.prepareDeleteVoucherPool({
+        project: '  my-project  ',
+        poolId: 'pool-3',
+      });
+
+      expect(result.preview).toEqual(expect.objectContaining({ project: 'my-project' }));
     });
   });
 });

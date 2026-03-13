@@ -2978,11 +2978,11 @@ customers
 
 const vouchers = program
   .command('vouchers')
-  .description('Manage Bloomreach voucher pools and discount codes');
+  .description('Manage Bloomreach voucher pools and discount codes (UI-only — no REST API)');
 
 vouchers
   .command('list')
-  .description('List all voucher pools in the project')
+  .description('List all voucher pools in the project (UI-only — no REST API endpoint)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .option('--limit <limit>', 'Maximum number of pools to return', '50')
   .option('--offset <offset>', 'Offset for pagination', '0')
@@ -3006,7 +3006,11 @@ vouchers
         for (const pool of result) {
           console.log(`  ${pool.name}`);
           console.log(`    Status:   ${pool.status}`);
-          console.log(`    Vouchers: ${pool.voucherCount} total, ${pool.redeemedCount} redeemed`);
+          const usagePct =
+            pool.voucherCount > 0 ? ((pool.redeemedCount / pool.voucherCount) * 100).toFixed(1) : '0.0';
+          console.log(
+            `    Vouchers: ${pool.voucherCount} total, ${pool.redeemedCount} redeemed (${usagePct}% used)`,
+          );
           console.log(`    ID:       ${pool.id}`);
           console.log(`    URL:      ${pool.url}`);
         }
@@ -3019,7 +3023,9 @@ vouchers
 
 vouchers
   .command('view-status')
-  .description('View redemption status of vouchers in a pool')
+  .description(
+    'View redemption status and usage statistics for vouchers in a pool (UI-only — no REST API endpoint)',
+  )
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--pool-id <id>', 'Voucher pool ID')
   .option('--voucher-code <code>', 'Specific voucher code to check')
@@ -3039,7 +3045,13 @@ vouchers
         } else {
           console.log(`Voucher Pool: ${result.name}`);
           console.log(`  Status:   ${result.status}`);
-          console.log(`  Vouchers: ${result.voucherCount} total, ${result.redeemedCount} redeemed`);
+          const usagePct =
+            result.voucherCount > 0
+              ? ((result.redeemedCount / result.voucherCount) * 100).toFixed(1)
+              : '0.0';
+          console.log(
+            `  Vouchers: ${result.voucherCount} total, ${result.redeemedCount} redeemed (${usagePct}% used)`,
+          );
           if (result.vouchers.length > 0) {
             console.log('  Codes:');
             for (const voucher of result.vouchers) {
@@ -3058,7 +3070,9 @@ vouchers
 
 vouchers
   .command('create')
-  .description('Prepare creation of a new voucher pool (two-phase commit)')
+  .description(
+    'Prepare creation of a new voucher pool (two-phase commit, UI-only). Requires: pool name + either --codes or --auto-generate',
+  )
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--name <name>', 'Voucher pool name')
   .option('--description <description>', 'Pool description')
@@ -3118,6 +3132,9 @@ vouchers
           console.log(
             `  Vouchers: ${result.preview.voucherCount} (${result.preview.voucherSource})`,
           );
+          if (result.preview.voucherSource === 'auto-generated') {
+            console.log(`  Preview:  ${result.preview.voucherCount} codes will be auto-generated on confirm`);
+          }
           console.log(`  Token:    ${result.confirmToken}`);
           console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');
@@ -3133,7 +3150,9 @@ vouchers
 
 vouchers
   .command('add')
-  .description('Prepare adding voucher codes to an existing pool (two-phase commit)')
+  .description(
+    'Prepare adding voucher codes to an existing pool (two-phase commit, UI-only). Provide either --codes or --auto-generate',
+  )
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--pool-id <id>', 'Voucher pool ID')
   .option('--codes <json>', 'JSON array of voucher codes ["CODE-1", "CODE-2"]')
@@ -3187,7 +3206,9 @@ vouchers
 
 vouchers
   .command('delete')
-  .description('Prepare deletion of a voucher pool (two-phase commit)')
+  .description(
+    'Prepare deletion of a voucher pool (two-phase commit, UI-only). This action is irreversible',
+  )
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--pool-id <id>', 'Voucher pool ID to delete')
   .option('--note <note>', 'Operator note for audit trail')
