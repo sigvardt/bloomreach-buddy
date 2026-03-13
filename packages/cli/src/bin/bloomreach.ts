@@ -10,6 +10,7 @@ import {
   BloomreachDataManagerService,
   BloomreachDashboardsService,
   BloomreachEmailCampaignsService,
+  BloomreachEvaluationSettingsService,
   BloomreachExportsService,
   BloomreachFlowsService,
   BloomreachIntegrationsService,
@@ -21,6 +22,7 @@ import {
   BloomreachPerformanceService,
   BloomreachRetentionsService,
   BloomreachScenariosService,
+  BloomreachSecuritySettingsService,
   BloomreachSurveysService,
   BloomreachTagManagerService,
   BloomreachTrendsService,
@@ -7806,6 +7808,551 @@ campaignSettingsPageVariables
           console.log(`  Page variable ID: ${options.pageVariableId}`);
           console.log(`  Token:            ${result.confirmToken}`);
           console.log(`  Expires:          ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const securitySettings = program
+  .command('security-settings')
+  .description('Manage Bloomreach security settings (SSH tunnels, 2FA)');
+
+const securitySettingsSshTunnels = securitySettings
+  .command('ssh-tunnels')
+  .description('Manage SSH tunnel configurations');
+
+securitySettingsSshTunnels
+  .command('list')
+  .description('List all configured SSH tunnels')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachSecuritySettingsService(options.project);
+      const result = await service.listSshTunnels({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No SSH tunnels found.');
+          return;
+        }
+        for (const tunnel of result) {
+          console.log(`  ${tunnel.name} (${tunnel.host}:${tunnel.port})`);
+          console.log(`    Username: ${tunnel.username}`);
+          console.log(`    Status:   ${tunnel.status}`);
+          console.log(`    ID:       ${tunnel.id}`);
+          console.log(`    URL:      ${tunnel.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+securitySettingsSshTunnels
+  .command('view')
+  .description('View details of a configured SSH tunnel')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--tunnel-id <id>', 'SSH tunnel ID')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; tunnelId: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachSecuritySettingsService(options.project);
+      const result = await service.viewSshTunnel({
+        project: options.project,
+        tunnelId: options.tunnelId,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`SSH Tunnel: ${result.name}`);
+        console.log(`  Host:     ${result.host}:${result.port}`);
+        console.log(`  Username: ${result.username}`);
+        console.log(`  Status:   ${result.status}`);
+        console.log(`  ID:       ${result.id}`);
+        console.log(`  URL:      ${result.url}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+securitySettingsSshTunnels
+  .command('create')
+  .description('Prepare SSH tunnel creation (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'SSH tunnel name')
+  .requiredOption('--host <host>', 'SSH tunnel host')
+  .requiredOption('--port <port>', 'SSH tunnel port')
+  .requiredOption('--username <username>', 'SSH tunnel username')
+  .option('--password <password>', 'SSH tunnel password')
+  .option('--host-key <key>', 'SSH host key fingerprint')
+  .option('--database-type <type>', 'Database type for tunnel usage')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      host: string;
+      port: string;
+      username: string;
+      password?: string;
+      hostKey?: string;
+      databaseType?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachSecuritySettingsService(options.project);
+        const result = service.prepareCreateSshTunnel({
+          project: options.project,
+          name: options.name,
+          host: options.host,
+          port: parseInt(options.port, 10),
+          username: options.username,
+          password: options.password,
+          hostKey: options.hostKey,
+          databaseType: options.databaseType,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('SSH tunnel creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+securitySettingsSshTunnels
+  .command('delete')
+  .description('Prepare SSH tunnel deletion (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--tunnel-id <id>', 'SSH tunnel ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; tunnelId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachSecuritySettingsService(options.project);
+      const result = service.prepareDeleteSshTunnel({
+        project: options.project,
+        tunnelId: options.tunnelId,
+        operatorNote: options.note,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('SSH tunnel deletion prepared.');
+        console.log(`  Tunnel ID: ${options.tunnelId}`);
+        console.log(`  Token:     ${result.confirmToken}`);
+        console.log(`  Expires:   ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+const securitySettingsTwoStep = securitySettings
+  .command('two-step')
+  .description('Manage project two-step verification settings');
+
+securitySettingsTwoStep
+  .command('view')
+  .description('View two-step verification settings')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachSecuritySettingsService(options.project);
+      const result = await service.viewTwoStepVerification({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Two-step verification (${options.project})`);
+        console.log(`  Enabled:  ${result.enabled}`);
+        console.log(`  Enforced: ${result.enforced ?? false}`);
+        console.log(`  URL:      ${result.url}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+securitySettingsTwoStep
+  .command('enable')
+  .description('Prepare enabling two-step verification (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachSecuritySettingsService(options.project);
+      const result = service.prepareEnableTwoStep({
+        project: options.project,
+        operatorNote: options.note,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Enable two-step verification prepared.');
+        console.log(`  Project: ${options.project}`);
+        console.log(`  Token:   ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+securitySettingsTwoStep
+  .command('disable')
+  .description('Prepare disabling two-step verification (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachSecuritySettingsService(options.project);
+      const result = service.prepareDisableTwoStep({
+        project: options.project,
+        operatorNote: options.note,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Disable two-step verification prepared.');
+        console.log(`  Project: ${options.project}`);
+        console.log(`  Token:   ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+const evaluationSettings = program
+  .command('evaluation-settings')
+  .description('Manage Bloomreach evaluation settings');
+
+const evaluationSettingsRevenueAttribution = evaluationSettings
+  .command('revenue-attribution')
+  .description('Manage revenue attribution settings');
+
+evaluationSettingsRevenueAttribution
+  .command('view')
+  .description('View revenue attribution settings')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachEvaluationSettingsService(options.project);
+      const result = await service.viewRevenueAttribution({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Revenue attribution (${options.project})`);
+        console.log(`  Model:    ${result.model}`);
+        console.log(`  Window:   ${result.attributionWindow ?? 'n/a'}`);
+        console.log(`  Channels: ${result.channels?.join(', ') ?? 'n/a'}`);
+        console.log(`  URL:      ${result.url}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+evaluationSettingsRevenueAttribution
+  .command('configure')
+  .description('Prepare revenue attribution configuration (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--model <model>', 'Revenue attribution model')
+  .option('--attribution-window <days>', 'Attribution window in days')
+  .option('--channels <csv>', 'Comma-separated channels list')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      model: string;
+      attributionWindow?: string;
+      channels?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachEvaluationSettingsService(options.project);
+        const result = service.prepareConfigureRevenueAttribution({
+          project: options.project,
+          model: options.model,
+          attributionWindow: options.attributionWindow
+            ? parseInt(options.attributionWindow, 10)
+            : undefined,
+          channels: options.channels
+            ? options.channels.split(',').map((channel) => channel.trim())
+            : undefined,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Revenue attribution configuration prepared.');
+          console.log(`  Model:   ${options.model}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const evaluationSettingsCurrency = evaluationSettings
+  .command('currency')
+  .description('Manage project currency settings');
+
+evaluationSettingsCurrency
+  .command('view')
+  .description('View currency settings')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachEvaluationSettingsService(options.project);
+      const result = await service.viewCurrency({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Currency settings (${options.project})`);
+        console.log(`  Code:   ${result.currencyCode}`);
+        console.log(`  Symbol: ${result.currencySymbol ?? 'n/a'}`);
+        console.log(`  URL:    ${result.url}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+evaluationSettingsCurrency
+  .command('set')
+  .description('Prepare currency update (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--currency-code <code>', 'ISO 4217 currency code')
+  .option('--currency-symbol <symbol>', 'Currency symbol')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      currencyCode: string;
+      currencySymbol?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachEvaluationSettingsService(options.project);
+        const result = service.prepareSetCurrency({
+          project: options.project,
+          currencyCode: options.currencyCode,
+          currencySymbol: options.currencySymbol,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Currency update prepared.');
+          console.log(`  Currency: ${options.currencyCode}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const evaluationSettingsDashboards = evaluationSettings
+  .command('dashboards')
+  .description('Manage evaluation dashboard settings');
+
+evaluationSettingsDashboards
+  .command('view')
+  .description('View evaluation dashboard settings')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachEvaluationSettingsService(options.project);
+      const result = await service.viewEvaluationDashboards({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Evaluation dashboards (${options.project})`);
+        console.log(`  URL: ${result.url}`);
+        for (const dashboard of result.dashboards) {
+          console.log(`  - ${dashboard.id} (${dashboard.name}) enabled=${dashboard.enabled ?? false}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+evaluationSettingsDashboards
+  .command('configure')
+  .description('Prepare evaluation dashboards configuration (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--dashboards <json>', 'JSON dashboard config array [{id, enabled}]')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      dashboards: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachEvaluationSettingsService(options.project);
+        const dashboards = JSON.parse(options.dashboards) as { id: string; enabled: boolean }[];
+        const result = service.prepareConfigureEvaluationDashboards({
+          project: options.project,
+          dashboards,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Evaluation dashboards configuration prepared.');
+          console.log(`  Dashboards: ${dashboards.length}`);
+          console.log(`  Token:      ${result.confirmToken}`);
+          console.log(`  Expires:    ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const evaluationSettingsVoucherMapping = evaluationSettings
+  .command('voucher-mapping')
+  .description('Manage voucher mapping settings');
+
+evaluationSettingsVoucherMapping
+  .command('view')
+  .description('View voucher mapping settings')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachEvaluationSettingsService(options.project);
+      const result = await service.viewVoucherMapping({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Voucher mapping (${options.project})`);
+        console.log(`  Mapping field: ${result.mappingField ?? 'n/a'}`);
+        console.log(`  Mapping type:  ${result.mappingType ?? 'n/a'}`);
+        console.log(`  URL:           ${result.url}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+evaluationSettingsVoucherMapping
+  .command('configure')
+  .description('Prepare voucher mapping configuration (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--mapping-field <field>', 'Voucher mapping field')
+  .option('--mapping-type <type>', 'Voucher mapping type')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      mappingField: string;
+      mappingType?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachEvaluationSettingsService(options.project);
+        const result = service.prepareConfigureVoucherMapping({
+          project: options.project,
+          mappingField: options.mappingField,
+          mappingType: options.mappingType,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Voucher mapping configuration prepared.');
+          console.log(`  Field:   ${options.mappingField}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');
           console.log('To confirm, run:');
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
