@@ -15,6 +15,7 @@ import {
   BloomreachScenariosService,
   BloomreachSurveysService,
   BloomreachTrendsService,
+  BloomreachVouchersService,
 } from '@bloomreach-buddy/core';
 import type {
   CustomerIds,
@@ -29,6 +30,7 @@ import type {
   SurveyDisplayConditions,
   RetentionFilter,
   TrendFilter,
+  RedemptionRules,
 } from '@bloomreach-buddy/core';
 
 function printJson(value: unknown): void {
@@ -2776,6 +2778,257 @@ customers
           console.log(`  Customer: ${options.customerId}`);
           console.log(`  Token:    ${result.confirmToken}`);
           console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const vouchers = program
+  .command('vouchers')
+  .description('Manage Bloomreach voucher pools and discount codes');
+
+vouchers
+  .command('list')
+  .description('List all voucher pools in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--limit <limit>', 'Maximum number of pools to return', '50')
+  .option('--offset <offset>', 'Offset for pagination', '0')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; limit: string; offset: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachVouchersService(options.project);
+        const result = await service.listVoucherPools({
+          project: options.project,
+          limit: parseInt(options.limit, 10),
+          offset: parseInt(options.offset, 10),
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          if (result.length === 0) {
+            console.log('No voucher pools found.');
+            return;
+          }
+          for (const pool of result) {
+            console.log(`  ${pool.name}`);
+            console.log(`    Status:   ${pool.status}`);
+            console.log(`    Vouchers: ${pool.voucherCount} total, ${pool.redeemedCount} redeemed`);
+            console.log(`    ID:       ${pool.id}`);
+            console.log(`    URL:      ${pool.url}`);
+          }
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+vouchers
+  .command('view-status')
+  .description('View redemption status of vouchers in a pool')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--pool-id <id>', 'Voucher pool ID')
+  .option('--voucher-code <code>', 'Specific voucher code to check')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      poolId: string;
+      voucherCode?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachVouchersService(options.project);
+        const result = await service.viewVoucherStatus({
+          project: options.project,
+          poolId: options.poolId,
+          voucherCode: options.voucherCode,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log(`Voucher Pool: ${result.name}`);
+          console.log(`  Status:   ${result.status}`);
+          console.log(`  Vouchers: ${result.voucherCount} total, ${result.redeemedCount} redeemed`);
+          if (result.vouchers.length > 0) {
+            console.log('  Codes:');
+            for (const voucher of result.vouchers) {
+              const redeemed =
+                voucher.status === 'redeemed' ? ` (redeemed: ${voucher.redeemedAt})` : '';
+              console.log(`    ${voucher.code} [${voucher.status}]${redeemed}`);
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+vouchers
+  .command('create')
+  .description('Prepare creation of a new voucher pool (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Voucher pool name')
+  .option('--description <description>', 'Pool description')
+  .option('--codes <json>', 'JSON array of voucher codes ["CODE-1", "CODE-2"]')
+  .option('--auto-generate <count>', 'Number of voucher codes to auto-generate')
+  .option('--max-redemptions <n>', 'Maximum redemptions per voucher')
+  .option('--expires-at <datetime>', 'ISO-8601 expiration date for vouchers')
+  .option('--single-use', 'Mark vouchers as single-use')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      description?: string;
+      codes?: string;
+      autoGenerate?: string;
+      maxRedemptions?: string;
+      expiresAt?: string;
+      singleUse?: boolean;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const voucherCodes = options.codes
+          ? (JSON.parse(options.codes) as string[])
+          : undefined;
+        const autoGenerateCount = options.autoGenerate
+          ? parseInt(options.autoGenerate, 10)
+          : undefined;
+
+        let redemptionRules: RedemptionRules | undefined;
+        if (options.maxRedemptions || options.expiresAt || options.singleUse) {
+          redemptionRules = {
+            maxRedemptions: options.maxRedemptions
+              ? parseInt(options.maxRedemptions, 10)
+              : undefined,
+            expiresAt: options.expiresAt,
+            singleUse: options.singleUse,
+          };
+        }
+
+        const service = new BloomreachVouchersService(options.project);
+        const result = service.prepareCreateVoucherPool({
+          project: options.project,
+          name: options.name,
+          description: options.description,
+          voucherCodes,
+          autoGenerateCount,
+          redemptionRules,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Voucher pool creation prepared.');
+          console.log(`  Name:     ${options.name}`);
+          console.log(`  Vouchers: ${result.preview.voucherCount} (${result.preview.voucherSource})`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+vouchers
+  .command('add')
+  .description('Prepare adding voucher codes to an existing pool (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--pool-id <id>', 'Voucher pool ID')
+  .option('--codes <json>', 'JSON array of voucher codes ["CODE-1", "CODE-2"]')
+  .option('--auto-generate <count>', 'Number of voucher codes to auto-generate')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      poolId: string;
+      codes?: string;
+      autoGenerate?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const voucherCodes = options.codes
+          ? (JSON.parse(options.codes) as string[])
+          : undefined;
+        const autoGenerateCount = options.autoGenerate
+          ? parseInt(options.autoGenerate, 10)
+          : undefined;
+
+        const service = new BloomreachVouchersService(options.project);
+        const result = service.prepareAddVouchers({
+          project: options.project,
+          poolId: options.poolId,
+          voucherCodes,
+          autoGenerateCount,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Add vouchers prepared.');
+          console.log(`  Pool:     ${options.poolId}`);
+          console.log(`  Vouchers: ${result.preview.voucherCount} (${result.preview.voucherSource})`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+vouchers
+  .command('delete')
+  .description('Prepare deletion of a voucher pool (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--pool-id <id>', 'Voucher pool ID to delete')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; poolId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachVouchersService(options.project);
+        const result = service.prepareDeleteVoucherPool({
+          project: options.project,
+          poolId: options.poolId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Voucher pool deletion prepared.');
+          console.log(`  Pool:    ${options.poolId}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');
           console.log('To confirm, run:');
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
