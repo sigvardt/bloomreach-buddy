@@ -15,6 +15,7 @@ import {
   BloomreachRetentionsService,
   BloomreachScenariosService,
   BloomreachSurveysService,
+  BloomreachTagManagerService,
   BloomreachTrendsService,
   BloomreachVouchersService,
 } from '@bloomreach-buddy/core';
@@ -29,6 +30,7 @@ import type {
   GeoFilter,
   SurveyQuestion,
   SurveyDisplayConditions,
+  TagTriggerConditions,
   RetentionFilter,
   TrendFilter,
   RedemptionRules,
@@ -3705,5 +3707,309 @@ assets
       }
     },
   );
+
+const tagManager = program
+  .command('tag-manager')
+  .description('Manage Bloomreach Tag Manager JavaScript tags');
+
+tagManager
+  .command('list')
+  .description('List all managed JavaScript tags')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--status <status>', 'Filter by status (enabled, disabled)')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; status?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachTagManagerService(options.project);
+      const result = await service.listTags({
+        project: options.project,
+        status: options.status,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No managed tags found.');
+          return;
+        }
+
+        for (const tag of result) {
+          console.log(`  ${tag.name}`);
+          console.log(`    Status:   ${tag.status}`);
+          if (tag.priority !== undefined) {
+            console.log(`    Priority: ${tag.priority}`);
+          }
+          console.log(`    ID:       ${tag.id}`);
+          console.log(`    URL:      ${tag.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+tagManager
+  .command('view')
+  .description('View details of a specific managed tag')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--tag-id <id>', 'Tag ID')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; tagId: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachTagManagerService(options.project);
+      const result = await service.viewTag({
+        project: options.project,
+        tagId: options.tagId,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Tag: ${result.name}`);
+        console.log(`  Status:   ${result.status}`);
+        if (result.priority !== undefined) {
+          console.log(`  Priority: ${result.priority}`);
+        }
+        console.log(`  JS code:  ${result.jsCode.slice(0, 200)}`);
+        console.log(`  Trigger:  ${JSON.stringify(result.triggerConditions)}`);
+        console.log(`  URL:      ${result.url}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+tagManager
+  .command('create')
+  .description('Prepare creation of a new managed JavaScript tag (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Tag name')
+  .requiredOption('--js-code <code>', 'JavaScript code for the tag')
+  .option('--page-url <url>', 'Page URL pattern for trigger condition')
+  .option('--events <csv>', 'Trigger event names (comma-separated)')
+  .option('--customer-attributes <json>', 'Customer attribute conditions as JSON object')
+  .option('--priority <n>', 'Execution priority (positive integer, lower = higher)')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      jsCode: string;
+      pageUrl?: string;
+      events?: string;
+      customerAttributes?: string;
+      priority?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        let triggerConditions: TagTriggerConditions | undefined;
+        if (options.pageUrl || options.events || options.customerAttributes) {
+          triggerConditions = {
+            pageUrl: options.pageUrl,
+            events: options.events ? options.events.split(',').map((e) => e.trim()) : undefined,
+            customerAttributes: options.customerAttributes
+              ? (JSON.parse(options.customerAttributes) as Record<string, string>)
+              : undefined,
+          };
+        }
+
+        const service = new BloomreachTagManagerService(options.project);
+        const result = service.prepareCreateTag({
+          project: options.project,
+          name: options.name,
+          jsCode: options.jsCode,
+          triggerConditions,
+          priority: options.priority ? parseInt(options.priority, 10) : undefined,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Tag creation prepared.');
+          console.log(`  Tag:     ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+tagManager
+  .command('enable')
+  .description('Prepare enabling a managed tag (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--tag-id <id>', 'Tag ID to enable')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; tagId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachTagManagerService(options.project);
+      const result = service.prepareEnableTag({
+        project: options.project,
+        tagId: options.tagId,
+        operatorNote: options.note,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Tag enable prepared.');
+        console.log(`  Tag:     ${options.tagId}`);
+        console.log(`  Token:   ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+tagManager
+  .command('disable')
+  .description('Prepare disabling a managed tag (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--tag-id <id>', 'Tag ID to disable')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; tagId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachTagManagerService(options.project);
+      const result = service.prepareDisableTag({
+        project: options.project,
+        tagId: options.tagId,
+        operatorNote: options.note,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Tag disable prepared.');
+        console.log(`  Tag:     ${options.tagId}`);
+        console.log(`  Token:   ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+tagManager
+  .command('edit')
+  .description('Prepare editing a managed tag (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--tag-id <id>', 'Tag ID to edit')
+  .option('--name <name>', 'New tag name')
+  .option('--js-code <code>', 'New JavaScript code')
+  .option('--page-url <url>', 'New page URL pattern for trigger condition')
+  .option('--events <csv>', 'New trigger event names (comma-separated)')
+  .option('--customer-attributes <json>', 'New customer attribute conditions as JSON object')
+  .option('--priority <n>', 'New execution priority')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      tagId: string;
+      name?: string;
+      jsCode?: string;
+      pageUrl?: string;
+      events?: string;
+      customerAttributes?: string;
+      priority?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        let triggerConditions: TagTriggerConditions | undefined;
+        if (options.pageUrl || options.events || options.customerAttributes) {
+          triggerConditions = {
+            pageUrl: options.pageUrl,
+            events: options.events ? options.events.split(',').map((e) => e.trim()) : undefined,
+            customerAttributes: options.customerAttributes
+              ? (JSON.parse(options.customerAttributes) as Record<string, string>)
+              : undefined,
+          };
+        }
+
+        const service = new BloomreachTagManagerService(options.project);
+        const result = service.prepareEditTag({
+          project: options.project,
+          tagId: options.tagId,
+          name: options.name,
+          jsCode: options.jsCode,
+          triggerConditions,
+          priority: options.priority ? parseInt(options.priority, 10) : undefined,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Tag edit prepared.');
+          console.log(`  Tag:     ${options.tagId}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+tagManager
+  .command('delete')
+  .description('Prepare deletion of a managed tag (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--tag-id <id>', 'Tag ID to delete')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; tagId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachTagManagerService(options.project);
+      const result = service.prepareDeleteTag({
+        project: options.project,
+        tagId: options.tagId,
+        operatorNote: options.note,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Tag deletion prepared.');
+        console.log(`  Tag:     ${options.tagId}`);
+        console.log(`  Token:   ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 program.parse();
