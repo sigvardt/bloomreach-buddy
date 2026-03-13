@@ -12,6 +12,7 @@ import {
   BloomreachFlowsService,
   BloomreachFunnelsService,
   BloomreachGeoAnalysesService,
+  BloomreachMetricsService,
   BloomreachPerformanceService,
   BloomreachRetentionsService,
   BloomreachScenariosService,
@@ -29,6 +30,8 @@ import type {
   FunnelStep,
   FunnelFilter,
   GeoFilter,
+  MetricAggregation,
+  MetricFilter,
   SurveyQuestion,
   SurveyDisplayConditions,
   TagTriggerConditions,
@@ -4002,6 +4005,199 @@ tagManager
       } else {
         console.log('Tag deletion prepared.');
         console.log(`  Tag:     ${options.tagId}`);
+        console.log(`  Token:   ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+const metrics = program
+  .command('metrics')
+  .description('Manage custom computed metrics (Data & Assets > Metrics)');
+
+metrics
+  .command('list')
+  .description('List all custom computed metrics in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachMetricsService(options.project);
+      const result = await service.listMetrics({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No metrics found.');
+          return;
+        }
+        for (const metric of result) {
+          console.log(`  ${metric.name}`);
+          console.log(`    ID:          ${metric.id}`);
+          console.log(`    Aggregation: ${metric.aggregation.aggregationType}`);
+          console.log(`    URL:         ${metric.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+metrics
+  .command('create')
+  .description('Prepare creation of a custom metric (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Metric name')
+  .requiredOption('--event-name <eventName>', 'Event name for aggregation')
+  .requiredOption('--aggregation-type <type>', 'Aggregation type (sum, count, average, min, max, unique)')
+  .option('--property-name <prop>', 'Event property name for property-based aggregations')
+  .option('--description <desc>', 'Metric description')
+  .option('--filters <json>', 'JSON object of metric filters')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      eventName: string;
+      aggregationType: string;
+      propertyName?: string;
+      description?: string;
+      filters?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const filters = options.filters ? (JSON.parse(options.filters) as MetricFilter) : undefined;
+        const aggregation: MetricAggregation = {
+          eventName: options.eventName,
+          aggregationType: options.aggregationType,
+          propertyName: options.propertyName,
+        };
+
+        const service = new BloomreachMetricsService(options.project);
+        const result = service.prepareCreateMetric({
+          project: options.project,
+          name: options.name,
+          description: options.description,
+          aggregation,
+          filters,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Metric creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+metrics
+  .command('edit')
+  .description('Prepare editing a custom metric (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--metric-id <id>', 'Metric ID')
+  .option('--name <name>', 'New metric name')
+  .option('--event-name <eventName>', 'New event name for aggregation')
+  .option('--aggregation-type <type>', 'New aggregation type (sum, count, average, min, max, unique)')
+  .option('--property-name <prop>', 'New event property name for property-based aggregations')
+  .option('--description <desc>', 'New metric description')
+  .option('--filters <json>', 'JSON object of metric filters')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      metricId: string;
+      name?: string;
+      eventName?: string;
+      aggregationType?: string;
+      propertyName?: string;
+      description?: string;
+      filters?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        let aggregation: MetricAggregation | undefined;
+        if (options.eventName || options.aggregationType || options.propertyName) {
+          aggregation = {
+            eventName: options.eventName ?? '',
+            aggregationType: options.aggregationType ?? '',
+            propertyName: options.propertyName,
+          };
+        }
+        const filters = options.filters ? (JSON.parse(options.filters) as MetricFilter) : undefined;
+
+        const service = new BloomreachMetricsService(options.project);
+        const result = service.prepareEditMetric({
+          project: options.project,
+          metricId: options.metricId,
+          name: options.name,
+          description: options.description,
+          aggregation,
+          filters,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Metric edit prepared.');
+          console.log(`  Metric:  ${options.metricId}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+metrics
+  .command('delete')
+  .description('Prepare deletion of a custom metric (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--metric-id <id>', 'Metric ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; metricId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachMetricsService(options.project);
+      const result = service.prepareDeleteMetric({
+        project: options.project,
+        metricId: options.metricId,
+        operatorNote: options.note,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Metric deletion prepared.');
+        console.log(`  Metric:  ${options.metricId}`);
         console.log(`  Token:   ${result.confirmToken}`);
         console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
         console.log('');
