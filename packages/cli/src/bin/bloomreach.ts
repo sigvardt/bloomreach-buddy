@@ -1638,8 +1638,10 @@ const funnels = program
 
 funnels
   .command('list')
-  .description('List all funnel analyses in the project')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description(
+    'List all funnel analyses in the project (note: requires browser automation — not yet available via API)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -1671,7 +1673,10 @@ funnels
   .command('view-results')
   .description('View conversion rates and drop-off data for a funnel analysis')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--analysis-id <id>', 'Funnel analysis ID')
+  .requiredOption(
+    '--analysis-id <id>',
+    'Funnel analysis ID (hex string from Bloomreach UI URL, e.g. "606488856f8cf6f848b20af8")',
+  )
   .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
   .option('--end-date <date>', 'End date (YYYY-MM-DD)')
   .option('--json', 'Output as JSON')
@@ -1684,7 +1689,8 @@ funnels
       json?: boolean;
     }) => {
       try {
-        const service = new BloomreachFunnelsService(options.project);
+        const apiConfig = tryResolveApiConfig(options.project);
+        const service = new BloomreachFunnelsService(options.project, apiConfig);
         const result = await service.viewFunnelResults({
           project: options.project,
           analysisId: options.analysisId,
