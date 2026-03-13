@@ -1,6 +1,8 @@
 import { validateProject } from './bloomreachDashboards.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
+import { bloomreachApiFetch, buildDataPath } from './bloomreachApiClient.js';
 
 export const CREATE_RETENTION_ACTION_TYPE = 'retentions.create_retention';
 export const CLONE_RETENTION_ACTION_TYPE = 'retentions.clone_retention';
@@ -144,6 +146,19 @@ export function buildRetentionsUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/analytics/retentions`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
 export interface RetentionActionExecutor {
   readonly actionType: string;
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -151,56 +166,78 @@ export interface RetentionActionExecutor {
 
 class CreateRetentionExecutor implements RetentionActionExecutor {
   readonly actionType = CREATE_RETENTION_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateRetentionExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateRetentionExecutor: not yet implemented. ' +
+        'Retention creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CloneRetentionExecutor implements RetentionActionExecutor {
   readonly actionType = CLONE_RETENTION_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CloneRetentionExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CloneRetentionExecutor: not yet implemented. ' +
+        'Retention cloning is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ArchiveRetentionExecutor implements RetentionActionExecutor {
   readonly actionType = ARCHIVE_RETENTION_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ArchiveRetentionExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ArchiveRetentionExecutor: not yet implemented. ' +
+        'Retention archiving is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createRetentionActionExecutors(): Record<
-  string,
-  RetentionActionExecutor
-> {
+export function createRetentionActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, RetentionActionExecutor> {
   return {
-    [CREATE_RETENTION_ACTION_TYPE]: new CreateRetentionExecutor(),
-    [CLONE_RETENTION_ACTION_TYPE]: new CloneRetentionExecutor(),
-    [ARCHIVE_RETENTION_ACTION_TYPE]: new ArchiveRetentionExecutor(),
+    [CREATE_RETENTION_ACTION_TYPE]: new CreateRetentionExecutor(apiConfig),
+    [CLONE_RETENTION_ACTION_TYPE]: new CloneRetentionExecutor(apiConfig),
+    [ARCHIVE_RETENTION_ACTION_TYPE]: new ArchiveRetentionExecutor(apiConfig),
   };
 }
 
 export class BloomreachRetentionsService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildRetentionsUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get retentionsUrl(): string {
@@ -215,7 +252,9 @@ export class BloomreachRetentionsService {
     }
 
     throw new Error(
-      'listRetentionAnalyses: not yet implemented. Requires browser automation infrastructure.',
+      'listRetentionAnalyses: the Bloomreach API does not provide a list endpoint for retentions. ' +
+        'Retention analysis IDs must be obtained from the Bloomreach Engagement UI ' +
+        '(found in the URL when viewing a retention analysis, e.g. "606488856f8cf6f848b20af8").',
     );
   }
 
@@ -223,7 +262,7 @@ export class BloomreachRetentionsService {
     input: ViewRetentionResultsInput,
   ): Promise<RetentionResults> {
     validateProject(input.project);
-    validateRetentionAnalysisId(input.analysisId);
+    const analysisId = validateRetentionAnalysisId(input.analysisId);
 
     if (input.granularity !== undefined) {
       validateRetentionGranularity(input.granularity);
@@ -237,9 +276,66 @@ export class BloomreachRetentionsService {
       validateDateRange(dateRange);
     }
 
-    throw new Error(
-      'viewRetentionResults: not yet implemented. Requires browser automation infrastructure.',
-    );
+    const config = requireApiConfig(this.apiConfig, 'viewRetentionResults');
+    const path = buildDataPath(config, '/analyses/retentions');
+
+    const response = await bloomreachApiFetch(config, path, {
+      body: {
+        analysis_id: analysisId,
+        format: 'table_json',
+      },
+    });
+
+    const data = response as {
+      header?: string[];
+      rows?: unknown[][];
+      success?: boolean;
+      name?: string;
+    };
+    if (!data.success || !Array.isArray(data.rows)) {
+      throw new Error('viewRetentionResults: unexpected API response format.');
+    }
+
+    const header = Array.isArray(data.header) ? data.header : [];
+    const cohortDateIdx = header.indexOf('cohort_date');
+    const cohortSizeIdx = header.indexOf('cohort_size');
+
+    const periodIndices: number[] = [];
+    for (let i = 0; i < header.length; i++) {
+      if (i !== cohortDateIdx && i !== cohortSizeIdx) {
+        periodIndices.push(i);
+      }
+    }
+
+    const cohorts: RetentionCohortRow[] = data.rows.map((row) => {
+      const toNum = (idx: number): number => {
+        if (idx < 0 || idx >= row.length) return 0;
+        const val = row[idx];
+        return typeof val === 'number' ? val : 0;
+      };
+      const toStr = (idx: number): string => {
+        if (idx < 0 || idx >= row.length) return '';
+        const val = row[idx];
+        return val === null || val === undefined ? '' : String(val);
+      };
+
+      return {
+        cohortDate: toStr(cohortDateIdx),
+        cohortSize: toNum(cohortSizeIdx),
+        retentionByPeriod: periodIndices.map((idx) => toNum(idx)),
+      };
+    });
+
+    return {
+      analysisId,
+      analysisName: data.name ?? analysisId,
+      cohortEvent: '',
+      returnEvent: '',
+      granularity: (input.granularity as RetentionGranularity) ?? 'daily',
+      startDate: input.startDate ?? '',
+      endDate: input.endDate ?? '',
+      cohorts,
+    };
   }
 
   prepareCreateRetentionAnalysis(
