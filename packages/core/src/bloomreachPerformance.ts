@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const PERFORMANCE_DASHBOARD_TYPES = [
   'project_performance',
@@ -194,15 +195,32 @@ export function buildProjectHealthUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/overview/health-dashboard`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 /**
  * Read-only service for Bloomreach Engagement's built-in performance dashboards.
  * All methods currently throw — browser automation infrastructure is not yet available.
  */
 export class BloomreachPerformanceService {
   private readonly project: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.project = validateProject(project);
+    this.apiConfig = apiConfig;
   }
 
   get projectPerformanceUrl(): string {
@@ -231,9 +249,12 @@ export class BloomreachPerformanceService {
   ): Promise<PerformanceDashboardResult<ProjectPerformanceMetrics>> {
     validateProject(input.project);
     validateDateRange(input.dateRange);
+    void this.apiConfig;
 
     throw new Error(
-      'viewProjectPerformance: not yet implemented. Requires browser automation infrastructure.',
+      'viewProjectPerformance: the Bloomreach API does not provide an endpoint for project performance dashboards. ' +
+        'Performance data must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Overview > Performance Dashboards > Project in your project).',
     );
   }
 
@@ -243,12 +264,15 @@ export class BloomreachPerformanceService {
   ): Promise<PerformanceDashboardResult<ChannelPerformanceMetrics>> {
     validateProject(input.project);
     validateDateRange(input.dateRange);
+    void this.apiConfig;
     if (input.channel !== undefined) {
       validateChannel(input.channel);
     }
 
     throw new Error(
-      'viewChannelPerformance: not yet implemented. Requires browser automation infrastructure.',
+      'viewChannelPerformance: the Bloomreach API does not provide an endpoint for channel performance dashboards. ' +
+        'Channel performance data must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Overview > Performance Dashboards > Channel in your project).',
     );
   }
 
@@ -257,9 +281,12 @@ export class BloomreachPerformanceService {
     input: ViewBloomreachUsageInput,
   ): Promise<PerformanceDashboardResult<BloomreachUsageMetrics>> {
     validateProject(input.project);
+    void this.apiConfig;
 
     throw new Error(
-      'viewBloomreachUsage: not yet implemented. Requires browser automation infrastructure.',
+      'viewBloomreachUsage: the Bloomreach API does not provide an endpoint for usage dashboards. ' +
+        'Usage data must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Overview > Pricing Dashboard in your project).',
     );
   }
 
@@ -268,9 +295,12 @@ export class BloomreachPerformanceService {
     input: ViewProjectOverviewInput,
   ): Promise<PerformanceDashboardResult<ProjectOverviewMetrics>> {
     validateProject(input.project);
+    void this.apiConfig;
 
     throw new Error(
-      'viewProjectOverview: not yet implemented. Requires browser automation infrastructure.',
+      'viewProjectOverview: the Bloomreach API does not provide an endpoint for project overview dashboards. ' +
+        'Overview data must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Overview > Project in your project).',
     );
   }
 
@@ -279,9 +309,12 @@ export class BloomreachPerformanceService {
     input: ViewProjectHealthInput,
   ): Promise<PerformanceDashboardResult<ProjectHealthMetrics>> {
     validateProject(input.project);
+    void this.apiConfig;
 
     throw new Error(
-      'viewProjectHealth: not yet implemented. Requires browser automation infrastructure.',
+      'viewProjectHealth: the Bloomreach API does not provide an endpoint for health dashboards. ' +
+        'Health data must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Overview > Health Dashboard in your project).',
     );
   }
 }
