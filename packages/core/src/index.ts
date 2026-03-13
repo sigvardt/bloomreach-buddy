@@ -11,6 +11,7 @@ export * from './bloomreachRetentions.js';
 export * from './bloomreachTrends.js';
 export * from './bloomreachCustomers.js';
 export * from './bloomreachGeoAnalyses.js';
+export * from './bloomreachVouchers.js';
 
 export interface BloomreachClientConfig {
   /** Bloomreach environment ID */
