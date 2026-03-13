@@ -8,9 +8,10 @@ import {
   BloomreachEmailCampaignsService,
   BloomreachFunnelsService,
   BloomreachPerformanceService,
+  BloomreachRetentionsService,
   BloomreachScenariosService,
-  BloomreachTrendsService,
   BloomreachSurveysService,
+  BloomreachTrendsService,
 } from '@bloomreach-buddy/core';
 import type {
   EmailCampaignSchedule,
@@ -19,6 +20,7 @@ import type {
   FunnelFilter,
   SurveyQuestion,
   SurveyDisplayConditions,
+  RetentionFilter,
   TrendFilter,
 } from '@bloomreach-buddy/core';
 
@@ -1965,6 +1967,266 @@ funnels
           printJson(result);
         } else {
           console.log('Funnel analysis archive prepared.');
+          console.log(`  Analysis: ${options.analysisId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+const retentions = program
+  .command('retentions')
+  .description('Manage Bloomreach Engagement retention analyses');
+
+retentions
+  .command('list')
+  .description('List all retention analyses in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachRetentionsService(options.project);
+      const result = await service.listRetentionAnalyses({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No retention analyses found.');
+          return;
+        }
+        for (const retention of result) {
+          console.log(`  ${retention.name}`);
+          console.log(`    Cohort event: ${retention.cohortEvent}`);
+          console.log(`    Return event: ${retention.returnEvent}`);
+          console.log(`    Granularity:  ${retention.granularity}`);
+          console.log(`    ID:           ${retention.id}`);
+          console.log(`    URL:          ${retention.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(
+        `Error: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      process.exit(1);
+    }
+  });
+
+retentions
+  .command('view-results')
+  .description('View cohort retention data for a retention analysis')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--analysis-id <id>', 'Retention analysis ID')
+  .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
+  .option('--end-date <date>', 'End date (YYYY-MM-DD)')
+  .option('--granularity <granularity>', 'Time granularity (daily, weekly, monthly)')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      analysisId: string;
+      startDate?: string;
+      endDate?: string;
+      granularity?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachRetentionsService(options.project);
+        const result = await service.viewRetentionResults({
+          project: options.project,
+          analysisId: options.analysisId,
+          startDate: options.startDate,
+          endDate: options.endDate,
+          granularity: options.granularity,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log(`Retention Analysis: ${result.analysisName}`);
+          console.log(`  Cohort event: ${result.cohortEvent}`);
+          console.log(`  Return event: ${result.returnEvent}`);
+          console.log(`  Granularity:  ${result.granularity}`);
+          console.log(`  Date range:   ${result.startDate} to ${result.endDate}`);
+          if (result.cohorts.length === 0) {
+            console.log('  Cohorts: none');
+          } else {
+            console.log('  Cohorts:');
+            for (const cohort of result.cohorts) {
+              console.log(`    ${JSON.stringify(cohort)}`);
+            }
+          }
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+retentions
+  .command('create')
+  .description('Prepare creation of a new retention analysis (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Retention analysis name')
+  .requiredOption('--cohort-event <event>', 'Cohort event name')
+  .requiredOption('--return-event <event>', 'Return event name')
+  .option('--granularity <granularity>', 'Time granularity (daily, weekly, monthly)', 'daily')
+  .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
+  .option('--end-date <date>', 'End date (YYYY-MM-DD)')
+  .option('--customer-attributes <json>', 'JSON object of customer attribute filters')
+  .option('--event-properties <json>', 'JSON object of event property filters')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      cohortEvent: string;
+      returnEvent: string;
+      granularity: string;
+      startDate?: string;
+      endDate?: string;
+      customerAttributes?: string;
+      eventProperties?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const filters: RetentionFilter = {};
+        if (options.customerAttributes) {
+          filters.customerAttributes = JSON.parse(options.customerAttributes) as Record<
+            string,
+            string
+          >;
+        }
+        if (options.eventProperties) {
+          filters.eventProperties = JSON.parse(options.eventProperties) as Record<
+            string,
+            string
+          >;
+        }
+
+        const dateRange =
+          options.startDate || options.endDate
+            ? { startDate: options.startDate, endDate: options.endDate }
+            : undefined;
+
+        const service = new BloomreachRetentionsService(options.project);
+        const result = service.prepareCreateRetentionAnalysis({
+          project: options.project,
+          name: options.name,
+          cohortEvent: options.cohortEvent,
+          returnEvent: options.returnEvent,
+          granularity: options.granularity,
+          dateRange,
+          filters: Object.keys(filters).length > 0 ? filters : undefined,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Retention analysis creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+retentions
+  .command('clone')
+  .description('Prepare cloning a retention analysis (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--analysis-id <id>', 'Retention analysis ID to clone')
+  .option('--new-name <name>', 'Name for the cloned analysis')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      analysisId: string;
+      newName?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachRetentionsService(options.project);
+        const result = service.prepareCloneRetentionAnalysis({
+          project: options.project,
+          analysisId: options.analysisId,
+          newName: options.newName,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Retention analysis clone prepared.');
+          console.log(`  Source:   ${options.analysisId}`);
+          console.log(`  New name: ${options.newName ?? '(auto-generated)'}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+retentions
+  .command('archive')
+  .description('Prepare archiving a retention analysis (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--analysis-id <id>', 'Retention analysis ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      analysisId: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachRetentionsService(options.project);
+        const result = service.prepareArchiveRetentionAnalysis({
+          project: options.project,
+          analysisId: options.analysisId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Retention analysis archive prepared.');
           console.log(`  Analysis: ${options.analysisId}`);
           console.log(`  Token:    ${result.confirmToken}`);
           console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
