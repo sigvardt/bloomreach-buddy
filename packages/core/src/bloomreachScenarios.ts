@@ -112,9 +112,7 @@ export function validateScenarioName(name: string): string {
 
 export function validateScenarioStatus(status: string): ScenarioStatus {
   if (!SCENARIO_STATUSES.includes(status as ScenarioStatus)) {
-    throw new Error(
-      `status must be one of: ${SCENARIO_STATUSES.join(', ')} (got "${status}").`,
-    );
+    throw new Error(`status must be one of: ${SCENARIO_STATUSES.join(', ')} (got "${status}").`);
   }
   return status as ScenarioStatus;
 }
@@ -139,9 +137,7 @@ export interface ScenarioActionExecutor {
 class CreateScenarioExecutor implements ScenarioActionExecutor {
   readonly actionType = CREATE_SCENARIO_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'CreateScenarioExecutor: not yet implemented. Requires browser automation infrastructure.',
     );
@@ -151,9 +147,7 @@ class CreateScenarioExecutor implements ScenarioActionExecutor {
 class StartScenarioExecutor implements ScenarioActionExecutor {
   readonly actionType = START_SCENARIO_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'StartScenarioExecutor: not yet implemented. Requires browser automation infrastructure.',
     );
@@ -163,9 +157,7 @@ class StartScenarioExecutor implements ScenarioActionExecutor {
 class StopScenarioExecutor implements ScenarioActionExecutor {
   readonly actionType = STOP_SCENARIO_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'StopScenarioExecutor: not yet implemented. Requires browser automation infrastructure.',
     );
@@ -175,9 +167,7 @@ class StopScenarioExecutor implements ScenarioActionExecutor {
 class CloneScenarioExecutor implements ScenarioActionExecutor {
   readonly actionType = CLONE_SCENARIO_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'CloneScenarioExecutor: not yet implemented. Requires browser automation infrastructure.',
     );
@@ -187,19 +177,14 @@ class CloneScenarioExecutor implements ScenarioActionExecutor {
 class ArchiveScenarioExecutor implements ScenarioActionExecutor {
   readonly actionType = ARCHIVE_SCENARIO_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'ArchiveScenarioExecutor: not yet implemented. Requires browser automation infrastructure.',
     );
   }
 }
 
-export function createScenarioActionExecutors(): Record<
-  string,
-  ScenarioActionExecutor
-> {
+export function createScenarioActionExecutors(): Record<string, ScenarioActionExecutor> {
   return {
     [CREATE_SCENARIO_ACTION_TYPE]: new CreateScenarioExecutor(),
     [START_SCENARIO_ACTION_TYPE]: new StartScenarioExecutor(),
@@ -304,8 +289,7 @@ export class BloomreachScenariosService {
   prepareCloneScenario(input: CloneScenarioInput): PreparedScenarioAction {
     const project = validateProject(input.project);
     const scenarioId = validateScenarioId(input.scenarioId);
-    const newName =
-      input.newName !== undefined ? validateScenarioName(input.newName) : undefined;
+    const newName = input.newName !== undefined ? validateScenarioName(input.newName) : undefined;
 
     const preview = {
       action: CLONE_SCENARIO_ACTION_TYPE,

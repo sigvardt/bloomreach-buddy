@@ -125,9 +125,7 @@ export function validateSurveyName(name: string): string {
 
 export function validateSurveyStatus(status: string): SurveyStatus {
   if (!SURVEY_STATUSES.includes(status as SurveyStatus)) {
-    throw new Error(
-      `status must be one of: ${SURVEY_STATUSES.join(', ')} (got "${status}").`,
-    );
+    throw new Error(`status must be one of: ${SURVEY_STATUSES.join(', ')} (got "${status}").`);
   }
   return status as SurveyStatus;
 }
@@ -200,9 +198,7 @@ export interface SurveyActionExecutor {
 class CreateSurveyExecutor implements SurveyActionExecutor {
   readonly actionType = CREATE_SURVEY_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'CreateSurveyExecutor: not yet implemented. Requires browser automation infrastructure.',
     );
@@ -212,9 +208,7 @@ class CreateSurveyExecutor implements SurveyActionExecutor {
 class StartSurveyExecutor implements SurveyActionExecutor {
   readonly actionType = START_SURVEY_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'StartSurveyExecutor: not yet implemented. Requires browser automation infrastructure.',
     );
@@ -224,9 +218,7 @@ class StartSurveyExecutor implements SurveyActionExecutor {
 class StopSurveyExecutor implements SurveyActionExecutor {
   readonly actionType = STOP_SURVEY_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'StopSurveyExecutor: not yet implemented. Requires browser automation infrastructure.',
     );
@@ -236,9 +228,7 @@ class StopSurveyExecutor implements SurveyActionExecutor {
 class ArchiveSurveyExecutor implements SurveyActionExecutor {
   readonly actionType = ARCHIVE_SURVEY_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'ArchiveSurveyExecutor: not yet implemented. Requires browser automation infrastructure.',
     );

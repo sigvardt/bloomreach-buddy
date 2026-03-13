@@ -14,8 +14,7 @@ export const CAMPAIGN_CALENDAR_CAMPAIGN_TYPES = [
   'weblayer',
   'webhook',
 ] as const;
-export type CampaignCalendarCampaignType =
-  (typeof CAMPAIGN_CALENDAR_CAMPAIGN_TYPES)[number];
+export type CampaignCalendarCampaignType = (typeof CAMPAIGN_CALENDAR_CAMPAIGN_TYPES)[number];
 
 export const CAMPAIGN_CALENDAR_STATUSES = [
   'draft',
@@ -25,8 +24,7 @@ export const CAMPAIGN_CALENDAR_STATUSES = [
   'stopped',
   'finished',
 ] as const;
-export type CampaignCalendarStatus =
-  (typeof CAMPAIGN_CALENDAR_STATUSES)[number];
+export type CampaignCalendarStatus = (typeof CAMPAIGN_CALENDAR_STATUSES)[number];
 
 export const CAMPAIGN_CALENDAR_CHANNELS = [
   'email',
@@ -36,12 +34,10 @@ export const CAMPAIGN_CALENDAR_CHANNELS = [
   'weblayer',
   'webhook',
 ] as const;
-export type CampaignCalendarChannel =
-  (typeof CAMPAIGN_CALENDAR_CHANNELS)[number];
+export type CampaignCalendarChannel = (typeof CAMPAIGN_CALENDAR_CHANNELS)[number];
 
 export const CAMPAIGN_CALENDAR_EXPORT_FORMATS = ['json', 'csv'] as const;
-export type CampaignCalendarExportFormat =
-  (typeof CAMPAIGN_CALENDAR_EXPORT_FORMATS)[number];
+export type CampaignCalendarExportFormat = (typeof CAMPAIGN_CALENDAR_EXPORT_FORMATS)[number];
 
 export interface CampaignCalendarEntry {
   id: string;
@@ -112,9 +108,7 @@ const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 export function validateDateFormat(date: string): string {
   const trimmed = date.trim();
   if (!ISO_DATE_REGEX.test(trimmed)) {
-    throw new Error(
-      `Date must be in YYYY-MM-DD format (got "${trimmed}").`,
-    );
+    throw new Error(`Date must be in YYYY-MM-DD format (got "${trimmed}").`);
   }
   const parsed = new Date(trimmed);
   if (isNaN(parsed.getTime())) {
@@ -127,10 +121,7 @@ export function validateDateFormat(date: string): string {
  * @throws {Error} If dates are not valid ISO-8601 YYYY-MM-DD strings,
  *   or if startDate is after endDate.
  */
-export function validateCalendarDateRange(
-  startDate: string,
-  endDate: string,
-): CalendarDateRange {
+export function validateCalendarDateRange(startDate: string, endDate: string): CalendarDateRange {
   const validStart = validateDateFormat(startDate);
   const validEnd = validateDateFormat(endDate);
   if (new Date(validStart) > new Date(validEnd)) {
@@ -142,14 +133,8 @@ export function validateCalendarDateRange(
 }
 
 /** @throws {Error} If `type` is not a recognised campaign type. */
-export function validateCalendarCampaignType(
-  type: string,
-): CampaignCalendarCampaignType {
-  if (
-    !CAMPAIGN_CALENDAR_CAMPAIGN_TYPES.includes(
-      type as CampaignCalendarCampaignType,
-    )
-  ) {
+export function validateCalendarCampaignType(type: string): CampaignCalendarCampaignType {
+  if (!CAMPAIGN_CALENDAR_CAMPAIGN_TYPES.includes(type as CampaignCalendarCampaignType)) {
     throw new Error(
       `Campaign type must be one of: ${CAMPAIGN_CALENDAR_CAMPAIGN_TYPES.join(', ')} (got "${type}").`,
     );
@@ -158,12 +143,8 @@ export function validateCalendarCampaignType(
 }
 
 /** @throws {Error} If `status` is not a recognised campaign calendar status. */
-export function validateCalendarCampaignStatus(
-  status: string,
-): CampaignCalendarStatus {
-  if (
-    !CAMPAIGN_CALENDAR_STATUSES.includes(status as CampaignCalendarStatus)
-  ) {
+export function validateCalendarCampaignStatus(status: string): CampaignCalendarStatus {
+  if (!CAMPAIGN_CALENDAR_STATUSES.includes(status as CampaignCalendarStatus)) {
     throw new Error(
       `Campaign status must be one of: ${CAMPAIGN_CALENDAR_STATUSES.join(', ')} (got "${status}").`,
     );
@@ -172,12 +153,8 @@ export function validateCalendarCampaignStatus(
 }
 
 /** @throws {Error} If `channel` is not a recognised campaign channel. */
-export function validateCalendarChannel(
-  channel: string,
-): CampaignCalendarChannel {
-  if (
-    !CAMPAIGN_CALENDAR_CHANNELS.includes(channel as CampaignCalendarChannel)
-  ) {
+export function validateCalendarChannel(channel: string): CampaignCalendarChannel {
+  if (!CAMPAIGN_CALENDAR_CHANNELS.includes(channel as CampaignCalendarChannel)) {
     throw new Error(
       `Channel must be one of: ${CAMPAIGN_CALENDAR_CHANNELS.join(', ')} (got "${channel}").`,
     );
@@ -186,14 +163,8 @@ export function validateCalendarChannel(
 }
 
 /** @throws {Error} If `format` is not a recognised export format. */
-export function validateExportFormat(
-  format: string,
-): CampaignCalendarExportFormat {
-  if (
-    !CAMPAIGN_CALENDAR_EXPORT_FORMATS.includes(
-      format as CampaignCalendarExportFormat,
-    )
-  ) {
+export function validateExportFormat(format: string): CampaignCalendarExportFormat {
+  if (!CAMPAIGN_CALENDAR_EXPORT_FORMATS.includes(format as CampaignCalendarExportFormat)) {
     throw new Error(
       `Export format must be one of: ${CAMPAIGN_CALENDAR_EXPORT_FORMATS.join(', ')} (got "${format}").`,
     );
@@ -217,9 +188,7 @@ export interface CampaignCalendarActionExecutor {
 class ExportCalendarExecutor implements CampaignCalendarActionExecutor {
   readonly actionType = EXPORT_CALENDAR_ACTION_TYPE;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     throw new Error(
       'ExportCalendarExecutor: not yet implemented. Requires browser automation infrastructure.',
     );
@@ -252,9 +221,7 @@ export class BloomreachCampaignCalendarService {
   }
 
   /** @throws {Error} Browser automation not yet available. */
-  async viewCampaignCalendar(
-    input: ViewCampaignCalendarInput,
-  ): Promise<CampaignCalendarEntry[]> {
+  async viewCampaignCalendar(input: ViewCampaignCalendarInput): Promise<CampaignCalendarEntry[]> {
     validateProject(input.project);
     if (input.startDate !== undefined && input.endDate !== undefined) {
       validateCalendarDateRange(input.startDate, input.endDate);

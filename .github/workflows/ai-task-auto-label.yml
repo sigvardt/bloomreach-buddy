@@ -18,12 +18,12 @@ jobs:
           script: |
             const issue = context.payload.issue;
             const labels = issue.labels.map(l => l.name);
-            
+
             const excludeLabels = ['backlog', 'ai-in-progress', 'ai-blocked', 'ai-review-ready', 'wontfix', 'duplicate', 'invalid'];
-            
+
             const hasExclude = labels.some(l => excludeLabels.includes(l));
             const hasAiTask = labels.includes('ai-task');
-            
+
             if (hasExclude && hasAiTask) {
               await github.rest.issues.removeLabel({
                 owner: context.repo.owner,

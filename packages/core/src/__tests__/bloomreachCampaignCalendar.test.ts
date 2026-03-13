@@ -109,9 +109,7 @@ describe('validateDateFormat', () => {
   });
 
   it('throws for non-date string', () => {
-    expect(() => validateDateFormat('not-a-date')).toThrow(
-      'must be in YYYY-MM-DD format',
-    );
+    expect(() => validateDateFormat('not-a-date')).toThrow('must be in YYYY-MM-DD format');
   });
 
   it('throws for empty string', () => {
@@ -119,9 +117,7 @@ describe('validateDateFormat', () => {
   });
 
   it('throws for partial date', () => {
-    expect(() => validateDateFormat('2026-03')).toThrow(
-      'must be in YYYY-MM-DD format',
-    );
+    expect(() => validateDateFormat('2026-03')).toThrow('must be in YYYY-MM-DD format');
   });
 
   it('throws for date with time component', () => {
@@ -191,15 +187,11 @@ describe('validateCalendarCampaignType', () => {
   });
 
   it('throws for unknown type', () => {
-    expect(() => validateCalendarCampaignType('banner')).toThrow(
-      'Campaign type must be one of',
-    );
+    expect(() => validateCalendarCampaignType('banner')).toThrow('Campaign type must be one of');
   });
 
   it('throws for empty string', () => {
-    expect(() => validateCalendarCampaignType('')).toThrow(
-      'Campaign type must be one of',
-    );
+    expect(() => validateCalendarCampaignType('')).toThrow('Campaign type must be one of');
   });
 });
 
@@ -235,9 +227,7 @@ describe('validateCalendarCampaignStatus', () => {
   });
 
   it('throws for empty string', () => {
-    expect(() => validateCalendarCampaignStatus('')).toThrow(
-      'Campaign status must be one of',
-    );
+    expect(() => validateCalendarCampaignStatus('')).toThrow('Campaign status must be one of');
   });
 });
 
@@ -267,9 +257,7 @@ describe('validateCalendarChannel', () => {
   });
 
   it('throws for unknown channel', () => {
-    expect(() => validateCalendarChannel('telegram')).toThrow(
-      'Channel must be one of',
-    );
+    expect(() => validateCalendarChannel('telegram')).toThrow('Channel must be one of');
   });
 
   it('throws for empty string', () => {
@@ -287,15 +275,11 @@ describe('validateExportFormat', () => {
   });
 
   it('throws for unknown format', () => {
-    expect(() => validateExportFormat('xml')).toThrow(
-      'Export format must be one of',
-    );
+    expect(() => validateExportFormat('xml')).toThrow('Export format must be one of');
   });
 
   it('throws for empty string', () => {
-    expect(() => validateExportFormat('')).toThrow(
-      'Export format must be one of',
-    );
+    expect(() => validateExportFormat('')).toThrow('Export format must be one of');
   });
 });
 
@@ -307,15 +291,11 @@ describe('buildCampaignCalendarUrl', () => {
   });
 
   it('encodes spaces in project name', () => {
-    expect(buildCampaignCalendarUrl('my project')).toBe(
-      '/p/my%20project/campaigns/calendar',
-    );
+    expect(buildCampaignCalendarUrl('my project')).toBe('/p/my%20project/campaigns/calendar');
   });
 
   it('encodes slashes in project name', () => {
-    expect(buildCampaignCalendarUrl('org/project')).toBe(
-      '/p/org%2Fproject/campaigns/calendar',
-    );
+    expect(buildCampaignCalendarUrl('org/project')).toBe('/p/org%2Fproject/campaigns/calendar');
   });
 });
 
@@ -350,9 +330,7 @@ describe('BloomreachCampaignCalendarService', () => {
 
     it('exposes the calendar URL', () => {
       const service = new BloomreachCampaignCalendarService('kingdom-of-joakim');
-      expect(service.calendarUrl).toBe(
-        '/p/kingdom-of-joakim/campaigns/calendar',
-      );
+      expect(service.calendarUrl).toBe('/p/kingdom-of-joakim/campaigns/calendar');
     });
 
     it('trims project name', () => {
@@ -361,18 +339,16 @@ describe('BloomreachCampaignCalendarService', () => {
     });
 
     it('throws for empty project', () => {
-      expect(() => new BloomreachCampaignCalendarService('')).toThrow(
-        'must not be empty',
-      );
+      expect(() => new BloomreachCampaignCalendarService('')).toThrow('must not be empty');
     });
   });
 
   describe('viewCampaignCalendar', () => {
     it('throws not-yet-implemented error', async () => {
       const service = new BloomreachCampaignCalendarService('test');
-      await expect(
-        service.viewCampaignCalendar({ project: 'test' }),
-      ).rejects.toThrow('not yet implemented');
+      await expect(service.viewCampaignCalendar({ project: 'test' })).rejects.toThrow(
+        'not yet implemented',
+      );
     });
 
     it('throws not-yet-implemented with valid date range', async () => {
@@ -388,9 +364,9 @@ describe('BloomreachCampaignCalendarService', () => {
 
     it('validates project when provided', async () => {
       const service = new BloomreachCampaignCalendarService('test');
-      await expect(
-        service.viewCampaignCalendar({ project: '' }),
-      ).rejects.toThrow('must not be empty');
+      await expect(service.viewCampaignCalendar({ project: '' })).rejects.toThrow(
+        'must not be empty',
+      );
     });
 
     it('validates start date format', async () => {
@@ -428,9 +404,9 @@ describe('BloomreachCampaignCalendarService', () => {
   describe('filterCampaignCalendar', () => {
     it('throws not-yet-implemented error', async () => {
       const service = new BloomreachCampaignCalendarService('test');
-      await expect(
-        service.filterCampaignCalendar({ project: 'test' }),
-      ).rejects.toThrow('not yet implemented');
+      await expect(service.filterCampaignCalendar({ project: 'test' })).rejects.toThrow(
+        'not yet implemented',
+      );
     });
 
     it('throws not-yet-implemented with all filters', async () => {
@@ -449,9 +425,9 @@ describe('BloomreachCampaignCalendarService', () => {
 
     it('validates project when provided', async () => {
       const service = new BloomreachCampaignCalendarService('test');
-      await expect(
-        service.filterCampaignCalendar({ project: '' }),
-      ).rejects.toThrow('must not be empty');
+      await expect(service.filterCampaignCalendar({ project: '' })).rejects.toThrow(
+        'must not be empty',
+      );
     });
 
     it('validates campaign type filter', async () => {
@@ -530,9 +506,7 @@ describe('BloomreachCampaignCalendarService', () => {
         type: 'email',
       });
 
-      expect(result.preview).toEqual(
-        expect.objectContaining({ type: 'email' }),
-      );
+      expect(result.preview).toEqual(expect.objectContaining({ type: 'email' }));
     });
 
     it('includes status filter in preview', () => {
@@ -542,9 +516,7 @@ describe('BloomreachCampaignCalendarService', () => {
         status: 'scheduled',
       });
 
-      expect(result.preview).toEqual(
-        expect.objectContaining({ status: 'scheduled' }),
-      );
+      expect(result.preview).toEqual(expect.objectContaining({ status: 'scheduled' }));
     });
 
     it('includes channel filter in preview', () => {
@@ -554,9 +526,7 @@ describe('BloomreachCampaignCalendarService', () => {
         channel: 'sms',
       });
 
-      expect(result.preview).toEqual(
-        expect.objectContaining({ channel: 'sms' }),
-      );
+      expect(result.preview).toEqual(expect.objectContaining({ channel: 'sms' }));
     });
 
     it('includes explicit export format in preview', () => {
@@ -566,18 +536,14 @@ describe('BloomreachCampaignCalendarService', () => {
         format: 'csv',
       });
 
-      expect(result.preview).toEqual(
-        expect.objectContaining({ format: 'csv' }),
-      );
+      expect(result.preview).toEqual(expect.objectContaining({ format: 'csv' }));
     });
 
     it('defaults format to json when not specified', () => {
       const service = new BloomreachCampaignCalendarService('test');
       const result = service.prepareExportCalendar({ project: 'test' });
 
-      expect(result.preview).toEqual(
-        expect.objectContaining({ format: 'json' }),
-      );
+      expect(result.preview).toEqual(expect.objectContaining({ format: 'json' }));
     });
 
     it('includes operatorNote in preview', () => {
@@ -622,9 +588,7 @@ describe('BloomreachCampaignCalendarService', () => {
 
     it('throws for empty project', () => {
       const service = new BloomreachCampaignCalendarService('test');
-      expect(() =>
-        service.prepareExportCalendar({ project: '' }),
-      ).toThrow('must not be empty');
+      expect(() => service.prepareExportCalendar({ project: '' })).toThrow('must not be empty');
     });
 
     it('throws for invalid date range', () => {
@@ -640,30 +604,30 @@ describe('BloomreachCampaignCalendarService', () => {
 
     it('throws for invalid campaign type', () => {
       const service = new BloomreachCampaignCalendarService('test');
-      expect(() =>
-        service.prepareExportCalendar({ project: 'test', type: 'banner' }),
-      ).toThrow('Campaign type must be one of');
+      expect(() => service.prepareExportCalendar({ project: 'test', type: 'banner' })).toThrow(
+        'Campaign type must be one of',
+      );
     });
 
     it('throws for invalid status', () => {
       const service = new BloomreachCampaignCalendarService('test');
-      expect(() =>
-        service.prepareExportCalendar({ project: 'test', status: 'active' }),
-      ).toThrow('Campaign status must be one of');
+      expect(() => service.prepareExportCalendar({ project: 'test', status: 'active' })).toThrow(
+        'Campaign status must be one of',
+      );
     });
 
     it('throws for invalid channel', () => {
       const service = new BloomreachCampaignCalendarService('test');
-      expect(() =>
-        service.prepareExportCalendar({ project: 'test', channel: 'telegram' }),
-      ).toThrow('Channel must be one of');
+      expect(() => service.prepareExportCalendar({ project: 'test', channel: 'telegram' })).toThrow(
+        'Channel must be one of',
+      );
     });
 
     it('throws for invalid export format', () => {
       const service = new BloomreachCampaignCalendarService('test');
-      expect(() =>
-        service.prepareExportCalendar({ project: 'test', format: 'xml' }),
-      ).toThrow('Export format must be one of');
+      expect(() => service.prepareExportCalendar({ project: 'test', format: 'xml' })).toThrow(
+        'Export format must be one of',
+      );
     });
   });
 });

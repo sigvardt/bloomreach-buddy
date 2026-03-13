@@ -8,8 +8,7 @@ export const PERFORMANCE_DASHBOARD_TYPES = [
   'project_health',
 ] as const;
 
-export type PerformanceDashboardType =
-  (typeof PERFORMANCE_DASHBOARD_TYPES)[number];
+export type PerformanceDashboardType = (typeof PERFORMANCE_DASHBOARD_TYPES)[number];
 
 export interface DateRangeFilter {
   /** ISO-8601 date string, e.g. `"2025-01-01"`. */
@@ -22,9 +21,7 @@ const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 function assertValidCalendarDate(label: string, value: string): void {
   if (!ISO_DATE_RE.test(value)) {
-    throw new Error(
-      `${label} must be a valid ISO-8601 date (YYYY-MM-DD), got "${value}".`,
-    );
+    throw new Error(`${label} must be a valid ISO-8601 date (YYYY-MM-DD), got "${value}".`);
   }
   const parsed = new Date(value + 'T00:00:00Z');
   if (Number.isNaN(parsed.getTime())) {
@@ -37,9 +34,7 @@ function assertValidCalendarDate(label: string, value: string): void {
 }
 
 /** @throws {Error} If dates are malformed or `startDate` is after `endDate`. */
-export function validateDateRange(
-  dateRange?: DateRangeFilter,
-): DateRangeFilter | undefined {
+export function validateDateRange(dateRange?: DateRangeFilter): DateRangeFilter | undefined {
   if (dateRange === undefined) {
     return undefined;
   }
@@ -79,9 +74,7 @@ export type ChannelType = (typeof CHANNEL_TYPES)[number];
 /** @throws {Error} If `channel` is not a recognised channel type. */
 export function validateChannel(channel: string): ChannelType {
   if (!CHANNEL_TYPES.includes(channel as ChannelType)) {
-    throw new Error(
-      `channel must be one of: ${CHANNEL_TYPES.join(', ')} (got "${channel}").`,
-    );
+    throw new Error(`channel must be one of: ${CHANNEL_TYPES.join(', ')} (got "${channel}").`);
   }
   return channel as ChannelType;
 }

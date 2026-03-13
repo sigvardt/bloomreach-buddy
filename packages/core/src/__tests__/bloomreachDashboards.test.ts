@@ -252,16 +252,16 @@ describe('BloomreachDashboardsService', () => {
 
     it('throws for empty name', () => {
       const service = new BloomreachDashboardsService('test');
-      expect(() =>
-        service.prepareCreateDashboard({ project: 'test', name: '' }),
-      ).toThrow('must not be empty');
+      expect(() => service.prepareCreateDashboard({ project: 'test', name: '' })).toThrow(
+        'must not be empty',
+      );
     });
 
     it('throws for empty project', () => {
       const service = new BloomreachDashboardsService('test');
-      expect(() =>
-        service.prepareCreateDashboard({ project: '', name: 'Dashboard' }),
-      ).toThrow('must not be empty');
+      expect(() => service.prepareCreateDashboard({ project: '', name: 'Dashboard' })).toThrow(
+        'must not be empty',
+      );
     });
 
     it('throws for invalid layout columns', () => {
@@ -310,9 +310,9 @@ describe('BloomreachDashboardsService', () => {
 
     it('throws for empty dashboardId', () => {
       const service = new BloomreachDashboardsService('test');
-      expect(() =>
-        service.prepareSetHomeDashboard({ project: 'test', dashboardId: '' }),
-      ).toThrow('must not be empty');
+      expect(() => service.prepareSetHomeDashboard({ project: 'test', dashboardId: '' })).toThrow(
+        'must not be empty',
+      );
     });
 
     it('throws for empty project', () => {
@@ -344,16 +344,16 @@ describe('BloomreachDashboardsService', () => {
 
     it('throws for empty dashboardId', () => {
       const service = new BloomreachDashboardsService('test');
-      expect(() =>
-        service.prepareDeleteDashboard({ project: 'test', dashboardId: '' }),
-      ).toThrow('must not be empty');
+      expect(() => service.prepareDeleteDashboard({ project: 'test', dashboardId: '' })).toThrow(
+        'must not be empty',
+      );
     });
 
     it('throws for whitespace-only dashboardId', () => {
       const service = new BloomreachDashboardsService('test');
-      expect(() =>
-        service.prepareDeleteDashboard({ project: 'test', dashboardId: '   ' }),
-      ).toThrow('must not be empty');
+      expect(() => service.prepareDeleteDashboard({ project: 'test', dashboardId: '   ' })).toThrow(
+        'must not be empty',
+      );
     });
 
     it('throws for empty project', () => {

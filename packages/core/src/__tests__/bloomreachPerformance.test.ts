@@ -87,40 +87,30 @@ describe('validateDateRange', () => {
   });
 
   it('throws for startDate that is not a real date', () => {
-    expect(() => validateDateRange({ startDate: '2025-13-45' })).toThrow(
-      'startDate',
-    );
+    expect(() => validateDateRange({ startDate: '2025-13-45' })).toThrow('startDate');
   });
 
   it('throws for endDate that is not a real date', () => {
-    expect(() => validateDateRange({ endDate: '2025-02-30' })).toThrow(
-      'endDate',
-    );
+    expect(() => validateDateRange({ endDate: '2025-02-30' })).toThrow('endDate');
   });
 
   it('throws when startDate is after endDate', () => {
-    expect(() =>
-      validateDateRange({ startDate: '2025-06-01', endDate: '2025-01-01' }),
-    ).toThrow('must not be after');
+    expect(() => validateDateRange({ startDate: '2025-06-01', endDate: '2025-01-01' })).toThrow(
+      'must not be after',
+    );
   });
 });
 
 describe('validateChannel', () => {
-  it.each([
-    'email',
-    'sms',
-    'push',
-    'whatsapp',
-    'weblayer',
-    'in_app_message',
-  ] as const)('accepts "%s"', (channel) => {
-    expect(validateChannel(channel)).toBe(channel);
-  });
+  it.each(['email', 'sms', 'push', 'whatsapp', 'weblayer', 'in_app_message'] as const)(
+    'accepts "%s"',
+    (channel) => {
+      expect(validateChannel(channel)).toBe(channel);
+    },
+  );
 
   it('throws for an unknown channel', () => {
-    expect(() => validateChannel('carrier_pigeon')).toThrow(
-      'channel must be one of',
-    );
+    expect(() => validateChannel('carrier_pigeon')).toThrow('channel must be one of');
   });
 
   it('throws for an empty string', () => {
@@ -170,37 +160,27 @@ describe('buildBloomreachUsageUrl', () => {
   });
 
   it('encodes special characters', () => {
-    expect(buildBloomreachUsageUrl('a/b')).toBe(
-      '/p/a%2Fb/overview/pricing-dashboard-v2',
-    );
+    expect(buildBloomreachUsageUrl('a/b')).toBe('/p/a%2Fb/overview/pricing-dashboard-v2');
   });
 });
 
 describe('buildProjectOverviewUrl', () => {
   it('builds URL for a simple project name', () => {
-    expect(buildProjectOverviewUrl('my-project')).toBe(
-      '/p/my-project/overview/project',
-    );
+    expect(buildProjectOverviewUrl('my-project')).toBe('/p/my-project/overview/project');
   });
 
   it('encodes special characters', () => {
-    expect(buildProjectOverviewUrl('x y')).toBe(
-      '/p/x%20y/overview/project',
-    );
+    expect(buildProjectOverviewUrl('x y')).toBe('/p/x%20y/overview/project');
   });
 });
 
 describe('buildProjectHealthUrl', () => {
   it('builds URL for a simple project name', () => {
-    expect(buildProjectHealthUrl('my-project')).toBe(
-      '/p/my-project/overview/health-dashboard',
-    );
+    expect(buildProjectHealthUrl('my-project')).toBe('/p/my-project/overview/health-dashboard');
   });
 
   it('encodes special characters', () => {
-    expect(buildProjectHealthUrl('a&b')).toBe(
-      '/p/a%26b/overview/health-dashboard',
-    );
+    expect(buildProjectHealthUrl('a&b')).toBe('/p/a%26b/overview/health-dashboard');
   });
 });
 
@@ -219,15 +199,11 @@ describe('BloomreachPerformanceService', () => {
     });
 
     it('throws for empty project', () => {
-      expect(() => new BloomreachPerformanceService('')).toThrow(
-        'must not be empty',
-      );
+      expect(() => new BloomreachPerformanceService('')).toThrow('must not be empty');
     });
 
     it('throws for whitespace-only project', () => {
-      expect(() => new BloomreachPerformanceService('   ')).toThrow(
-        'must not be empty',
-      );
+      expect(() => new BloomreachPerformanceService('   ')).toThrow('must not be empty');
     });
   });
 
@@ -247,9 +223,7 @@ describe('BloomreachPerformanceService', () => {
     });
 
     it('exposes usageUrl', () => {
-      expect(service.usageUrl).toBe(
-        '/p/test-proj/overview/pricing-dashboard-v2',
-      );
+      expect(service.usageUrl).toBe('/p/test-proj/overview/pricing-dashboard-v2');
     });
 
     it('exposes overviewUrl', () => {
@@ -257,25 +231,23 @@ describe('BloomreachPerformanceService', () => {
     });
 
     it('exposes healthUrl', () => {
-      expect(service.healthUrl).toBe(
-        '/p/test-proj/overview/health-dashboard',
-      );
+      expect(service.healthUrl).toBe('/p/test-proj/overview/health-dashboard');
     });
   });
 
   describe('viewProjectPerformance', () => {
     it('throws not-yet-implemented error', async () => {
       const service = new BloomreachPerformanceService('test');
-      await expect(
-        service.viewProjectPerformance({ project: 'test' }),
-      ).rejects.toThrow('not yet implemented');
+      await expect(service.viewProjectPerformance({ project: 'test' })).rejects.toThrow(
+        'not yet implemented',
+      );
     });
 
     it('validates project before throwing', async () => {
       const service = new BloomreachPerformanceService('test');
-      await expect(
-        service.viewProjectPerformance({ project: '' }),
-      ).rejects.toThrow('must not be empty');
+      await expect(service.viewProjectPerformance({ project: '' })).rejects.toThrow(
+        'must not be empty',
+      );
     });
 
     it('validates dateRange before throwing', async () => {
@@ -292,16 +264,16 @@ describe('BloomreachPerformanceService', () => {
   describe('viewChannelPerformance', () => {
     it('throws not-yet-implemented error', async () => {
       const service = new BloomreachPerformanceService('test');
-      await expect(
-        service.viewChannelPerformance({ project: 'test' }),
-      ).rejects.toThrow('not yet implemented');
+      await expect(service.viewChannelPerformance({ project: 'test' })).rejects.toThrow(
+        'not yet implemented',
+      );
     });
 
     it('validates project before throwing', async () => {
       const service = new BloomreachPerformanceService('test');
-      await expect(
-        service.viewChannelPerformance({ project: '' }),
-      ).rejects.toThrow('must not be empty');
+      await expect(service.viewChannelPerformance({ project: '' })).rejects.toThrow(
+        'must not be empty',
+      );
     });
 
     it('validates dateRange before throwing', async () => {
@@ -328,48 +300,46 @@ describe('BloomreachPerformanceService', () => {
   describe('viewBloomreachUsage', () => {
     it('throws not-yet-implemented error', async () => {
       const service = new BloomreachPerformanceService('test');
-      await expect(
-        service.viewBloomreachUsage({ project: 'test' }),
-      ).rejects.toThrow('not yet implemented');
+      await expect(service.viewBloomreachUsage({ project: 'test' })).rejects.toThrow(
+        'not yet implemented',
+      );
     });
 
     it('validates project before throwing', async () => {
       const service = new BloomreachPerformanceService('test');
-      await expect(
-        service.viewBloomreachUsage({ project: '' }),
-      ).rejects.toThrow('must not be empty');
+      await expect(service.viewBloomreachUsage({ project: '' })).rejects.toThrow(
+        'must not be empty',
+      );
     });
   });
 
   describe('viewProjectOverview', () => {
     it('throws not-yet-implemented error', async () => {
       const service = new BloomreachPerformanceService('test');
-      await expect(
-        service.viewProjectOverview({ project: 'test' }),
-      ).rejects.toThrow('not yet implemented');
+      await expect(service.viewProjectOverview({ project: 'test' })).rejects.toThrow(
+        'not yet implemented',
+      );
     });
 
     it('validates project before throwing', async () => {
       const service = new BloomreachPerformanceService('test');
-      await expect(
-        service.viewProjectOverview({ project: '   ' }),
-      ).rejects.toThrow('must not be empty');
+      await expect(service.viewProjectOverview({ project: '   ' })).rejects.toThrow(
+        'must not be empty',
+      );
     });
   });
 
   describe('viewProjectHealth', () => {
     it('throws not-yet-implemented error', async () => {
       const service = new BloomreachPerformanceService('test');
-      await expect(
-        service.viewProjectHealth({ project: 'test' }),
-      ).rejects.toThrow('not yet implemented');
+      await expect(service.viewProjectHealth({ project: 'test' })).rejects.toThrow(
+        'not yet implemented',
+      );
     });
 
     it('validates project before throwing', async () => {
       const service = new BloomreachPerformanceService('test');
-      await expect(
-        service.viewProjectHealth({ project: '' }),
-      ).rejects.toThrow('must not be empty');
+      await expect(service.viewProjectHealth({ project: '' })).rejects.toThrow('must not be empty');
     });
   });
 });

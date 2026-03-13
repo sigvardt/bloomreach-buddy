@@ -336,16 +336,16 @@ describe('BloomreachSurveysService', () => {
 
     it('validates status when provided', async () => {
       const service = new BloomreachSurveysService('test');
-      await expect(
-        service.listSurveys({ project: 'test', status: 'paused' }),
-      ).rejects.toThrow('status must be one of');
+      await expect(service.listSurveys({ project: 'test', status: 'paused' })).rejects.toThrow(
+        'status must be one of',
+      );
     });
 
     it('validates project when input is provided', async () => {
       const service = new BloomreachSurveysService('test');
-      await expect(
-        service.listSurveys({ project: '', status: 'active' }),
-      ).rejects.toThrow('must not be empty');
+      await expect(service.listSurveys({ project: '', status: 'active' })).rejects.toThrow(
+        'must not be empty',
+      );
     });
   });
 
@@ -366,9 +366,9 @@ describe('BloomreachSurveysService', () => {
 
     it('validates surveyId input', async () => {
       const service = new BloomreachSurveysService('test');
-      await expect(
-        service.viewSurveyResults({ project: 'test', surveyId: '   ' }),
-      ).rejects.toThrow('Survey ID must not be empty');
+      await expect(service.viewSurveyResults({ project: 'test', surveyId: '   ' })).rejects.toThrow(
+        'Survey ID must not be empty',
+      );
     });
   });
 
@@ -522,9 +522,9 @@ describe('BloomreachSurveysService', () => {
 
     it('throws for empty project', () => {
       const service = new BloomreachSurveysService('test');
-      expect(() =>
-        service.prepareStartSurvey({ project: '', surveyId: 'survey-123' }),
-      ).toThrow('must not be empty');
+      expect(() => service.prepareStartSurvey({ project: '', surveyId: 'survey-123' })).toThrow(
+        'must not be empty',
+      );
     });
   });
 
@@ -569,9 +569,9 @@ describe('BloomreachSurveysService', () => {
 
     it('throws for empty project', () => {
       const service = new BloomreachSurveysService('test');
-      expect(() =>
-        service.prepareStopSurvey({ project: '', surveyId: 'survey-456' }),
-      ).toThrow('must not be empty');
+      expect(() => service.prepareStopSurvey({ project: '', surveyId: 'survey-456' })).toThrow(
+        'must not be empty',
+      );
     });
   });
 
@@ -616,9 +616,9 @@ describe('BloomreachSurveysService', () => {
 
     it('throws for empty project', () => {
       const service = new BloomreachSurveysService('test');
-      expect(() =>
-        service.prepareArchiveSurvey({ project: '', surveyId: 'survey-900' }),
-      ).toThrow('must not be empty');
+      expect(() => service.prepareArchiveSurvey({ project: '', surveyId: 'survey-900' })).toThrow(
+        'must not be empty',
+      );
     });
   });
 });

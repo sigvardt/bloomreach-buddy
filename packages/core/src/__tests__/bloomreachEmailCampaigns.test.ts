@@ -264,9 +264,9 @@ describe('validateABTestConfig', () => {
   });
 
   it('throws for negative splitPercentage', () => {
-    expect(() =>
-      validateABTestConfig({ enabled: true, variants: 2, splitPercentage: -1 }),
-    ).toThrow('must be between 0 and 100');
+    expect(() => validateABTestConfig({ enabled: true, variants: 2, splitPercentage: -1 })).toThrow(
+      'must be between 0 and 100',
+    );
   });
 
   it('throws for splitPercentage above 100', () => {
@@ -323,9 +323,9 @@ describe('validateSchedule', () => {
   });
 
   it('throws for unknown schedule type', () => {
-    expect(() =>
-      validateSchedule({ type: 'delayed' as unknown as 'immediate' }),
-    ).toThrow('schedule type must be one of');
+    expect(() => validateSchedule({ type: 'delayed' as unknown as 'immediate' })).toThrow(
+      'schedule type must be one of',
+    );
   });
 });
 
@@ -337,9 +337,7 @@ describe('buildEmailCampaignsUrl', () => {
   });
 
   it('encodes spaces in project name', () => {
-    expect(buildEmailCampaignsUrl('my project')).toBe(
-      '/p/my%20project/campaigns/email-campaigns',
-    );
+    expect(buildEmailCampaignsUrl('my project')).toBe('/p/my%20project/campaigns/email-campaigns');
   });
 
   it('encodes slashes in project name', () => {
@@ -383,9 +381,7 @@ describe('BloomreachEmailCampaignsService', () => {
 
     it('exposes the email campaigns URL', () => {
       const service = new BloomreachEmailCampaignsService('kingdom-of-joakim');
-      expect(service.emailCampaignsUrl).toBe(
-        '/p/kingdom-of-joakim/campaigns/email-campaigns',
-      );
+      expect(service.emailCampaignsUrl).toBe('/p/kingdom-of-joakim/campaigns/email-campaigns');
     });
 
     it('trims project name', () => {
@@ -413,9 +409,9 @@ describe('BloomreachEmailCampaignsService', () => {
 
     it('validates project when input is provided', async () => {
       const service = new BloomreachEmailCampaignsService('test');
-      await expect(
-        service.listEmailCampaigns({ project: '', status: 'draft' }),
-      ).rejects.toThrow('must not be empty');
+      await expect(service.listEmailCampaigns({ project: '', status: 'draft' })).rejects.toThrow(
+        'must not be empty',
+      );
     });
   });
 
@@ -448,7 +444,7 @@ describe('BloomreachEmailCampaignsService', () => {
       const result = service.prepareCreateEmailCampaign({
         project: 'test',
         name: 'Spring Sale',
-        subjectLine: 'Don\'t miss our Spring Sale!',
+        subjectLine: "Don't miss our Spring Sale!",
       });
 
       expect(result.preparedActionId).toMatch(/^pa_/);
@@ -459,7 +455,7 @@ describe('BloomreachEmailCampaignsService', () => {
           action: 'email_campaigns.create_campaign',
           project: 'test',
           name: 'Spring Sale',
-          subjectLine: 'Don\'t miss our Spring Sale!',
+          subjectLine: "Don't miss our Spring Sale!",
         }),
       );
     });
@@ -473,9 +469,7 @@ describe('BloomreachEmailCampaignsService', () => {
         templateType: 'html',
       });
 
-      expect(result.preview).toEqual(
-        expect.objectContaining({ templateType: 'html' }),
-      );
+      expect(result.preview).toEqual(expect.objectContaining({ templateType: 'html' }));
     });
 
     it('includes audience in preview', () => {
@@ -487,9 +481,7 @@ describe('BloomreachEmailCampaignsService', () => {
         audience: 'vip-customers',
       });
 
-      expect(result.preview).toEqual(
-        expect.objectContaining({ audience: 'vip-customers' }),
-      );
+      expect(result.preview).toEqual(expect.objectContaining({ audience: 'vip-customers' }));
     });
 
     it('includes schedule in preview', () => {
@@ -647,9 +639,9 @@ describe('BloomreachEmailCampaignsService', () => {
 
     it('throws for empty campaignId', () => {
       const service = new BloomreachEmailCampaignsService('test');
-      expect(() =>
-        service.prepareSendEmailCampaign({ project: 'test', campaignId: '' }),
-      ).toThrow('must not be empty');
+      expect(() => service.prepareSendEmailCampaign({ project: 'test', campaignId: '' })).toThrow(
+        'must not be empty',
+      );
     });
 
     it('throws for empty project', () => {
@@ -687,9 +679,7 @@ describe('BloomreachEmailCampaignsService', () => {
         newName: '  Cloned Campaign  ',
       });
 
-      expect(result.preview).toEqual(
-        expect.objectContaining({ newName: 'Cloned Campaign' }),
-      );
+      expect(result.preview).toEqual(expect.objectContaining({ newName: 'Cloned Campaign' }));
     });
 
     it('includes operatorNote in preview', () => {
@@ -700,16 +690,14 @@ describe('BloomreachEmailCampaignsService', () => {
         operatorNote: 'Clone for Q3',
       });
 
-      expect(result.preview).toEqual(
-        expect.objectContaining({ operatorNote: 'Clone for Q3' }),
-      );
+      expect(result.preview).toEqual(expect.objectContaining({ operatorNote: 'Clone for Q3' }));
     });
 
     it('throws for empty campaignId', () => {
       const service = new BloomreachEmailCampaignsService('test');
-      expect(() =>
-        service.prepareCloneEmailCampaign({ project: 'test', campaignId: '' }),
-      ).toThrow('must not be empty');
+      expect(() => service.prepareCloneEmailCampaign({ project: 'test', campaignId: '' })).toThrow(
+        'must not be empty',
+      );
     });
 
     it('throws for empty project', () => {

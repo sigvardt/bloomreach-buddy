@@ -287,10 +287,7 @@ class ArchiveEmailCampaignExecutor implements EmailCampaignActionExecutor {
   }
 }
 
-export function createEmailCampaignActionExecutors(): Record<
-  string,
-  EmailCampaignActionExecutor
-> {
+export function createEmailCampaignActionExecutors(): Record<string, EmailCampaignActionExecutor> {
   return {
     [CREATE_EMAIL_CAMPAIGN_ACTION_TYPE]: new CreateEmailCampaignExecutor(),
     [SEND_EMAIL_CAMPAIGN_ACTION_TYPE]: new SendEmailCampaignExecutor(),
@@ -316,9 +313,7 @@ export class BloomreachEmailCampaignsService {
   }
 
   /** @throws {Error} Browser automation not yet available. */
-  async listEmailCampaigns(
-    input?: ListEmailCampaignsInput,
-  ): Promise<BloomreachEmailCampaign[]> {
+  async listEmailCampaigns(input?: ListEmailCampaignsInput): Promise<BloomreachEmailCampaign[]> {
     if (input !== undefined) {
       validateProject(input.project);
       if (input.status !== undefined) {
@@ -332,9 +327,7 @@ export class BloomreachEmailCampaignsService {
   }
 
   /** @throws {Error} Browser automation not yet available. */
-  async viewCampaignResults(
-    input: ViewEmailCampaignResultsInput,
-  ): Promise<EmailCampaignResults> {
+  async viewCampaignResults(input: ViewEmailCampaignResultsInput): Promise<EmailCampaignResults> {
     validateProject(input.project);
     validateCampaignId(input.campaignId);
 
@@ -344,9 +337,7 @@ export class BloomreachEmailCampaignsService {
   }
 
   /** @throws {Error} If input validation fails. */
-  prepareCreateEmailCampaign(
-    input: CreateEmailCampaignInput,
-  ): PreparedEmailCampaignAction {
+  prepareCreateEmailCampaign(input: CreateEmailCampaignInput): PreparedEmailCampaignAction {
     const project = validateProject(input.project);
     const name = validateCampaignName(input.name);
     const subjectLine = validateSubjectLine(input.subjectLine);
@@ -381,9 +372,7 @@ export class BloomreachEmailCampaignsService {
   }
 
   /** @throws {Error} If input validation fails. */
-  prepareSendEmailCampaign(
-    input: SendEmailCampaignInput,
-  ): PreparedEmailCampaignAction {
+  prepareSendEmailCampaign(input: SendEmailCampaignInput): PreparedEmailCampaignAction {
     const project = validateProject(input.project);
     const campaignId = validateCampaignId(input.campaignId);
 
@@ -403,13 +392,10 @@ export class BloomreachEmailCampaignsService {
   }
 
   /** @throws {Error} If input validation fails. */
-  prepareCloneEmailCampaign(
-    input: CloneEmailCampaignInput,
-  ): PreparedEmailCampaignAction {
+  prepareCloneEmailCampaign(input: CloneEmailCampaignInput): PreparedEmailCampaignAction {
     const project = validateProject(input.project);
     const campaignId = validateCampaignId(input.campaignId);
-    const newName =
-      input.newName !== undefined ? validateCampaignName(input.newName) : undefined;
+    const newName = input.newName !== undefined ? validateCampaignName(input.newName) : undefined;
 
     const preview = {
       action: CLONE_EMAIL_CAMPAIGN_ACTION_TYPE,
@@ -428,9 +414,7 @@ export class BloomreachEmailCampaignsService {
   }
 
   /** @throws {Error} If input validation fails. */
-  prepareArchiveEmailCampaign(
-    input: ArchiveEmailCampaignInput,
-  ): PreparedEmailCampaignAction {
+  prepareArchiveEmailCampaign(input: ArchiveEmailCampaignInput): PreparedEmailCampaignAction {
     const project = validateProject(input.project);
     const campaignId = validateCampaignId(input.campaignId);
 
