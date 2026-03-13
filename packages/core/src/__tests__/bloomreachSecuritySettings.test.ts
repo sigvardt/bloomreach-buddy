@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
 import {
   CREATE_SSH_TUNNEL_ACTION_TYPE,
   UPDATE_SSH_TUNNEL_ACTION_TYPE,
@@ -19,6 +20,17 @@ import {
   createSecuritySettingsActionExecutors,
   BloomreachSecuritySettingsService,
 } from '../index.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_SSH_TUNNEL_ACTION_TYPE', () => {
@@ -82,6 +94,26 @@ describe('validateTunnelName', () => {
     const name = 'x'.repeat(201);
     expect(() => validateTunnelName(name)).toThrow('must not exceed 200 characters');
   });
+
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateTunnelName('\n\tPrimary Tunnel\t\n')).toBe('Primary Tunnel');
+  });
+
+  it('accepts single-character name', () => {
+    expect(validateTunnelName('T')).toBe('T');
+  });
+
+  it('accepts unicode tunnel name', () => {
+    expect(validateTunnelName('Produkční tunel')).toBe('Produkční tunel');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateTunnelName('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateTunnelName('\n\n')).toThrow('must not be empty');
+  });
 });
 
 describe('validateHost', () => {
@@ -105,6 +137,26 @@ describe('validateHost', () => {
   it('throws for host exceeding maximum length', () => {
     const host = 'x'.repeat(254);
     expect(() => validateHost(host)).toThrow('must not exceed 253 characters');
+  });
+
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateHost('\n\tssh.example.com\t\n')).toBe('ssh.example.com');
+  });
+
+  it('accepts single-character host', () => {
+    expect(validateHost('x')).toBe('x');
+  });
+
+  it('accepts unicode host', () => {
+    expect(validateHost('ssh.ëxample.com')).toBe('ssh.ëxample.com');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateHost('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateHost('\n\n')).toThrow('must not be empty');
   });
 });
 
@@ -136,6 +188,10 @@ describe('validatePort', () => {
   it('accepts typical SSH port', () => {
     expect(validatePort(22)).toBe(22);
   });
+
+  it('throws for NaN', () => {
+    expect(() => validatePort(NaN)).toThrow();
+  });
 });
 
 describe('validateUsername', () => {
@@ -160,6 +216,26 @@ describe('validateUsername', () => {
     const username = 'x'.repeat(201);
     expect(() => validateUsername(username)).toThrow('must not exceed 200 characters');
   });
+
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateUsername('\n\tdeploy\t\n')).toBe('deploy');
+  });
+
+  it('accepts single-character username', () => {
+    expect(validateUsername('d')).toBe('d');
+  });
+
+  it('accepts unicode username', () => {
+    expect(validateUsername('přístup')).toBe('přístup');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateUsername('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateUsername('\n\n')).toThrow('must not be empty');
+  });
 });
 
 describe('validateTunnelId', () => {
@@ -173,6 +249,22 @@ describe('validateTunnelId', () => {
 
   it('returns trimmed tunnel ID for valid input', () => {
     expect(validateTunnelId('  tunnel-123  ')).toBe('tunnel-123');
+  });
+
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateTunnelId('\n\ttunnel-abc\t\n')).toBe('tunnel-abc');
+  });
+
+  it('accepts unicode tunnel ID', () => {
+    expect(validateTunnelId('tunel-č123')).toBe('tunel-č123');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateTunnelId('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateTunnelId('\n\n')).toThrow('must not be empty');
   });
 });
 
@@ -197,6 +289,18 @@ describe('URL builders', () => {
     expect(buildSshTunnelsUrl('org/project')).toBe('/p/org%2Fproject/project-settings/ssh-tunnels');
     expect(buildTwoStepVerificationUrl('org/project')).toBe(
       '/p/org%2Fproject/project-settings/project-two-step',
+    );
+  });
+
+  it('encodes unicode project names in URLs', () => {
+    expect(buildSshTunnelsUrl('projekt åäö')).toContain('%C3%A5');
+    expect(buildTwoStepVerificationUrl('projekt åäö')).toContain('%C3%A5');
+  });
+
+  it('encodes hash in URLs', () => {
+    expect(buildSshTunnelsUrl('my#project')).toBe('/p/my%23project/project-settings/ssh-tunnels');
+    expect(buildTwoStepVerificationUrl('my#project')).toBe(
+      '/p/my%23project/project-settings/project-two-step',
     );
   });
 });
@@ -226,6 +330,79 @@ describe('createSecuritySettingsActionExecutors', () => {
       await expect(executor.execute({})).rejects.toThrow('not yet implemented');
     }
   });
+
+  it('executors throw UI-only availability message on execute', async () => {
+    const executors = createSecuritySettingsActionExecutors();
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow(
+        'only available through the Bloomreach Engagement UI',
+      );
+    }
+  });
+
+  it('CreateSshTunnelExecutor mentions UI-only availability', async () => {
+    const executors = createSecuritySettingsActionExecutors();
+    await expect(executors[CREATE_SSH_TUNNEL_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('UpdateSshTunnelExecutor mentions UI-only availability', async () => {
+    const executors = createSecuritySettingsActionExecutors();
+    await expect(executors[UPDATE_SSH_TUNNEL_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('DeleteSshTunnelExecutor mentions UI-only availability', async () => {
+    const executors = createSecuritySettingsActionExecutors();
+    await expect(executors[DELETE_SSH_TUNNEL_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('EnableTwoStepExecutor mentions UI-only availability', async () => {
+    const executors = createSecuritySettingsActionExecutors();
+    await expect(executors[ENABLE_TWO_STEP_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('DisableTwoStepExecutor mentions UI-only availability', async () => {
+    const executors = createSecuritySettingsActionExecutors();
+    await expect(executors[DISABLE_TWO_STEP_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('UpdateTwoStepExecutor mentions UI-only availability', async () => {
+    const executors = createSecuritySettingsActionExecutors();
+    await expect(executors[UPDATE_TWO_STEP_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+});
+
+describe('apiConfig acceptance', () => {
+  it('createSecuritySettingsActionExecutors accepts apiConfig', () => {
+    const executors = createSecuritySettingsActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(6);
+  });
+
+  it('createSecuritySettingsActionExecutors works without apiConfig', () => {
+    const executors = createSecuritySettingsActionExecutors();
+    expect(Object.keys(executors)).toHaveLength(6);
+  });
+
+  it('BloomreachSecuritySettingsService accepts apiConfig', () => {
+    const service = new BloomreachSecuritySettingsService('test', TEST_API_CONFIG);
+    expect(service.sshTunnelsUrl).toBe('/p/test/project-settings/ssh-tunnels');
+  });
+
+  it('BloomreachSecuritySettingsService works without apiConfig', () => {
+    const service = new BloomreachSecuritySettingsService('test');
+    expect(service.sshTunnelsUrl).toBe('/p/test/project-settings/ssh-tunnels');
+  });
 });
 
 describe('BloomreachSecuritySettingsService', () => {
@@ -242,6 +419,21 @@ describe('BloomreachSecuritySettingsService', () => {
 
     it('throws for empty project', () => {
       expect(() => new BloomreachSecuritySettingsService('')).toThrow('must not be empty');
+    });
+
+    it('encodes spaces in URL', () => {
+      const service = new BloomreachSecuritySettingsService('my project');
+      expect(service.sshTunnelsUrl).toBe('/p/my%20project/project-settings/ssh-tunnels');
+    });
+
+    it('encodes unicode in URL', () => {
+      const service = new BloomreachSecuritySettingsService('projekt åäö');
+      expect(service.sshTunnelsUrl).toContain('%C3%A5');
+    });
+
+    it('encodes hash in URL', () => {
+      const service = new BloomreachSecuritySettingsService('my#project');
+      expect(service.sshTunnelsUrl).toBe('/p/my%23project/project-settings/ssh-tunnels');
     });
   });
 
@@ -269,6 +461,40 @@ describe('BloomreachSecuritySettingsService', () => {
     it('viewTwoStepVerification throws not-yet-implemented error', async () => {
       const service = new BloomreachSecuritySettingsService('test');
       await expect(service.viewTwoStepVerification()).rejects.toThrow('not yet implemented');
+    });
+
+    it('listSshTunnels throws descriptive UI-only error', async () => {
+      const service = new BloomreachSecuritySettingsService('test');
+      await expect(service.listSshTunnels()).rejects.toThrow('Bloomreach Engagement UI');
+    });
+
+    it('viewSshTunnel throws descriptive UI-only error', async () => {
+      const service = new BloomreachSecuritySettingsService('test');
+      await expect(service.viewSshTunnel()).rejects.toThrow('Bloomreach Engagement UI');
+    });
+
+    it('viewTwoStepVerification throws descriptive UI-only error', async () => {
+      const service = new BloomreachSecuritySettingsService('test');
+      await expect(service.viewTwoStepVerification()).rejects.toThrow('Bloomreach Engagement UI');
+    });
+
+    it('listSshTunnels validates project when input provided', async () => {
+      const service = new BloomreachSecuritySettingsService('test');
+      await expect(service.listSshTunnels({ project: '' })).rejects.toThrow('must not be empty');
+    });
+
+    it('viewSshTunnel validates project when input provided', async () => {
+      const service = new BloomreachSecuritySettingsService('test');
+      await expect(
+        service.viewSshTunnel({ project: '', tunnelId: 'x' }),
+      ).rejects.toThrow('must not be empty');
+    });
+
+    it('viewTwoStepVerification validates project when input provided', async () => {
+      const service = new BloomreachSecuritySettingsService('test');
+      await expect(
+        service.viewTwoStepVerification({ project: '' }),
+      ).rejects.toThrow('must not be empty');
     });
   });
 
@@ -515,6 +741,37 @@ describe('BloomreachSecuritySettingsService', () => {
     it('throws for empty project', () => {
       const service = new BloomreachSecuritySettingsService('test');
       expect(() => service.prepareDisableTwoStep({ project: '' })).toThrow('must not be empty');
+    });
+  });
+
+  describe('token expiry consistency', () => {
+    it('all prepare methods set expiry ~30 minutes in the future', () => {
+      const service = new BloomreachSecuritySettingsService('test');
+      const now = Date.now();
+      const thirtyMinMs = 30 * 60 * 1000;
+
+      const results = [
+        service.prepareCreateSshTunnel({
+          project: 'test',
+          name: 'T',
+          host: 'h',
+          port: 22,
+          username: 'u',
+        }),
+        service.prepareUpdateSshTunnel({
+          project: 'test',
+          tunnelId: 't-1',
+          name: 'T2',
+        }),
+        service.prepareDeleteSshTunnel({ project: 'test', tunnelId: 't-1' }),
+        service.prepareEnableTwoStep({ project: 'test' }),
+        service.prepareDisableTwoStep({ project: 'test' }),
+      ];
+
+      for (const result of results) {
+        expect(result.expiresAtMs).toBeGreaterThanOrEqual(now + thirtyMinMs - 1000);
+        expect(result.expiresAtMs).toBeLessThanOrEqual(now + thirtyMinMs + 5000);
+      }
     });
   });
 });
