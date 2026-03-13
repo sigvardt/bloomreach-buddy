@@ -9168,8 +9168,10 @@ const segmentations = program
 
 segmentations
   .command('list')
-  .description('List all segmentations in the project')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description(
+    'List all segmentations in the project (note: requires browser automation — not yet available via API)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -9200,11 +9202,15 @@ segmentations
   .command('view-size')
   .description('View the number of customers matching a segmentation')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--segmentation-id <id>', 'Segmentation ID')
+  .requiredOption(
+    '--segmentation-id <id>',
+    'Segmentation analysis ID (hex string from Bloomreach UI URL, e.g. "606488856f8cf6f848b20af8")',
+  )
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; segmentationId: string; json?: boolean }) => {
     try {
-      const service = new BloomreachSegmentationsService(options.project);
+      const apiConfig = tryResolveApiConfig(options.project);
+      const service = new BloomreachSegmentationsService(options.project, apiConfig);
       const result = await service.viewSegmentSize({
         project: options.project,
         segmentationId: options.segmentationId,
@@ -9227,9 +9233,13 @@ segmentations
   .command('view-customers')
   .description('Browse customers matching a segmentation')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--segmentation-id <id>', 'Segmentation ID')
+  .requiredOption(
+    '--segmentation-id <id>',
+    'Segmentation analysis ID (hex string from Bloomreach UI URL, e.g. "606488856f8cf6f848b20af8")',
+  )
   .option('--limit <n>', 'Maximum number of customers to return')
   .option('--offset <n>', 'Offset for pagination')
+  .option('--format <format>', 'Output format: table (default) or csv', 'table')
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -9237,10 +9247,12 @@ segmentations
       segmentationId: string;
       limit?: string;
       offset?: string;
+      format: string;
       json?: boolean;
     }) => {
       try {
-        const service = new BloomreachSegmentationsService(options.project);
+        const apiConfig = tryResolveApiConfig(options.project);
+        const service = new BloomreachSegmentationsService(options.project, apiConfig);
         const result = await service.viewSegmentCustomers({
           project: options.project,
           segmentationId: options.segmentationId,
@@ -9250,6 +9262,13 @@ segmentations
 
         if (options.json) {
           printJson(result);
+        } else if (options.format.toLowerCase() === 'csv') {
+          console.log('customerId,attributes');
+          for (const customer of result.customers) {
+            const escapedCustomerId = customer.customerId.replaceAll('"', '""');
+            const attributesJson = JSON.stringify(customer.attributes ?? {}).replaceAll('"', '""');
+            console.log(`"${escapedCustomerId}","${attributesJson}"`);
+          }
         } else {
           console.log(`Segment Customers: ${result.segmentationId}`);
           console.log(`  Total:  ${result.total}`);
@@ -9273,7 +9292,7 @@ segmentations
   .requiredOption('--name <name>', 'Segmentation name')
   .requiredOption(
     '--conditions <json>',
-    'JSON array of conditions [{type, attribute, operator, value?}]',
+    'JSON array of conditions, e.g. [{"type":"customer_attribute","attribute":"email","operator":"is_set"}]',
   )
   .option('--operator <op>', 'Logical operator for conditions (and, or)', 'and')
   .option('--start-date <date>', 'Start date for event conditions (YYYY-MM-DD)')
@@ -9331,7 +9350,10 @@ segmentations
   .command('clone')
   .description('Prepare cloning a segmentation (two-phase commit)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--segmentation-id <id>', 'Segmentation ID to clone')
+  .requiredOption(
+    '--segmentation-id <id>',
+    'Segmentation analysis ID (hex string from Bloomreach UI URL, e.g. "606488856f8cf6f848b20af8")',
+  )
   .option('--new-name <name>', 'Name for the cloned segmentation')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
@@ -9375,7 +9397,10 @@ segmentations
   .command('archive')
   .description('Prepare archiving a segmentation (two-phase commit)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--segmentation-id <id>', 'Segmentation ID')
+  .requiredOption(
+    '--segmentation-id <id>',
+    'Segmentation analysis ID (hex string from Bloomreach UI URL, e.g. "606488856f8cf6f848b20af8")',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(

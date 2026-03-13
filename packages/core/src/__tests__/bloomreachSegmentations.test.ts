@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   CREATE_SEGMENTATION_ACTION_TYPE,
   CLONE_SEGMENTATION_ACTION_TYPE,
@@ -22,6 +22,18 @@ import {
   BloomreachSegmentationsService,
 } from '../index.js';
 import type { SegmentCondition } from '../index.js';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_SEGMENTATION_ACTION_TYPE', () => {
@@ -588,6 +600,24 @@ describe('createSegmentationActionExecutors', () => {
       'not yet implemented',
     );
   });
+
+  it('accepts optional apiConfig parameter', () => {
+    const executors = createSegmentationActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(3);
+  });
+
+  it('executors still throw not-yet-implemented with apiConfig', async () => {
+    const executors = createSegmentationActionExecutors(TEST_API_CONFIG);
+    await expect(executors[CREATE_SEGMENTATION_ACTION_TYPE].execute({})).rejects.toThrow(
+      'not yet implemented',
+    );
+    await expect(executors[CLONE_SEGMENTATION_ACTION_TYPE].execute({})).rejects.toThrow(
+      'not yet implemented',
+    );
+    await expect(executors[ARCHIVE_SEGMENTATION_ACTION_TYPE].execute({})).rejects.toThrow(
+      'not yet implemented',
+    );
+  });
 });
 
 describe('BloomreachSegmentationsService', () => {
@@ -597,8 +627,18 @@ describe('BloomreachSegmentationsService', () => {
       expect(service).toBeInstanceOf(BloomreachSegmentationsService);
     });
 
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachSegmentationsService('kingdom-of-joakim', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachSegmentationsService);
+    });
+
     it('exposes the segmentations URL', () => {
       const service = new BloomreachSegmentationsService('kingdom-of-joakim');
+      expect(service.segmentationsUrl).toBe('/p/kingdom-of-joakim/analytics/segmentations');
+    });
+
+    it('exposes segmentations URL when constructed with apiConfig', () => {
+      const service = new BloomreachSegmentationsService('kingdom-of-joakim', TEST_API_CONFIG);
       expect(service.segmentationsUrl).toBe('/p/kingdom-of-joakim/analytics/segmentations');
     });
 
@@ -622,9 +662,9 @@ describe('BloomreachSegmentationsService', () => {
   });
 
   describe('listSegmentations', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws unsupported list endpoint error', async () => {
       const service = new BloomreachSegmentationsService('test');
-      await expect(service.listSegmentations()).rejects.toThrow('not yet implemented');
+      await expect(service.listSegmentations()).rejects.toThrow('does not provide a list endpoint');
     });
 
     it('validates project when input is provided', async () => {
@@ -639,37 +679,27 @@ describe('BloomreachSegmentationsService', () => {
       );
     });
 
-    it('throws not-yet-implemented error for valid project override', async () => {
+    it('throws unsupported list endpoint error for valid project override', async () => {
       const service = new BloomreachSegmentationsService('test');
       await expect(service.listSegmentations({ project: 'kingdom-of-joakim' })).rejects.toThrow(
-        'not yet implemented',
+        'does not provide a list endpoint',
       );
     });
 
-    it('throws not-yet-implemented error for trimmed project override', async () => {
+    it('throws unsupported list endpoint error for trimmed project override', async () => {
       const service = new BloomreachSegmentationsService('test');
       await expect(service.listSegmentations({ project: '  kingdom-of-joakim  ' })).rejects.toThrow(
-        'not yet implemented',
+        'does not provide a list endpoint',
       );
     });
   });
 
   describe('viewSegmentSize', () => {
-    it('throws not-yet-implemented error with valid minimal input', async () => {
+    it('throws API credential error when apiConfig is not provided', async () => {
       const service = new BloomreachSegmentationsService('test');
       await expect(
         service.viewSegmentSize({ project: 'test', segmentationId: 'seg-1' }),
-      ).rejects.toThrow('not yet implemented');
-    });
-
-    it('throws not-yet-implemented error with valid full input', async () => {
-      const service = new BloomreachSegmentationsService('test');
-      await expect(
-        service.viewSegmentSize({
-          project: '  test  ',
-          segmentationId: '  seg-1  ',
-        }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('requires API credentials');
     });
 
     it('validates project input', async () => {
@@ -707,32 +737,68 @@ describe('BloomreachSegmentationsService', () => {
       ).rejects.toThrow('Segmentation ID must not be empty');
     });
 
-    it('accepts trimmed segmentationId and reaches not-yet-implemented', async () => {
-      const service = new BloomreachSegmentationsService('test');
+    it('returns segment size from API response', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            header: ['segment', '#'],
+            rows: [['online buyers', 42], ['offline buyers', 18]],
+            success: true,
+            name: 'test segmentation',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachSegmentationsService('test', TEST_API_CONFIG);
+      const result = await service.viewSegmentSize({
+        project: 'test',
+        segmentationId: 'seg-abc',
+      });
+
+      expect(result.segmentationId).toBe('seg-abc');
+      expect(result.customerCount).toBe(60);
+      expect(result.computedAt).toBeDefined();
+    });
+
+    it('returns zero customer count for empty rows', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({ header: ['segment', '#'], rows: [], success: true }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachSegmentationsService('test', TEST_API_CONFIG);
+      const result = await service.viewSegmentSize({
+        project: 'test',
+        segmentationId: 'seg-empty',
+      });
+
+      expect(result.customerCount).toBe(0);
+    });
+
+    it('throws on unsuccessful API response', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({ success: false, errors: { _global: ['Not found'] } }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachSegmentationsService('test', TEST_API_CONFIG);
       await expect(
-        service.viewSegmentSize({ project: 'test', segmentationId: '  seg-99  ' }),
-      ).rejects.toThrow('not yet implemented');
+        service.viewSegmentSize({ project: 'test', segmentationId: 'bad-id' }),
+      ).rejects.toThrow('unexpected API response format');
     });
   });
 
   describe('viewSegmentCustomers', () => {
-    it('throws not-yet-implemented error with valid minimal input', async () => {
+    it('throws API credential error when apiConfig is not provided', async () => {
       const service = new BloomreachSegmentationsService('test');
       await expect(
         service.viewSegmentCustomers({ project: 'test', segmentationId: 'seg-1' }),
-      ).rejects.toThrow('not yet implemented');
-    });
-
-    it('throws not-yet-implemented error with valid full input', async () => {
-      const service = new BloomreachSegmentationsService('test');
-      await expect(
-        service.viewSegmentCustomers({
-          project: 'test',
-          segmentationId: 'seg-1',
-          limit: 50,
-          offset: 10,
-        }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('requires API credentials');
     });
 
     it('validates project input', async () => {
@@ -798,28 +864,69 @@ describe('BloomreachSegmentationsService', () => {
       ).rejects.toThrow('non-negative integer');
     });
 
-    it('accepts undefined limit and offset and reaches not-yet-implemented', async () => {
-      const service = new BloomreachSegmentationsService('test');
-      await expect(
-        service.viewSegmentCustomers({
-          project: 'test',
-          segmentationId: 'seg-1',
-          limit: undefined,
-          offset: undefined,
-        }),
-      ).rejects.toThrow('not yet implemented');
+    it('returns customers from API response', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify([
+            { registered: 'cust-1', email_id: 'one@example.com', tier: 'gold' },
+            { registered: 'cust-2', cookie: 'cookie-2', tier: 'silver' },
+            { registered: 'cust-3', tier: 'bronze' },
+          ]),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachSegmentationsService('test', TEST_API_CONFIG);
+      const result = await service.viewSegmentCustomers({
+        project: 'test',
+        segmentationId: 'seg-abc',
+        limit: 2,
+        offset: 0,
+      });
+
+      expect(result.segmentationId).toBe('seg-abc');
+      expect(result.total).toBe(3);
+      expect(result.customers).toHaveLength(2);
+      expect(result.limit).toBe(2);
+      expect(result.offset).toBe(0);
+      expect(result.customers[0].customerId).toBe('cust-1');
+      expect(result.customers[1].customerId).toBe('cust-2');
     });
 
-    it('accepts valid limit and offset and reaches not-yet-implemented', async () => {
-      const service = new BloomreachSegmentationsService('test');
-      await expect(
-        service.viewSegmentCustomers({
-          project: 'test',
-          segmentationId: 'seg-1',
-          limit: 1,
-          offset: 0,
+    it('returns empty list when no customers match', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
         }),
-      ).rejects.toThrow('not yet implemented');
+      );
+
+      const service = new BloomreachSegmentationsService('test', TEST_API_CONFIG);
+      const result = await service.viewSegmentCustomers({
+        project: 'test',
+        segmentationId: 'seg-empty',
+      });
+
+      expect(result.customers).toHaveLength(0);
+      expect(result.total).toBe(0);
+    });
+
+    it('applies default limit and offset when not specified', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify([{ registered: 'cust-1' }]), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+
+      const service = new BloomreachSegmentationsService('test', TEST_API_CONFIG);
+      const result = await service.viewSegmentCustomers({
+        project: 'test',
+        segmentationId: 'seg-1',
+      });
+
+      expect(result.limit).toBe(20);
+      expect(result.offset).toBe(0);
     });
   });
 
