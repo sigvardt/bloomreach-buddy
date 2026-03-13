@@ -22,6 +22,7 @@ export * from './bloomreachTagManager.js';
 export * from './bloomreachDataManager.js';
 export * from './bloomreachMetrics.js';
 export * from './bloomreachExports.js';
+export * from './bloomreachImports.js';
 export * from './bloomreachInitiatives.js';
 export * from './bloomreachIntegrations.js';
 export * from './bloomreachProjectSettings.js';

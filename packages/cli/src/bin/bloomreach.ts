@@ -19,6 +19,7 @@ import {
   BloomreachProjectSettingsService,
   BloomreachFunnelsService,
   BloomreachGeoAnalysesService,
+  BloomreachImportsService,
   BloomreachMetricsService,
   BloomreachPerformanceService,
   BloomreachReportsService,
@@ -49,6 +50,8 @@ import type {
   FunnelFilter,
   FunnelStep,
   GeoFilter,
+  ImportMapping,
+  ImportScheduleConfig,
   MetricAggregation,
   MetricFilter,
   RedemptionRules,
@@ -9876,6 +9879,258 @@ catalogs
           console.log('Catalog deletion prepared.');
           console.log(`  Catalog: ${options.catalogId}`);
           console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const imports = program
+  .command('imports')
+  .description('Manage Bloomreach data imports');
+
+imports
+  .command('list')
+  .description('List all data imports in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--status <status>', 'Filter by status (pending, processing, completed, failed, cancelled, scheduled)')
+  .option('--type <type>', 'Filter by type (csv, api)')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; status?: string; type?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachImportsService(options.project);
+      const input: { project: string; status?: string; type?: string } = {
+        project: options.project,
+      };
+      if (options.status) input.status = options.status;
+      if (options.type) input.type = options.type;
+
+      const result = await service.listImports(input);
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No imports found.');
+          return;
+        }
+        for (const imp of result) {
+          console.log(`  ${imp.name}`);
+          console.log(`    Status:    ${imp.status}`);
+          console.log(`    Type:      ${imp.type}`);
+          console.log(`    Source:    ${imp.source}`);
+          console.log(`    Progress:  ${imp.rowsProcessed}/${imp.rowsTotal} rows`);
+          console.log(`    Errors:    ${imp.errors}`);
+          console.log(`    Warnings:  ${imp.warnings}`);
+          console.log(`    ID:        ${imp.id}`);
+          console.log(`    URL:       ${imp.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+imports
+  .command('view-status')
+  .description('View detailed status of a specific import')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--import-id <id>', 'Import ID')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; importId: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachImportsService(options.project);
+      const result = await service.viewImportStatus({
+        project: options.project,
+        importId: options.importId,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Import: ${result.name}`);
+        console.log(`  Status:     ${result.status}`);
+        console.log(`  Type:       ${result.type}`);
+        console.log(`  Source:     ${result.source}`);
+        console.log(`  Progress:   ${result.rowsProcessed}/${result.rowsTotal} rows`);
+        console.log(`  Errors:     ${result.errors}`);
+        console.log(`  Warnings:   ${result.warnings}`);
+        console.log(`  Created:    ${result.createdAt}`);
+        if (result.startedAt) console.log(`  Started:    ${result.startedAt}`);
+        if (result.completedAt) console.log(`  Completed:  ${result.completedAt}`);
+        if (result.errorDetails.length > 0) {
+          console.log('  Error Details:');
+          for (const err of result.errorDetails) {
+            console.log(`    Row ${err.row}, Column "${err.column}": ${err.message}`);
+          }
+        }
+        if (result.warningDetails.length > 0) {
+          console.log('  Warning Details:');
+          for (const warn of result.warningDetails) {
+            console.log(`    Row ${warn.row}, Column "${warn.column}": ${warn.message}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+imports
+  .command('create')
+  .description('Prepare creation of a new data import (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Import name')
+  .requiredOption('--type <type>', 'Import type (csv, api)')
+  .requiredOption('--source <source>', 'Data source URL (CSV file URL or API endpoint)')
+  .requiredOption('--mapping <json>', 'JSON array of mappings [{sourceColumn, targetProperty, transformationType?}]')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      type: string;
+      source: string;
+      mapping: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const mapping = JSON.parse(options.mapping) as ImportMapping[];
+
+        const service = new BloomreachImportsService(options.project);
+        const result = service.prepareCreateImport({
+          project: options.project,
+          name: options.name,
+          type: options.type,
+          source: options.source,
+          mapping,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Import creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Type:    ${options.type}`);
+          console.log(`  Source:  ${options.source}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+imports
+  .command('schedule')
+  .description('Prepare scheduling a recurring data import (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Import name')
+  .requiredOption('--type <type>', 'Import type (csv, api)')
+  .requiredOption('--source <source>', 'Data source URL (CSV file URL or API endpoint)')
+  .requiredOption('--mapping <json>', 'JSON array of mappings [{sourceColumn, targetProperty, transformationType?}]')
+  .requiredOption('--frequency <frequency>', 'Schedule frequency (daily, weekly, monthly, custom)')
+  .option('--cron <expression>', 'Cron expression for custom frequency')
+  .option('--start-date <date>', 'Schedule start date (YYYY-MM-DD)')
+  .option('--end-date <date>', 'Schedule end date (YYYY-MM-DD)')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      type: string;
+      source: string;
+      mapping: string;
+      frequency: string;
+      cron?: string;
+      startDate?: string;
+      endDate?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const mapping = JSON.parse(options.mapping) as ImportMapping[];
+        const schedule: ImportScheduleConfig = {
+          frequency: options.frequency,
+          cronExpression: options.cron,
+          startDate: options.startDate,
+          endDate: options.endDate,
+          isActive: true,
+        };
+
+        const service = new BloomreachImportsService(options.project);
+        const result = service.prepareScheduleImport({
+          project: options.project,
+          name: options.name,
+          type: options.type,
+          source: options.source,
+          mapping,
+          schedule,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Import schedule prepared.');
+          console.log(`  Name:      ${options.name}`);
+          console.log(`  Type:      ${options.type}`);
+          console.log(`  Source:    ${options.source}`);
+          console.log(`  Frequency: ${options.frequency}`);
+          if (options.cron) console.log(`  Cron:      ${options.cron}`);
+          console.log(`  Token:     ${result.confirmToken}`);
+          console.log(`  Expires:   ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+imports
+  .command('cancel')
+  .description('Prepare cancellation of an in-progress import (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--import-id <id>', 'Import ID to cancel')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; importId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachImportsService(options.project);
+        const result = service.prepareCancelImport({
+          project: options.project,
+          importId: options.importId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Import cancellation prepared.');
+          console.log(`  Import: ${options.importId}`);
+          console.log(`  Token:  ${result.confirmToken}`);
           console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');
           console.log('To confirm, run:');
