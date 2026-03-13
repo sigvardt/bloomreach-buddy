@@ -25,6 +25,7 @@ import {
   BloomreachScenariosService,
   BloomreachSecuritySettingsService,
   BloomreachSegmentationsService,
+  BloomreachSqlReportsService,
   BloomreachSurveysService,
   BloomreachTagManagerService,
   BloomreachTrendsService,
@@ -9343,5 +9344,293 @@ segmentations
       }
     },
   );
+
+const sqlReports = program
+  .command('sql-reports')
+  .description('Manage Bloomreach SQL reports (beta)');
+
+sqlReports
+  .command('list')
+  .description('List all SQL reports in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--status <status>', 'Filter by status (saved, running, completed, failed, archived)')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; status?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachSqlReportsService(options.project);
+      const result = await service.listSqlReports({
+        project: options.project,
+        status: options.status,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No SQL reports found.');
+          return;
+        }
+        for (const report of result) {
+          const truncatedQuery =
+            report.query.length > 80 ? `${report.query.slice(0, 80)}...` : report.query;
+          console.log(`  ${report.name}`);
+          console.log(`    Status: ${report.status}`);
+          console.log(`    Query:  ${truncatedQuery}`);
+          console.log(`    ID:     ${report.id}`);
+          console.log(`    URL:    ${report.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+sqlReports
+  .command('view')
+  .description('View details of a specific SQL report')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--report-id <id>', 'SQL report ID')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; reportId: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachSqlReportsService(options.project);
+      const result = await service.viewSqlReport({
+        project: options.project,
+        reportId: options.reportId,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`SQL Report: ${result.name}`);
+        console.log(`  Status:         ${result.status}`);
+        console.log(`  Query:          ${result.query}`);
+        console.log(`  Parameters:     ${JSON.stringify(result.parameters ?? {}, null, 2)}`);
+        console.log(`  Last executed:  ${result.lastExecutedAt ?? 'never'}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+sqlReports
+  .command('create')
+  .description('Prepare creation of a new SQL report (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Report name')
+  .requiredOption('--query <sql>', 'SQL query string')
+  .option('--parameters <json>', 'JSON object of query parameters')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      query: string;
+      parameters?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const parameters = options.parameters
+          ? (JSON.parse(options.parameters) as Record<string, string>)
+          : undefined;
+
+        const service = new BloomreachSqlReportsService(options.project);
+        const result = service.prepareCreateSqlReport({
+          project: options.project,
+          name: options.name,
+          query: options.query,
+          parameters,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('SQL report creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+sqlReports
+  .command('execute')
+  .description('Prepare execution of a SQL report (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--report-id <id>', 'SQL report ID')
+  .option('--parameters <json>', 'JSON object of query parameters')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      reportId: string;
+      parameters?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const parameters = options.parameters
+          ? (JSON.parse(options.parameters) as Record<string, string>)
+          : undefined;
+
+        const service = new BloomreachSqlReportsService(options.project);
+        const result = service.prepareExecuteSqlReport({
+          project: options.project,
+          reportId: options.reportId,
+          parameters,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('SQL report execution prepared.');
+          console.log(`  Report:  ${options.reportId}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+sqlReports
+  .command('export-results')
+  .description('Prepare export of SQL report results (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--report-id <id>', 'SQL report ID')
+  .option('--format <format>', 'Export format (json, csv)', 'json')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      reportId: string;
+      format: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachSqlReportsService(options.project);
+        const result = service.prepareExportSqlReportResults({
+          project: options.project,
+          reportId: options.reportId,
+          format: options.format,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('SQL report results export prepared.');
+          console.log(`  Report:  ${options.reportId}`);
+          console.log(`  Format:  ${options.format}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+sqlReports
+  .command('clone')
+  .description('Prepare cloning a SQL report (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--report-id <id>', 'SQL report ID to clone')
+  .option('--new-name <name>', 'Name for the cloned report')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      reportId: string;
+      newName?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachSqlReportsService(options.project);
+        const result = service.prepareCloneSqlReport({
+          project: options.project,
+          reportId: options.reportId,
+          newName: options.newName,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('SQL report clone prepared.');
+          console.log(`  Source:   ${options.reportId}`);
+          console.log(`  New name: ${options.newName ?? '(auto-generated)'}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+sqlReports
+  .command('archive')
+  .description('Prepare archiving a SQL report (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--report-id <id>', 'SQL report ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; reportId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachSqlReportsService(options.project);
+      const result = service.prepareArchiveSqlReport({
+        project: options.project,
+        reportId: options.reportId,
+        operatorNote: options.note,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('SQL report archive prepared.');
+        console.log(`  Report:   ${options.reportId}`);
+        console.log(`  Token:    ${result.confirmToken}`);
+        console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 program.parse();

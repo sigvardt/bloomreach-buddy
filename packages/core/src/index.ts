@@ -11,6 +11,7 @@ export * from './bloomreachReports.js';
 export * from './bloomreachScenarios.js';
 export * from './bloomreachSurveys.js';
 export * from './bloomreachRetentions.js';
+export * from './bloomreachSqlReports.js';
 export * from './bloomreachTrends.js';
 export * from './bloomreachCustomers.js';
 export * from './bloomreachGeoAnalyses.js';
