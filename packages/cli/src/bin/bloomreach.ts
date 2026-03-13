@@ -5689,11 +5689,11 @@ integrations
 
 const initiatives = program
   .command('initiatives')
-  .description('Manage Bloomreach Engagement initiatives');
+  .description('Manage Bloomreach Engagement initiatives (UI-only — no REST API)');
 
 initiatives
   .command('list')
-  .description('List all initiatives in the project')
+  .description('List all initiatives in the project (UI-only — no REST API endpoint)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
@@ -5725,7 +5725,7 @@ initiatives
 
 initiatives
   .command('filter')
-  .description('Filter initiatives by date, tags, owner, or status')
+  .description('Filter initiatives by date, tags, owner, or status (UI-only — no REST API endpoint)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .option('--start-date <date>', 'Filter by start date')
   .option('--end-date <date>', 'Filter by end date')
@@ -5788,7 +5788,7 @@ initiatives
 
 initiatives
   .command('view')
-  .description('View details of a specific initiative')
+  .description('View details of a specific initiative (UI-only — no REST API endpoint)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--initiative-id <id>', 'Initiative ID')
   .option('--json', 'Output as JSON')
@@ -5826,7 +5826,9 @@ initiatives
 
 initiatives
   .command('create')
-  .description('Prepare creation of a new initiative (two-phase commit)')
+  .description(
+    'Prepare creation of a new initiative (two-phase commit, UI-only). Supports: name, description, tags',
+  )
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--name <name>', 'Initiative name')
   .option('--description <description>', 'Initiative description')
@@ -5872,7 +5874,9 @@ initiatives
 
 initiatives
   .command('import')
-  .description('Prepare importing initiative configuration (two-phase commit)')
+  .description(
+    'Prepare importing initiative configuration (two-phase commit, UI-only). Supports: JSON configuration',
+  )
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--configuration <json>', 'JSON configuration object')
   .option('--note <note>', 'Operator note for audit trail')
@@ -5909,7 +5913,9 @@ initiatives
 
 initiatives
   .command('add-items')
-  .description('Prepare adding items to an initiative (two-phase commit)')
+  .description(
+    'Prepare adding items to an initiative (two-phase commit, UI-only). Items: campaigns, analyses, assets',
+  )
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--initiative-id <id>', 'Initiative ID')
   .requiredOption('--items <json>', 'JSON array of item references [{id, type}]')
@@ -5954,7 +5960,9 @@ initiatives
 
 initiatives
   .command('archive')
-  .description('Prepare archiving an initiative (two-phase commit)')
+  .description(
+    'Prepare archiving an initiative (two-phase commit, UI-only). Moves initiative to archived state',
+  )
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--initiative-id <id>', 'Initiative ID')
   .option('--note <note>', 'Operator note for audit trail')

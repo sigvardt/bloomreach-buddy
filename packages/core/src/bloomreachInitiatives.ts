@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const CREATE_INITIATIVE_ACTION_TYPE = 'initiatives.create_initiative';
 export const IMPORT_INITIATIVE_ACTION_TYPE = 'initiatives.import_initiative';
@@ -180,6 +181,21 @@ export function buildInitiativesUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/initiatives`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 export interface InitiativeActionExecutor {
   readonly actionType: string;
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -187,61 +203,85 @@ export interface InitiativeActionExecutor {
 
 class CreateInitiativeExecutor implements InitiativeActionExecutor {
   readonly actionType = CREATE_INITIATIVE_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateInitiativeExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateInitiativeExecutor: not yet implemented. Initiative creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ImportInitiativeExecutor implements InitiativeActionExecutor {
   readonly actionType = IMPORT_INITIATIVE_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ImportInitiativeExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ImportInitiativeExecutor: not yet implemented. Initiative import is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class AddItemsExecutor implements InitiativeActionExecutor {
   readonly actionType = ADD_ITEMS_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'AddItemsExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'AddItemsExecutor: not yet implemented. Adding items to initiatives is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ArchiveInitiativeExecutor implements InitiativeActionExecutor {
   readonly actionType = ARCHIVE_INITIATIVE_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ArchiveInitiativeExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ArchiveInitiativeExecutor: not yet implemented. Initiative archiving is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createInitiativeActionExecutors(): Record<
+export function createInitiativeActionExecutors(apiConfig?: BloomreachApiConfig): Record<
   string,
   InitiativeActionExecutor
 > {
   return {
-    [CREATE_INITIATIVE_ACTION_TYPE]: new CreateInitiativeExecutor(),
-    [IMPORT_INITIATIVE_ACTION_TYPE]: new ImportInitiativeExecutor(),
-    [ADD_ITEMS_ACTION_TYPE]: new AddItemsExecutor(),
-    [ARCHIVE_INITIATIVE_ACTION_TYPE]: new ArchiveInitiativeExecutor(),
+    [CREATE_INITIATIVE_ACTION_TYPE]: new CreateInitiativeExecutor(apiConfig),
+    [IMPORT_INITIATIVE_ACTION_TYPE]: new ImportInitiativeExecutor(apiConfig),
+    [ADD_ITEMS_ACTION_TYPE]: new AddItemsExecutor(apiConfig),
+    [ARCHIVE_INITIATIVE_ACTION_TYPE]: new ArchiveInitiativeExecutor(apiConfig),
   };
 }
 
@@ -255,9 +295,11 @@ export function createInitiativeActionExecutors(): Record<
  */
 export class BloomreachInitiativesService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildInitiativesUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get initiativesUrl(): string {
@@ -266,10 +308,15 @@ export class BloomreachInitiativesService {
 
   /** @throws {Error} Browser automation not yet available. */
   async listInitiatives(
-    _input?: ListInitiativesInput,
+    input?: ListInitiativesInput,
   ): Promise<BloomreachInitiative[]> {
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
+
+    void this.apiConfig;
     throw new Error(
-      'listInitiatives: not yet implemented. Requires browser automation infrastructure.',
+      'listInitiatives: the Bloomreach API does not provide an initiative listing endpoint. Initiative management is only available through the Bloomreach Engagement UI.',
     );
   }
 
@@ -282,8 +329,9 @@ export class BloomreachInitiativesService {
       validateInitiativeStatus(input.status);
     }
 
+    void this.apiConfig;
     throw new Error(
-      'filterInitiatives: not yet implemented. Requires browser automation infrastructure.',
+      'filterInitiatives: the Bloomreach API does not provide an initiative filtering endpoint. Initiative management is only available through the Bloomreach Engagement UI.',
     );
   }
 
@@ -294,8 +342,9 @@ export class BloomreachInitiativesService {
     validateProject(input.project);
     validateInitiativeId(input.initiativeId);
 
+    void this.apiConfig;
     throw new Error(
-      'viewInitiative: not yet implemented. Requires browser automation infrastructure.',
+      'viewInitiative: the Bloomreach API does not provide an initiative detail endpoint. Initiative management is only available through the Bloomreach Engagement UI.',
     );
   }
 
