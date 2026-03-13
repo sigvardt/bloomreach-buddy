@@ -6,6 +6,7 @@ import {
   BloomreachCampaignCalendarService,
   BloomreachDashboardsService,
   BloomreachEmailCampaignsService,
+  BloomreachFunnelsService,
   BloomreachPerformanceService,
   BloomreachScenariosService,
   BloomreachTrendsService,
@@ -14,6 +15,8 @@ import {
 import type {
   EmailCampaignSchedule,
   EmailCampaignABTestConfig,
+  FunnelStep,
+  FunnelFilter,
   SurveyQuestion,
   SurveyDisplayConditions,
   TrendFilter,
@@ -1715,6 +1718,253 @@ trends
           printJson(result);
         } else {
           console.log('Trend analysis archive prepared.');
+          console.log(`  Analysis: ${options.analysisId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+const funnels = program
+  .command('funnels')
+  .description('Manage Bloomreach Engagement funnel analyses');
+
+funnels
+  .command('list')
+  .description('List all funnel analyses in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachFunnelsService(options.project);
+      const result = await service.listFunnelAnalyses({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No funnel analyses found.');
+          return;
+        }
+        for (const funnel of result) {
+          console.log(`  ${funnel.name}`);
+          console.log(`    Steps:      ${funnel.steps.length}`);
+          console.log(`    Time limit: ${funnel.timeLimitMs ?? 'none'}`);
+          console.log(`    ID:         ${funnel.id}`);
+          console.log(`    URL:        ${funnel.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(
+        `Error: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      process.exit(1);
+    }
+  });
+
+funnels
+  .command('view-results')
+  .description('View conversion rates and drop-off data for a funnel analysis')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--analysis-id <id>', 'Funnel analysis ID')
+  .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
+  .option('--end-date <date>', 'End date (YYYY-MM-DD)')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      analysisId: string;
+      startDate?: string;
+      endDate?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachFunnelsService(options.project);
+        const result = await service.viewFunnelResults({
+          project: options.project,
+          analysisId: options.analysisId,
+          startDate: options.startDate,
+          endDate: options.endDate,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log(`Funnel Analysis: ${result.analysisName}`);
+          console.log(`  Date range: ${result.startDate} to ${result.endDate}`);
+          console.log(`  Overall conversion rate: ${result.overallConversionRate}`);
+          if (result.steps.length === 0) {
+            console.log('  Steps: none');
+          } else {
+            console.log('  Steps:');
+            for (const step of result.steps) {
+              console.log(
+                `    ${step.step}. ${step.label ?? step.eventName} | entered=${step.entered}, completed=${step.completed}, conversion=${step.conversionRate}, drop-off=${step.dropOffRate}`,
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+funnels
+  .command('create')
+  .description('Prepare creation of a new funnel analysis (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Funnel analysis name')
+  .requiredOption('--steps <json>', 'JSON array of funnel steps [{order, eventName, label?}]')
+  .option('--time-limit-ms <ms>', 'Maximum time between steps in milliseconds')
+  .option('--customer-attributes <json>', 'JSON object of customer attribute filters')
+  .option('--event-properties <json>', 'JSON object of event property filters')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      steps: string;
+      timeLimitMs?: string;
+      customerAttributes?: string;
+      eventProperties?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const steps = JSON.parse(options.steps) as FunnelStep[];
+        const filters: FunnelFilter = {};
+        if (options.customerAttributes) {
+          filters.customerAttributes = JSON.parse(options.customerAttributes) as Record<
+            string,
+            string
+          >;
+        }
+        if (options.eventProperties) {
+          filters.eventProperties = JSON.parse(options.eventProperties) as Record<
+            string,
+            string
+          >;
+        }
+
+        const service = new BloomreachFunnelsService(options.project);
+        const result = service.prepareCreateFunnelAnalysis({
+          project: options.project,
+          name: options.name,
+          steps,
+          timeLimitMs:
+            options.timeLimitMs !== undefined
+              ? parseInt(options.timeLimitMs, 10)
+              : undefined,
+          filters: Object.keys(filters).length > 0 ? filters : undefined,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Funnel analysis creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+funnels
+  .command('clone')
+  .description('Prepare cloning a funnel analysis (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--analysis-id <id>', 'Funnel analysis ID to clone')
+  .option('--new-name <name>', 'Name for the cloned analysis')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      analysisId: string;
+      newName?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachFunnelsService(options.project);
+        const result = service.prepareCloneFunnelAnalysis({
+          project: options.project,
+          analysisId: options.analysisId,
+          newName: options.newName,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Funnel analysis clone prepared.');
+          console.log(`  Source:   ${options.analysisId}`);
+          console.log(`  New name: ${options.newName ?? '(auto-generated)'}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+funnels
+  .command('archive')
+  .description('Prepare archiving a funnel analysis (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--analysis-id <id>', 'Funnel analysis ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      analysisId: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachFunnelsService(options.project);
+        const result = service.prepareArchiveFunnelAnalysis({
+          project: options.project,
+          analysisId: options.analysisId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Funnel analysis archive prepared.');
           console.log(`  Analysis: ${options.analysisId}`);
           console.log(`  Token:    ${result.confirmToken}`);
           console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
