@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
 import {
   ADD_CUSTOMER_PROPERTY_ACTION_TYPE,
   EDIT_CUSTOMER_PROPERTY_ACTION_TYPE,
@@ -25,6 +26,17 @@ import {
   createDataManagerActionExecutors,
   BloomreachDataManagerService,
 } from '../index.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports ADD_CUSTOMER_PROPERTY_ACTION_TYPE', () => {
@@ -132,6 +144,38 @@ describe('validatePropertyName', () => {
     const result = service.prepareAddCustomerProperty({ project: 'test', name: value, type: 'string' });
     expect(result.preview).toEqual(expect.objectContaining({ name: value }));
   });
+
+  it('trims mixed whitespace around valid value', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareAddCustomerProperty({ project: 'test', name: ' \t  prop \n ', type: 'string' });
+    expect(result.preview).toEqual(expect.objectContaining({ name: 'prop' }));
+  });
+
+  it('preserves internal spacing', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareAddCustomerProperty({ project: 'test', name: 'Customer   Tier', type: 'string' });
+    expect(result.preview).toEqual(expect.objectContaining({ name: 'Customer   Tier' }));
+  });
+
+  it('accepts punctuation-heavy value', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareAddCustomerProperty({ project: 'test', name: '  [Q1] Value (v2)  ', type: 'string' });
+    expect(result.preview).toEqual(expect.objectContaining({ name: '[Q1] Value (v2)' }));
+  });
+
+  it('throws for too-long value with surrounding whitespace', () => {
+    const service = new BloomreachDataManagerService('test');
+    expect(() =>
+      service.prepareAddCustomerProperty({ project: 'test', name: `  ${'x'.repeat(201)}  `, type: 'string' }),
+    ).toThrow('must not exceed 200 characters');
+  });
+
+  it('throws for mixed-whitespace-only value', () => {
+    const service = new BloomreachDataManagerService('test');
+    expect(() =>
+      service.prepareAddCustomerProperty({ project: 'test', name: ' \n\t ', type: 'string' }),
+    ).toThrow('must not be empty');
+  });
 });
 
 describe('validateEventName', () => {
@@ -168,6 +212,30 @@ describe('validateEventName', () => {
     const result = service.prepareAddEventDefinition({ project: 'test', name: value, type: 'json' });
     expect(result.preview).toEqual(expect.objectContaining({ name: value }));
   });
+
+  it('trims mixed whitespace around valid value', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareAddEventDefinition({ project: 'test', name: ' \t  checkout_event \n ', type: 'json' });
+    expect(result.preview).toEqual(expect.objectContaining({ name: 'checkout_event' }));
+  });
+
+  it('accepts unicode value', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareAddEventDefinition({ project: 'test', name: 'analyse-åäö', type: 'json' });
+    expect(result.preview).toEqual(expect.objectContaining({ name: 'analyse-åäö' }));
+  });
+
+  it('accepts dots and dashes', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareAddEventDefinition({ project: 'test', name: 'flow.v2-alpha', type: 'json' });
+    expect(result.preview).toEqual(expect.objectContaining({ name: 'flow.v2-alpha' }));
+  });
+
+  it('accepts colons', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareAddEventDefinition({ project: 'test', name: 'flow:checkout:1', type: 'json' });
+    expect(result.preview).toEqual(expect.objectContaining({ name: 'flow:checkout:1' }));
+  });
 });
 
 describe('validateDefinitionName', () => {
@@ -203,6 +271,31 @@ describe('validateDefinitionName', () => {
     const value = 'x'.repeat(200);
     const result = service.prepareAddFieldDefinition({ project: 'test', name: value, type: 'string' });
     expect(result.preview).toEqual(expect.objectContaining({ name: value }));
+  });
+
+  it('trims mixed whitespace around valid value', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareAddFieldDefinition({ project: 'test', name: ' \t  definition \n ', type: 'string' });
+    expect(result.preview).toEqual(expect.objectContaining({ name: 'definition' }));
+  });
+
+  it('preserves internal spacing', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareAddFieldDefinition({ project: 'test', name: 'Checkout   Flow', type: 'string' });
+    expect(result.preview).toEqual(expect.objectContaining({ name: 'Checkout   Flow' }));
+  });
+
+  it('accepts punctuation-heavy value', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareAddFieldDefinition({ project: 'test', name: '  [Q1] Value (v2)  ', type: 'string' });
+    expect(result.preview).toEqual(expect.objectContaining({ name: '[Q1] Value (v2)' }));
+  });
+
+  it('throws for tab-only string', () => {
+    const service = new BloomreachDataManagerService('test');
+    expect(() => service.prepareAddFieldDefinition({ project: 'test', name: '\t', type: 'string' })).toThrow(
+      'must not be empty',
+    );
   });
 });
 
@@ -249,6 +342,40 @@ describe('validateDescription', () => {
     const value = 'x'.repeat(1000);
     const result = service.prepareAddFieldDefinition({ project: 'test', name: 'def', type: 'string', description: value });
     expect(result.preview).toEqual(expect.objectContaining({ description: value }));
+  });
+
+  it('trims mixed whitespace around valid value', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareAddFieldDefinition({
+      project: 'test',
+      name: 'def',
+      type: 'string',
+      description: ' \t  useful description \n ',
+    });
+    expect(result.preview).toEqual(expect.objectContaining({ description: 'useful description' }));
+  });
+
+  it('preserves internal spacing', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareAddFieldDefinition({
+      project: 'test',
+      name: 'def',
+      type: 'string',
+      description: 'Checkout   Flow',
+    });
+    expect(result.preview).toEqual(expect.objectContaining({ description: 'Checkout   Flow' }));
+  });
+
+  it('throws for mixed-whitespace-only string', () => {
+    const service = new BloomreachDataManagerService('test');
+    expect(() =>
+      service.prepareAddFieldDefinition({
+        project: 'test',
+        name: 'def',
+        type: 'string',
+        description: ' \n\t ',
+      }),
+    ).toThrow('must not be empty');
   });
 });
 
@@ -516,6 +643,35 @@ describe('validateSourceName', () => {
     const result = service.prepareAddContentSource({ project: 'test', name: value, sourceType: 'api', url: 'https://x.y' });
     expect(result.preview).toEqual(expect.objectContaining({ name: value }));
   });
+
+  it('trims mixed whitespace around valid value', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareAddContentSource({
+      project: 'test',
+      name: ' \t  source \n ',
+      sourceType: 'api',
+      url: 'https://x.y',
+    });
+    expect(result.preview).toEqual(expect.objectContaining({ name: 'source' }));
+  });
+
+  it('accepts punctuation-heavy value', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareAddContentSource({
+      project: 'test',
+      name: '  [Q1] Value (v2)  ',
+      sourceType: 'api',
+      url: 'https://x.y',
+    });
+    expect(result.preview).toEqual(expect.objectContaining({ name: '[Q1] Value (v2)' }));
+  });
+
+  it('throws for tab-only string', () => {
+    const service = new BloomreachDataManagerService('test');
+    expect(() =>
+      service.prepareAddContentSource({ project: 'test', name: '\t', sourceType: 'api', url: 'https://x.y' }),
+    ).toThrow('must not be empty');
+  });
 });
 
 describe('validateDefinitionId', () => {
@@ -546,6 +702,31 @@ describe('validateDefinitionId', () => {
     const service = new BloomreachDataManagerService('test');
     expect(() => service.prepareEditFieldDefinition({ project: 'test', definitionId: 'x'.repeat(201) })).toThrow(
       'must not exceed 200 characters',
+    );
+  });
+
+  it('returns unicode value', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareEditFieldDefinition({ project: 'test', definitionId: 'analyse-åäö' });
+    expect(result.preview).toEqual(expect.objectContaining({ definitionId: 'analyse-åäö' }));
+  });
+
+  it('returns dotted and dashed value', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareEditFieldDefinition({ project: 'test', definitionId: 'flow.v2-alpha' });
+    expect(result.preview).toEqual(expect.objectContaining({ definitionId: 'flow.v2-alpha' }));
+  });
+
+  it('returns colon-delimited value', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareEditFieldDefinition({ project: 'test', definitionId: 'flow:checkout:1' });
+    expect(result.preview).toEqual(expect.objectContaining({ definitionId: 'flow:checkout:1' }));
+  });
+
+  it('throws for mixed-whitespace-only string', () => {
+    const service = new BloomreachDataManagerService('test');
+    expect(() => service.prepareEditFieldDefinition({ project: 'test', definitionId: ' \n\t ' })).toThrow(
+      'must not be empty',
     );
   });
 });
@@ -579,6 +760,29 @@ describe('validateSourceId', () => {
     expect(() => service.prepareEditContentSource({ project: 'test', sourceId: 'x'.repeat(201) })).toThrow(
       'must not exceed 200 characters',
     );
+  });
+
+  it('returns unicode value', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareEditContentSource({ project: 'test', sourceId: 'analyse-åäö' });
+    expect(result.preview).toEqual(expect.objectContaining({ sourceId: 'analyse-åäö' }));
+  });
+
+  it('returns dotted and dashed value', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareEditContentSource({ project: 'test', sourceId: 'flow.v2-alpha' });
+    expect(result.preview).toEqual(expect.objectContaining({ sourceId: 'flow.v2-alpha' }));
+  });
+
+  it('returns colon-delimited value', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareEditContentSource({ project: 'test', sourceId: 'flow:checkout:1' });
+    expect(result.preview).toEqual(expect.objectContaining({ sourceId: 'flow:checkout:1' }));
+  });
+
+  it('throws for tab-only string', () => {
+    const service = new BloomreachDataManagerService('test');
+    expect(() => service.prepareEditContentSource({ project: 'test', sourceId: '\t' })).toThrow('must not be empty');
   });
 });
 
@@ -637,6 +841,46 @@ describe('validateMappingFields', () => {
         transformationType: 'direct',
       }),
     ).toThrow('must not exceed 200 characters');
+  });
+
+  it('trims mixed whitespace for both fields', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareConfigureMapping({
+      project: 'test',
+      sourceField: ' \t  source_field \n ',
+      targetField: ' \t  target_field \n ',
+      transformationType: 'direct',
+    });
+    expect(result.preview).toEqual(
+      expect.objectContaining({ sourceField: 'source_field', targetField: 'target_field' }),
+    );
+  });
+
+  it('preserves internal spacing in fields', () => {
+    const service = new BloomreachDataManagerService('test');
+    const result = service.prepareConfigureMapping({
+      project: 'test',
+      sourceField: 'Checkout   Flow',
+      targetField: 'Flow   Checkout',
+      transformationType: 'direct',
+    });
+    expect(result.preview).toEqual(
+      expect.objectContaining({ sourceField: 'Checkout   Flow', targetField: 'Flow   Checkout' }),
+    );
+  });
+
+  it('throws for tab-only source field', () => {
+    const service = new BloomreachDataManagerService('test');
+    expect(() =>
+      service.prepareConfigureMapping({ project: 'test', sourceField: '\t', targetField: 'target', transformationType: 'direct' }),
+    ).toThrow('must not be empty');
+  });
+
+  it('throws for mixed-whitespace-only target field', () => {
+    const service = new BloomreachDataManagerService('test');
+    expect(() =>
+      service.prepareConfigureMapping({ project: 'test', sourceField: 'source', targetField: ' \n\t ', transformationType: 'direct' }),
+    ).toThrow('must not be empty');
   });
 });
 
@@ -782,6 +1026,70 @@ describe('createDataManagerActionExecutors', () => {
       await expect(executor.execute({})).rejects.toThrow('not yet implemented');
     }
   });
+
+  it('all executors mention UI-only in error', async () => {
+    const executors = createDataManagerActionExecutors();
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow(
+        'only available through the Bloomreach Engagement UI',
+      );
+    }
+  });
+
+  it('accepts optional apiConfig parameter', () => {
+    const executors = createDataManagerActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(9);
+  });
+
+  it('executors still throw not-yet-implemented with apiConfig', async () => {
+    const executors = createDataManagerActionExecutors(TEST_API_CONFIG);
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+    }
+  });
+
+  it('returns identical action keys with or without apiConfig', () => {
+    const withoutConfig = Object.keys(createDataManagerActionExecutors()).sort();
+    const withConfig = Object.keys(createDataManagerActionExecutors(TEST_API_CONFIG)).sort();
+    expect(withConfig).toEqual(withoutConfig);
+  });
+
+  it('preserves actionType mapping with apiConfig', () => {
+    const executors = createDataManagerActionExecutors(TEST_API_CONFIG);
+    for (const [key, executor] of Object.entries(executors)) {
+      expect(executor.actionType).toBe(key);
+    }
+  });
+
+  it('returns expected action keys', () => {
+    const keys = Object.keys(createDataManagerActionExecutors()).sort();
+    expect(keys).toEqual([
+      ADD_CONTENT_SOURCE_ACTION_TYPE,
+      ADD_CUSTOMER_PROPERTY_ACTION_TYPE,
+      ADD_EVENT_DEFINITION_ACTION_TYPE,
+      ADD_FIELD_DEFINITION_ACTION_TYPE,
+      CONFIGURE_MAPPING_ACTION_TYPE,
+      EDIT_CONTENT_SOURCE_ACTION_TYPE,
+      EDIT_CUSTOMER_PROPERTY_ACTION_TYPE,
+      EDIT_FIELD_DEFINITION_ACTION_TYPE,
+      SAVE_CHANGES_ACTION_TYPE,
+    ].sort());
+  });
+
+  it('returns new executor instances on each call', () => {
+    const first = createDataManagerActionExecutors(TEST_API_CONFIG);
+    const second = createDataManagerActionExecutors(TEST_API_CONFIG);
+    expect(first[ADD_CUSTOMER_PROPERTY_ACTION_TYPE]).not.toBe(second[ADD_CUSTOMER_PROPERTY_ACTION_TYPE]);
+  });
+
+  it('all executors mention UI-only guidance with apiConfig', async () => {
+    const executors = createDataManagerActionExecutors(TEST_API_CONFIG);
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow(
+        'only available through the Bloomreach Engagement UI',
+      );
+    }
+  });
 });
 
 describe('BloomreachDataManagerService', () => {
@@ -812,65 +1120,154 @@ describe('BloomreachDataManagerService', () => {
     it('throws for empty project', () => {
       expect(() => new BloomreachDataManagerService('')).toThrow('must not be empty');
     });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachDataManagerService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachDataManagerService);
+    });
+
+    it('exposes all 5 URL getters when constructed with apiConfig', () => {
+      const service = new BloomreachDataManagerService('test', TEST_API_CONFIG);
+      expect(service.customerPropertiesUrl).toBe('/p/test/data/management/customer-properties');
+      expect(service.eventsUrl).toBe('/p/test/data/management/events');
+      expect(service.definitionsUrl).toBe('/p/test/data/management/definitions');
+      expect(service.mappingUrl).toBe('/p/test/data/management/mapping');
+      expect(service.contentSourcesUrl).toBe('/p/test/data/management/content-sources');
+    });
+
+    it('encodes unicode project name in constructor URL', () => {
+      const service = new BloomreachDataManagerService('projekt åäö');
+      expect(service.customerPropertiesUrl).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/data/management/customer-properties');
+    });
+
+    it('encodes hash in constructor URL', () => {
+      const service = new BloomreachDataManagerService('my#project');
+      expect(service.customerPropertiesUrl).toBe('/p/my%23project/data/management/customer-properties');
+    });
+
+    it('encodes plus sign in constructor URL', () => {
+      const service = new BloomreachDataManagerService('project+beta');
+      expect(service.customerPropertiesUrl).toBe('/p/project%2Bbeta/data/management/customer-properties');
+    });
   });
 
   describe('listCustomerProperties', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachDataManagerService('test');
-      await expect(service.listCustomerProperties()).rejects.toThrow('not yet implemented');
+      await expect(service.listCustomerProperties()).rejects.toThrow('does not provide an endpoint');
     });
 
     it('validates project when input provided', async () => {
       const service = new BloomreachDataManagerService('test');
       await expect(service.listCustomerProperties({ project: '' })).rejects.toThrow('must not be empty');
     });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachDataManagerService('test', TEST_API_CONFIG);
+      await expect(service.listCustomerProperties()).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error for unicode project override', async () => {
+      const service = new BloomreachDataManagerService('test');
+      await expect(service.listCustomerProperties({ project: 'projekt åäö' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
   });
 
   describe('listEvents', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachDataManagerService('test');
-      await expect(service.listEvents()).rejects.toThrow('not yet implemented');
+      await expect(service.listEvents()).rejects.toThrow('does not provide an endpoint');
     });
 
     it('validates project when input provided', async () => {
       const service = new BloomreachDataManagerService('test');
       await expect(service.listEvents({ project: '' })).rejects.toThrow('must not be empty');
     });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachDataManagerService('test', TEST_API_CONFIG);
+      await expect(service.listEvents()).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error for unicode project override', async () => {
+      const service = new BloomreachDataManagerService('test');
+      await expect(service.listEvents({ project: 'projekt åäö' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
   });
 
   describe('listFieldDefinitions', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachDataManagerService('test');
-      await expect(service.listFieldDefinitions()).rejects.toThrow('not yet implemented');
+      await expect(service.listFieldDefinitions()).rejects.toThrow('does not provide an endpoint');
     });
 
     it('validates project when input provided', async () => {
       const service = new BloomreachDataManagerService('test');
       await expect(service.listFieldDefinitions({ project: '' })).rejects.toThrow('must not be empty');
     });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachDataManagerService('test', TEST_API_CONFIG);
+      await expect(service.listFieldDefinitions()).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error for unicode project override', async () => {
+      const service = new BloomreachDataManagerService('test');
+      await expect(service.listFieldDefinitions({ project: 'projekt åäö' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
   });
 
   describe('listMappings', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachDataManagerService('test');
-      await expect(service.listMappings()).rejects.toThrow('not yet implemented');
+      await expect(service.listMappings()).rejects.toThrow('does not provide an endpoint');
     });
 
     it('validates project when input provided', async () => {
       const service = new BloomreachDataManagerService('test');
       await expect(service.listMappings({ project: '' })).rejects.toThrow('must not be empty');
     });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachDataManagerService('test', TEST_API_CONFIG);
+      await expect(service.listMappings()).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error for unicode project override', async () => {
+      const service = new BloomreachDataManagerService('test');
+      await expect(service.listMappings({ project: 'projekt åäö' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
   });
 
   describe('listContentSources', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachDataManagerService('test');
-      await expect(service.listContentSources()).rejects.toThrow('not yet implemented');
+      await expect(service.listContentSources()).rejects.toThrow('does not provide an endpoint');
     });
 
     it('validates project when input provided', async () => {
       const service = new BloomreachDataManagerService('test');
       await expect(service.listContentSources({ project: '' })).rejects.toThrow('must not be empty');
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachDataManagerService('test', TEST_API_CONFIG);
+      await expect(service.listContentSources()).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error for unicode project override', async () => {
+      const service = new BloomreachDataManagerService('test');
+      await expect(service.listContentSources({ project: 'projekt åäö' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
     });
   });
 

@@ -4393,8 +4393,10 @@ const dataManager = program
 
 dataManager
   .command('list-properties')
-  .description('List all customer property definitions')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description(
+    'List all customer property definitions (note: the Bloomreach API does not provide a data manager endpoint — requires browser automation)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -4423,12 +4425,12 @@ dataManager
 
 dataManager
   .command('add-property')
-  .description('Prepare addition of a new customer property (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--name <name>', 'Property name')
-  .requiredOption('--type <type>', 'Property type (string, number, boolean, date, list, json)')
-  .option('--description <desc>', 'Property description')
-  .option('--group <group>', 'Property group assignment')
+  .description('Prepare addition of a new customer property (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--name <name>', 'Property name (max 200 characters)')
+  .requiredOption('--type <type>', 'Property type: string, number, boolean, date, list, or json')
+  .option('--description <desc>', 'Property description (max 1000 characters)')
+  .option('--group <group>', 'Property group assignment (max 200 characters)')
   .option('--required', 'Mark property as required')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
@@ -4475,11 +4477,11 @@ dataManager
 
 dataManager
   .command('edit-property')
-  .description('Prepare editing an existing customer property (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--property-name <name>', 'Property name to edit')
+  .description('Prepare editing an existing customer property (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--property-name <name>', 'Property name to edit (exact match, case-sensitive)')
   .option('--description <desc>', 'New property description')
-  .option('--type <type>', 'New property type')
+  .option('--type <type>', 'New property type: string, number, boolean, date, list, or json')
   .option('--group <group>', 'New property group assignment')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
@@ -4524,8 +4526,10 @@ dataManager
 
 dataManager
   .command('list-events')
-  .description('List all event definitions')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description(
+    'List all event definitions (note: the Bloomreach API does not provide a data manager endpoint — requires browser automation)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -4554,14 +4558,14 @@ dataManager
 
 dataManager
   .command('add-event')
-  .description('Prepare addition of a new event definition (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--name <name>', 'Event name')
-  .requiredOption('--type <type>', 'Event type (string, number, boolean, date, list, json)')
+  .description('Prepare addition of a new event definition (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--name <name>', 'Event name (max 200 characters)')
+  .requiredOption('--type <type>', 'Event type: string, number, boolean, date, list, or json')
   .option('--description <desc>', 'Event description')
   .option(
     '--properties <json>',
-    'JSON array of event properties [{name, type, description?, isRequired?}]',
+    'JSON array of event properties (e.g. \'[{"name":"order_id","type":"string","isRequired":true}]\')',
   )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
@@ -4610,8 +4614,10 @@ dataManager
 
 dataManager
   .command('list-definitions')
-  .description('List all data definitions')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description(
+    'List all data definitions (note: the Bloomreach API does not provide a data manager endpoint — requires browser automation)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -4640,10 +4646,10 @@ dataManager
 
 dataManager
   .command('add-definition')
-  .description('Prepare addition of a new definition (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--name <name>', 'Definition name')
-  .requiredOption('--type <type>', 'Definition type')
+  .description('Prepare addition of a new definition (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--name <name>', 'Definition name (max 200 characters)')
+  .requiredOption('--type <type>', 'Definition type: string, number, boolean, date, list, or json')
   .option('--description <desc>', 'Definition description')
   .option('--category <category>', 'Definition category')
   .option('--note <note>', 'Operator note for audit trail')
@@ -4689,11 +4695,11 @@ dataManager
 
 dataManager
   .command('edit-definition')
-  .description('Prepare editing an existing definition (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--definition-id <id>', 'Definition ID')
+  .description('Prepare editing an existing definition (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--definition-id <id>', 'Definition ID (from Bloomreach UI)')
   .option('--name <name>', 'New definition name')
-  .option('--type <type>', 'New definition type')
+  .option('--type <type>', 'New definition type: string, number, boolean, date, list, or json')
   .option('--description <desc>', 'New definition description')
   .option('--category <category>', 'New definition category')
   .option('--note <note>', 'Operator note for audit trail')
@@ -4741,8 +4747,10 @@ dataManager
 
 dataManager
   .command('list-mappings')
-  .description('List all source-to-target mappings')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description(
+    'List all source-to-target mappings (note: the Bloomreach API does not provide a data manager endpoint — requires browser automation)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -4774,13 +4782,13 @@ dataManager
 
 dataManager
   .command('configure-mapping')
-  .description('Prepare mapping configuration between source and target fields (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--source-field <field>', 'Source field name')
-  .requiredOption('--target-field <field>', 'Target field name')
+  .description('Prepare mapping configuration between source and target fields (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--source-field <field>', 'Source field name (max 200 characters)')
+  .requiredOption('--target-field <field>', 'Target field name (max 200 characters)')
   .option(
     '--transformation-type <type>',
-    'Transformation type (direct, concatenate, split, format, lookup)',
+    'Transformation type: direct, concatenate, split, format, or lookup',
   )
   .option('--active', 'Set mapping as active')
   .option('--note <note>', 'Operator note for audit trail')
@@ -4826,8 +4834,10 @@ dataManager
 
 dataManager
   .command('list-content-sources')
-  .description('List all content sources')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description(
+    'List all content sources (note: the Bloomreach API does not provide a data manager endpoint — requires browser automation)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -4855,12 +4865,15 @@ dataManager
 
 dataManager
   .command('add-content-source')
-  .description('Prepare addition of a content source (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--name <name>', 'Content source name')
-  .requiredOption('--source-type <type>', 'Source type (api, csv, webhook, database, sftp)')
-  .requiredOption('--url <url>', 'Content source URL')
-  .option('--configuration <json>', 'JSON object with source-specific configuration')
+  .description('Prepare addition of a content source (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--name <name>', 'Content source name (max 200 characters)')
+  .requiredOption('--source-type <type>', 'Source type: api, csv, webhook, database, or sftp')
+  .requiredOption('--url <url>', 'Content source URL (must be absolute, max 2000 characters)')
+  .option(
+    '--configuration <json>',
+    'Source-specific configuration as JSON (e.g. \'{"auth":"bearer","schedule":"hourly"}\')',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -4908,12 +4921,15 @@ dataManager
 
 dataManager
   .command('edit-content-source')
-  .description('Prepare editing of an existing content source (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--source-id <id>', 'Content source ID')
+  .description('Prepare editing of an existing content source (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--source-id <id>', 'Content source ID (from Bloomreach UI)')
   .option('--name <name>', 'New content source name')
   .option('--url <url>', 'New content source URL')
-  .option('--configuration <json>', 'JSON object with source-specific configuration')
+  .option(
+    '--configuration <json>',
+    'Source-specific configuration as JSON (e.g. \'{"auth":"oauth2"}\')',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -4961,8 +4977,10 @@ dataManager
 
 dataManager
   .command('save-changes')
-  .description('Prepare saving pending Data Manager changes (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description(
+    'Prepare saving pending Data Manager changes (two-phase commit, UI-only — commits all staged property/event/definition changes)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; note?: string; json?: boolean }) => {
