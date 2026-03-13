@@ -83,9 +83,7 @@ function printJson(value: unknown): void {
 
 function tryResolveApiConfig(projectToken?: string): BloomreachApiConfig | undefined {
   try {
-    return resolveApiConfig(
-      projectToken ? { projectToken } : undefined,
-    );
+    return resolveApiConfig(projectToken ? { projectToken } : undefined);
   } catch {
     return undefined;
   }
@@ -805,7 +803,10 @@ emailCampaigns
     '--schedule-type <type>',
     'Send schedule: immediate, scheduled (requires --scheduled-at), or recurring (requires --cron)',
   )
-  .option('--scheduled-at <datetime>', 'ISO-8601 datetime for scheduled sends (e.g. 2026-04-01T10:00:00Z)')
+  .option(
+    '--scheduled-at <datetime>',
+    'ISO-8601 datetime for scheduled sends (e.g. 2026-04-01T10:00:00Z)',
+  )
   .option('--cron <expression>', 'Cron expression for recurring sends (e.g. "0 9 * * MON")')
   .option('--ab-variants <n>', 'Number of A/B test variants (2-10, includes control)')
   .option('--ab-split <percent>', 'A/B test split percentage (0-100, audience fraction for test)')
@@ -1080,10 +1081,7 @@ surveys
   .option('--page-url <url>', 'Page URL pattern where survey appears (e.g. /checkout)')
   .option('--trigger-event <event>', 'Trigger event name (e.g. cart_abandon)')
   .option('--delay-ms <ms>', 'Delay in milliseconds before showing the survey')
-  .option(
-    '--frequency <frequency>',
-    'Display frequency: once, always, or once_per_session',
-  )
+  .option('--frequency <frequency>', 'Display frequency: once, always, or once_per_session')
   .option('--template-id <id>', 'Survey template ID for pre-built layouts')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
@@ -1502,10 +1500,7 @@ trends
   )
   .option('--start-date <date>', 'Start date in ISO-8601 format (YYYY-MM-DD)')
   .option('--end-date <date>', 'End date in ISO-8601 format (YYYY-MM-DD)')
-  .option(
-    '--granularity <granularity>',
-    'Time granularity: hourly | daily | weekly | monthly',
-  )
+  .option('--granularity <granularity>', 'Time granularity: hourly | daily | weekly | monthly')
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -2290,7 +2285,10 @@ flows
   .description('Prepare creation of a new flow analysis (two-phase commit, UI-only)')
   .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
   .requiredOption('--name <name>', 'Flow analysis name (max 200 characters)')
-  .requiredOption('--starting-event <event>', 'Starting event for the journey (e.g. "session_start")')
+  .requiredOption(
+    '--starting-event <event>',
+    'Starting event for the journey (e.g. "session_start")',
+  )
   .requiredOption(
     '--events <json>',
     'JSON array of events to track (e.g. \'[{"order":1,"eventName":"purchase"},{"order":2,"eventName":"refund"}]\')',
@@ -2414,10 +2412,7 @@ flows
   .command('archive')
   .description('Prepare archiving a flow analysis (two-phase commit, UI-only)')
   .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
-  .requiredOption(
-    '--analysis-id <id>',
-    'Flow analysis ID (hex string from Bloomreach UI URL)',
-  )
+  .requiredOption('--analysis-id <id>', 'Flow analysis ID (hex string from Bloomreach UI URL)')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -4205,7 +4200,10 @@ const metrics = program
 
 metrics
   .command('list')
-  .description('List all custom computed metrics in the project')
+  .description(
+    'List all custom computed metrics in the project ' +
+      '(note: the Bloomreach API does not provide a metrics endpoint — requires browser automation)',
+  )
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
@@ -4235,15 +4233,19 @@ metrics
 
 metrics
   .command('create')
-  .description('Prepare creation of a custom metric (two-phase commit)')
+  .description(
+    'Prepare creation of a custom metric (two-phase commit). ' +
+      'Aggregation types: sum, count, average, min, max, unique. ' +
+      'Property-based aggregations (sum, average, min, max) require --property-name.',
+  )
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--name <name>', 'Metric name')
-  .requiredOption('--event-name <eventName>', 'Event name for aggregation')
+  .requiredOption('--name <name>', 'Metric name (1–200 characters)')
+  .requiredOption('--event-name <eventName>', 'Event name for aggregation (e.g. "purchase")')
   .requiredOption(
     '--aggregation-type <type>',
     'Aggregation type (sum, count, average, min, max, unique)',
   )
-  .option('--property-name <prop>', 'Event property name for property-based aggregations')
+  .option('--property-name <prop>', 'Event property name — required for sum, average, min, max')
   .option('--description <desc>', 'Metric description')
   .option('--filters <json>', 'JSON object of metric filters')
   .option('--note <note>', 'Operator note for audit trail')
@@ -4298,16 +4300,19 @@ metrics
 
 metrics
   .command('edit')
-  .description('Prepare editing a custom metric (two-phase commit)')
+  .description(
+    'Prepare editing a custom metric (two-phase commit). ' +
+      'Provide only the fields you want to change.',
+  )
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--metric-id <id>', 'Metric ID')
-  .option('--name <name>', 'New metric name')
+  .requiredOption('--metric-id <id>', 'Metric ID to edit')
+  .option('--name <name>', 'New metric name (1–200 characters)')
   .option('--event-name <eventName>', 'New event name for aggregation')
   .option(
     '--aggregation-type <type>',
     'New aggregation type (sum, count, average, min, max, unique)',
   )
-  .option('--property-name <prop>', 'New event property name for property-based aggregations')
+  .option('--property-name <prop>', 'New event property name — required for sum, average, min, max')
   .option('--description <desc>', 'New metric description')
   .option('--filters <json>', 'JSON object of metric filters')
   .option('--note <note>', 'Operator note for audit trail')
@@ -4367,9 +4372,12 @@ metrics
 
 metrics
   .command('delete')
-  .description('Prepare deletion of a custom metric (two-phase commit)')
+  .description(
+    'Prepare deletion of a custom metric (two-phase commit). ' +
+      'This action is irreversible once confirmed.',
+  )
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--metric-id <id>', 'Metric ID')
+  .requiredOption('--metric-id <id>', 'Metric ID to delete')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; metricId: string; note?: string; json?: boolean }) => {
@@ -4795,7 +4803,9 @@ dataManager
 
 dataManager
   .command('configure-mapping')
-  .description('Prepare mapping configuration between source and target fields (two-phase commit, UI-only)')
+  .description(
+    'Prepare mapping configuration between source and target fields (two-phase commit, UI-only)',
+  )
   .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
   .requiredOption('--source-field <field>', 'Source field name (max 200 characters)')
   .requiredOption('--target-field <field>', 'Target field name (max 200 characters)')
@@ -8457,7 +8467,9 @@ evaluationSettingsDashboards
         console.log(`Evaluation dashboards (${options.project})`);
         console.log(`  URL: ${result.url}`);
         for (const dashboard of result.dashboards) {
-          console.log(`  - ${dashboard.id} (${dashboard.name}) enabled=${dashboard.enabled ?? false}`);
+          console.log(
+            `  - ${dashboard.id} (${dashboard.name}) enabled=${dashboard.enabled ?? false}`,
+          );
         }
       }
     } catch (error) {
@@ -8474,12 +8486,7 @@ evaluationSettingsDashboards
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: {
-      project: string;
-      dashboards: string;
-      note?: string;
-      json?: boolean;
-    }) => {
+    async (options: { project: string; dashboards: string; note?: string; json?: boolean }) => {
       try {
         const service = new BloomreachEvaluationSettingsService(options.project);
         const dashboards = JSON.parse(options.dashboards) as { id: string; enabled: boolean }[];
@@ -8614,9 +8621,7 @@ weblayers
         }
       }
     } catch (error) {
-      console.error(
-        `Error: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
       process.exit(1);
     }
   });
@@ -8627,38 +8632,30 @@ weblayers
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--weblayer-id <id>', 'Weblayer ID')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: {
-      project: string;
-      weblayerId: string;
-      json?: boolean;
-    }) => {
-      try {
-        const service = new BloomreachWeblayersService(options.project);
-        const result = await service.viewWeblayerPerformance({
-          project: options.project,
-          weblayerId: options.weblayerId,
-        });
+  .action(async (options: { project: string; weblayerId: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachWeblayersService(options.project);
+      const result = await service.viewWeblayerPerformance({
+        project: options.project,
+        weblayerId: options.weblayerId,
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          console.log(`Weblayer Performance: ${result.weblayerId}`);
-          console.log(`  Impressions:  ${result.impressions}`);
-          console.log(`  Clicks:       ${result.clicks}`);
-          console.log(`  Conversions:  ${result.conversions}`);
-          console.log(`  CTR:          ${(result.clickThroughRate * 100).toFixed(1)}%`);
-          console.log(`  Conv. Rate:   ${(result.conversionRate * 100).toFixed(1)}%`);
-          console.log(`  Revenue:      ${result.revenue}`);
-        }
-      } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        process.exit(1);
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Weblayer Performance: ${result.weblayerId}`);
+        console.log(`  Impressions:  ${result.impressions}`);
+        console.log(`  Clicks:       ${result.clicks}`);
+        console.log(`  Conversions:  ${result.conversions}`);
+        console.log(`  CTR:          ${(result.clickThroughRate * 100).toFixed(1)}%`);
+        console.log(`  Conv. Rate:   ${(result.conversionRate * 100).toFixed(1)}%`);
+        console.log(`  Revenue:      ${result.revenue}`);
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 weblayers
   .command('create')
@@ -8710,9 +8707,7 @@ weblayers
             scrollPercentage: options.scrollPercentage
               ? parseInt(options.scrollPercentage, 10)
               : undefined,
-            frequencyCap: options.frequencyCap
-              ? parseInt(options.frequencyCap, 10)
-              : undefined,
+            frequencyCap: options.frequencyCap ? parseInt(options.frequencyCap, 10) : undefined,
           };
         }
 
@@ -8749,9 +8744,7 @@ weblayers
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -8765,12 +8758,7 @@ weblayers
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: {
-      project: string;
-      weblayerId: string;
-      note?: string;
-      json?: boolean;
-    }) => {
+    async (options: { project: string; weblayerId: string; note?: string; json?: boolean }) => {
       try {
         const service = new BloomreachWeblayersService(options.project);
         const result = service.prepareStartWeblayer({
@@ -8791,9 +8779,7 @@ weblayers
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -8807,12 +8793,7 @@ weblayers
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: {
-      project: string;
-      weblayerId: string;
-      note?: string;
-      json?: boolean;
-    }) => {
+    async (options: { project: string; weblayerId: string; note?: string; json?: boolean }) => {
       try {
         const service = new BloomreachWeblayersService(options.project);
         const result = service.prepareStopWeblayer({
@@ -8833,9 +8814,7 @@ weblayers
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -8879,9 +8858,7 @@ weblayers
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -8895,12 +8872,7 @@ weblayers
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: {
-      project: string;
-      weblayerId: string;
-      note?: string;
-      json?: boolean;
-    }) => {
+    async (options: { project: string; weblayerId: string; note?: string; json?: boolean }) => {
       try {
         const service = new BloomreachWeblayersService(options.project);
         const result = service.prepareArchiveWeblayer({
@@ -8921,17 +8893,13 @@ weblayers
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
   );
 
-const reports = program
-  .command('reports')
-  .description('Manage Bloomreach Engagement reports');
+const reports = program.command('reports').description('Manage Bloomreach Engagement reports');
 
 reports
   .command('list')
@@ -8940,38 +8908,31 @@ reports
   )
   .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: {
-      project: string;
-      json?: boolean;
-    }) => {
-      try {
-        const service = new BloomreachReportsService(options.project);
-        const result = await service.listReports({ project: options.project });
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachReportsService(options.project);
+      const result = await service.listReports({ project: options.project });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          if (result.length === 0) {
-            console.log('No reports found.');
-            return;
-          }
-          for (const report of result) {
-            console.log(`  ${report.name}`);
-            console.log(`    Metrics:    ${report.metrics.join(', ')}`);
-            console.log(`    Dimensions: ${report.dimensions.join(', ')}`);
-            console.log(`    ID:         ${report.id}`);
-            console.log(`    URL:        ${report.url}`);
-          }
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No reports found.');
+          return;
         }
-      } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        process.exit(1);
+        for (const report of result) {
+          console.log(`  ${report.name}`);
+          console.log(`    Metrics:    ${report.metrics.join(', ')}`);
+          console.log(`    Dimensions: ${report.dimensions.join(', ')}`);
+          console.log(`    ID:         ${report.id}`);
+          console.log(`    URL:        ${report.url}`);
+        }
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 reports
   .command('view-results')
@@ -9046,13 +9007,13 @@ reports
           console.log(`  Columns: ${result.columns.join(', ')}`);
           console.log(`  Rows:    ${result.rows.length} (total: ${result.totalRows})`);
           if (result.dateRange) {
-            console.log(`  Date range: ${result.dateRange.startDate ?? '?'} – ${result.dateRange.endDate ?? '?'}`);
+            console.log(
+              `  Date range: ${result.dateRange.startDate ?? '?'} – ${result.dateRange.endDate ?? '?'}`,
+            );
           }
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -9103,11 +9064,11 @@ reports
         } = {
           project: options.project,
           name: options.name,
-          metrics: options.metrics.split(',').map(m => m.trim()),
+          metrics: options.metrics.split(',').map((m) => m.trim()),
         };
 
         if (options.dimensions) {
-          input.dimensions = options.dimensions.split(',').map(d => d.trim());
+          input.dimensions = options.dimensions.split(',').map((d) => d.trim());
         }
 
         if (options.startDate || options.endDate) {
@@ -9150,9 +9111,7 @@ reports
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -9162,10 +9121,7 @@ reports
   .command('export')
   .description('Prepare export of a report (two-phase commit)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption(
-    '--report-id <id>',
-    'Report analysis ID (hex string from Bloomreach UI URL)',
-  )
+  .requiredOption('--report-id <id>', 'Report analysis ID (hex string from Bloomreach UI URL)')
   .requiredOption('--format <format>', 'Export format (csv or xlsx)')
   .option('--start-date <date>', 'Start date (ISO-8601)')
   .option('--end-date <date>', 'End date (ISO-8601)')
@@ -9227,9 +9183,7 @@ reports
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -9239,10 +9193,7 @@ reports
   .command('clone')
   .description('Prepare cloning of a report (two-phase commit)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption(
-    '--report-id <id>',
-    'Report analysis ID (hex string from Bloomreach UI URL)',
-  )
+  .requiredOption('--report-id <id>', 'Report analysis ID (hex string from Bloomreach UI URL)')
   .option('--new-name <name>', 'Name for the cloned report')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
@@ -9276,9 +9227,7 @@ reports
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -9288,46 +9237,34 @@ reports
   .command('archive')
   .description('Prepare archiving of a report (two-phase commit)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption(
-    '--report-id <id>',
-    'Report analysis ID (hex string from Bloomreach UI URL)',
-  )
+  .requiredOption('--report-id <id>', 'Report analysis ID (hex string from Bloomreach UI URL)')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: {
-      project: string;
-      reportId: string;
-      note?: string;
-      json?: boolean;
-    }) => {
-      try {
-        const service = new BloomreachReportsService(options.project);
-        const result = service.prepareArchiveReport({
-          project: options.project,
-          reportId: options.reportId,
-          operatorNote: options.note,
-        });
+  .action(async (options: { project: string; reportId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachReportsService(options.project);
+      const result = service.prepareArchiveReport({
+        project: options.project,
+        reportId: options.reportId,
+        operatorNote: options.note,
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          console.log('Report archive prepared.');
-          console.log(`  Report: ${options.reportId}`);
-          console.log(`  Token:  ${result.confirmToken}`);
-          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
-          console.log('');
-          console.log('To confirm, run:');
-          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
-        }
-      } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        process.exit(1);
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Report archive prepared.');
+        console.log(`  Report: ${options.reportId}`);
+        console.log(`  Token:  ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 const segmentations = program
   .command('segmentations')
@@ -9608,7 +9545,10 @@ sqlReports
     'List all SQL reports in the project (note: the Bloomreach API does not provide a SQL reports endpoint — requires browser automation)',
   )
   .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
-  .option('--status <status>', 'Filter by report status: saved, running, completed, failed, archived')
+  .option(
+    '--status <status>',
+    'Filter by report status: saved, running, completed, failed, archived',
+  )
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; status?: string; json?: boolean }) => {
     try {
@@ -9677,7 +9617,10 @@ sqlReports
   .description('Prepare creation of a new SQL report (two-phase commit, UI-only)')
   .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
   .requiredOption('--name <name>', 'Report name (max 200 characters)')
-  .requiredOption('--query <sql>', 'SQL query string (e.g. "SELECT customer_id, email FROM customers LIMIT 100")')
+  .requiredOption(
+    '--query <sql>',
+    'SQL query string (e.g. "SELECT customer_id, email FROM customers LIMIT 100")',
+  )
   .option(
     '--parameters <json>',
     'Query parameters as JSON (e.g. \'{"start_date":"2026-01-01","end_date":"2026-01-31"}\')',
@@ -10038,7 +9981,10 @@ catalogs
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--catalog-id <id>', 'Catalog ID')
   .option('--items <json>', 'JSON array of catalog item property objects')
-  .option('--items-file <path>', 'Path to JSON file containing items array (alternative to --items)')
+  .option(
+    '--items-file <path>',
+    'Path to JSON file containing items array (alternative to --items)',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -10053,7 +9999,9 @@ catalogs
       try {
         let items: AddCatalogItemsInput['items'];
         if (options.itemsFile) {
-          items = JSON.parse(readFileSync(options.itemsFile, 'utf-8')) as AddCatalogItemsInput['items'];
+          items = JSON.parse(
+            readFileSync(options.itemsFile, 'utf-8'),
+          ) as AddCatalogItemsInput['items'];
         } else if (options.items) {
           items = JSON.parse(options.items) as AddCatalogItemsInput['items'];
         } else {
@@ -10095,7 +10043,10 @@ catalogs
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--catalog-id <id>', 'Catalog ID')
   .option('--items <json>', 'JSON array of item updates [{id, properties}]')
-  .option('--items-file <path>', 'Path to JSON file containing items array (alternative to --items)')
+  .option(
+    '--items-file <path>',
+    'Path to JSON file containing items array (alternative to --items)',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -10110,7 +10061,9 @@ catalogs
       try {
         let items: UpdateCatalogItemsInput['items'];
         if (options.itemsFile) {
-          items = JSON.parse(readFileSync(options.itemsFile, 'utf-8')) as UpdateCatalogItemsInput['items'];
+          items = JSON.parse(
+            readFileSync(options.itemsFile, 'utf-8'),
+          ) as UpdateCatalogItemsInput['items'];
         } else if (options.items) {
           items = JSON.parse(options.items) as UpdateCatalogItemsInput['items'];
         } else {
@@ -10182,15 +10135,16 @@ catalogs
     },
   );
 
-const imports = program
-  .command('imports')
-  .description('Manage Bloomreach data imports');
+const imports = program.command('imports').description('Manage Bloomreach data imports');
 
 imports
   .command('list')
   .description('List all data imports in the project')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .option('--status <status>', 'Filter by status (pending, processing, completed, failed, cancelled, scheduled)')
+  .option(
+    '--status <status>',
+    'Filter by status (pending, processing, completed, failed, cancelled, scheduled)',
+  )
   .option('--type <type>', 'Filter by type (csv, api)')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; status?: string; type?: string; json?: boolean }) => {
@@ -10284,7 +10238,10 @@ imports
   .requiredOption('--name <name>', 'Import name')
   .requiredOption('--type <type>', 'Import type (csv, api)')
   .requiredOption('--source <source>', 'Data source URL (CSV file URL or API endpoint)')
-  .requiredOption('--mapping <json>', 'JSON array of mappings [{sourceColumn, targetProperty, transformationType?}]')
+  .requiredOption(
+    '--mapping <json>',
+    'JSON array of mappings [{sourceColumn, targetProperty, transformationType?}]',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -10338,7 +10295,10 @@ imports
   .requiredOption('--name <name>', 'Import name')
   .requiredOption('--type <type>', 'Import type (csv, api)')
   .requiredOption('--source <source>', 'Data source URL (CSV file URL or API endpoint)')
-  .requiredOption('--mapping <json>', 'JSON array of mappings [{sourceColumn, targetProperty, transformationType?}]')
+  .requiredOption(
+    '--mapping <json>',
+    'JSON array of mappings [{sourceColumn, targetProperty, transformationType?}]',
+  )
   .requiredOption('--frequency <frequency>', 'Schedule frequency (daily, weekly, monthly, custom)')
   .option('--cron <expression>', 'Cron expression for custom frequency')
   .option('--start-date <date>', 'Schedule start date (YYYY-MM-DD)')
@@ -10410,34 +10370,32 @@ imports
   .requiredOption('--import-id <id>', 'Import ID to cancel')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: { project: string; importId: string; note?: string; json?: boolean }) => {
-      try {
-        const apiConfig = tryResolveApiConfig(options.project);
-        const service = new BloomreachImportsService(options.project, apiConfig);
-        const result = service.prepareCancelImport({
-          project: options.project,
-          importId: options.importId,
-          operatorNote: options.note,
-        });
+  .action(async (options: { project: string; importId: string; note?: string; json?: boolean }) => {
+    try {
+      const apiConfig = tryResolveApiConfig(options.project);
+      const service = new BloomreachImportsService(options.project, apiConfig);
+      const result = service.prepareCancelImport({
+        project: options.project,
+        importId: options.importId,
+        operatorNote: options.note,
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          console.log('Import cancellation prepared.');
-          console.log(`  Import: ${options.importId}`);
-          console.log(`  Token:  ${result.confirmToken}`);
-          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
-          console.log('');
-          console.log('To confirm, run:');
-          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
-        }
-      } catch (error) {
-        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Import cancellation prepared.');
+        console.log(`  Import: ${options.importId}`);
+        console.log(`  Token:  ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 const useCases = program
   .command('use-cases')
@@ -10447,52 +10405,56 @@ useCases
   .command('list')
   .description('List all available use case templates')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .option('--category <category>', 'Filter by goal category (awareness, acquisition, retention, optimization)')
+  .option(
+    '--category <category>',
+    'Filter by goal category (awareness, acquisition, retention, optimization)',
+  )
   .option('--tag <tag>', 'Filter by tag (new, essentials, popular)')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: { project: string; category?: string; tag?: string; json?: boolean }) => {
-      try {
-        const service = new BloomreachUseCasesService(options.project);
-        const input: { project: string; category?: string; tag?: string } = {
-          project: options.project,
-        };
-        if (options.category) input.category = options.category;
-        if (options.tag) input.tag = options.tag;
+  .action(async (options: { project: string; category?: string; tag?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachUseCasesService(options.project);
+      const input: { project: string; category?: string; tag?: string } = {
+        project: options.project,
+      };
+      if (options.category) input.category = options.category;
+      if (options.tag) input.tag = options.tag;
 
-        const result = await service.listUseCases(input);
+      const result = await service.listUseCases(input);
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          if (result.length === 0) {
-            console.log('No use cases found.');
-            return;
-          }
-          for (const useCase of result) {
-            console.log(`  ${useCase.name}`);
-            console.log(`    Category: ${useCase.goalCategory}`);
-            console.log(`    Tags:     ${useCase.tags.join(', ')}`);
-            if (useCase.readinessStatus) {
-              console.log(`    Ready:    ${useCase.readinessStatus}`);
-            }
-            console.log(`    ID:       ${useCase.id}`);
-            console.log(`    URL:      ${useCase.url}`);
-          }
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No use cases found.');
+          return;
         }
-      } catch (error) {
-        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        for (const useCase of result) {
+          console.log(`  ${useCase.name}`);
+          console.log(`    Category: ${useCase.goalCategory}`);
+          console.log(`    Tags:     ${useCase.tags.join(', ')}`);
+          if (useCase.readinessStatus) {
+            console.log(`    Ready:    ${useCase.readinessStatus}`);
+          }
+          console.log(`    ID:       ${useCase.id}`);
+          console.log(`    URL:      ${useCase.url}`);
+        }
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 useCases
   .command('search')
   .description('Search use case templates by keyword')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--query <query>', 'Search keyword')
-  .option('--category <category>', 'Filter by goal category (awareness, acquisition, retention, optimization)')
+  .option(
+    '--category <category>',
+    'Filter by goal category (awareness, acquisition, retention, optimization)',
+  )
   .option('--tag <tag>', 'Filter by tag (new, essentials, popular)')
   .option('--json', 'Output as JSON')
   .action(
@@ -10850,33 +10812,31 @@ access
   .requiredOption('--member-id <id>', 'Team member ID')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: { project: string; memberId: string; note?: string; json?: boolean }) => {
-      try {
-        const service = new BloomreachAccessManagementService(options.project);
-        const result = service.prepareRemoveTeamMember({
-          project: options.project,
-          memberId: options.memberId,
-          operatorNote: options.note,
-        });
+  .action(async (options: { project: string; memberId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachAccessManagementService(options.project);
+      const result = service.prepareRemoveTeamMember({
+        project: options.project,
+        memberId: options.memberId,
+        operatorNote: options.note,
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          console.log('Team member removal prepared.');
-          console.log(`  Member ID: ${options.memberId}`);
-          console.log(`  Token:     ${result.confirmToken}`);
-          console.log(`  Expires:   ${new Date(result.expiresAtMs).toISOString()}`);
-          console.log('');
-          console.log('To confirm, run:');
-          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
-        }
-      } catch (error) {
-        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Team member removal prepared.');
+        console.log(`  Member ID: ${options.memberId}`);
+        console.log(`  Token:     ${result.confirmToken}`);
+        console.log(`  Expires:   ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 access
   .command('list-api-keys')
@@ -10914,33 +10874,31 @@ access
   .requiredOption('--name <name>', 'API key name')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: { project: string; name: string; note?: string; json?: boolean }) => {
-      try {
-        const service = new BloomreachAccessManagementService(options.project);
-        const result = service.prepareCreateApiKey({
-          project: options.project,
-          name: options.name,
-          operatorNote: options.note,
-        });
+  .action(async (options: { project: string; name: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachAccessManagementService(options.project);
+      const result = service.prepareCreateApiKey({
+        project: options.project,
+        name: options.name,
+        operatorNote: options.note,
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          console.log('API key creation prepared.');
-          console.log(`  Name:    ${options.name}`);
-          console.log(`  Token:   ${result.confirmToken}`);
-          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
-          console.log('');
-          console.log('To confirm, run:');
-          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
-        }
-      } catch (error) {
-        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('API key creation prepared.');
+        console.log(`  Name:    ${options.name}`);
+        console.log(`  Token:   ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 access
   .command('delete-api-key')
@@ -10949,32 +10907,30 @@ access
   .requiredOption('--api-key-id <id>', 'API key ID')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: { project: string; apiKeyId: string; note?: string; json?: boolean }) => {
-      try {
-        const service = new BloomreachAccessManagementService(options.project);
-        const result = service.prepareDeleteApiKey({
-          project: options.project,
-          apiKeyId: options.apiKeyId,
-          operatorNote: options.note,
-        });
+  .action(async (options: { project: string; apiKeyId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachAccessManagementService(options.project);
+      const result = service.prepareDeleteApiKey({
+        project: options.project,
+        apiKeyId: options.apiKeyId,
+        operatorNote: options.note,
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          console.log('API key deletion prepared.');
-          console.log(`  API key ID: ${options.apiKeyId}`);
-          console.log(`  Token:      ${result.confirmToken}`);
-          console.log(`  Expires:    ${new Date(result.expiresAtMs).toISOString()}`);
-          console.log('');
-          console.log('To confirm, run:');
-          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
-        }
-      } catch (error) {
-        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('API key deletion prepared.');
+        console.log(`  API key ID: ${options.apiKeyId}`);
+        console.log(`  Token:      ${result.confirmToken}`);
+        console.log(`  Expires:    ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 program.parse();

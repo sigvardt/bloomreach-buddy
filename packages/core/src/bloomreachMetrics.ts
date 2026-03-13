@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
 
@@ -89,20 +90,8 @@ export interface PreparedMetricAction {
 const MAX_METRIC_NAME_LENGTH = 200;
 const MIN_METRIC_NAME_LENGTH = 1;
 const MAX_DESCRIPTION_LENGTH = 1000;
-const AGGREGATION_TYPES = new Set([
-  'sum',
-  'count',
-  'average',
-  'min',
-  'max',
-  'unique',
-]);
-const PROPERTY_REQUIRED_AGGREGATION_TYPES = new Set([
-  'sum',
-  'average',
-  'min',
-  'max',
-]);
+const AGGREGATION_TYPES = new Set(['sum', 'count', 'average', 'min', 'max', 'unique']);
+const PROPERTY_REQUIRED_AGGREGATION_TYPES = new Set(['sum', 'average', 'min', 'max']);
 
 export function validateMetricName(name: string): string {
   const trimmed = name.trim();
@@ -151,9 +140,7 @@ export function validateAggregationType(type: string): string {
   return normalized;
 }
 
-export function validateAggregation(
-  aggregation: MetricAggregation,
-): MetricAggregation {
+export function validateAggregation(aggregation: MetricAggregation): MetricAggregation {
   const eventName = aggregation.eventName.trim();
   if (eventName.length === 0) {
     throw new Error('Aggregation eventName must not be empty.');
@@ -166,9 +153,7 @@ export function validateAggregation(
     PROPERTY_REQUIRED_AGGREGATION_TYPES.has(aggregationType) &&
     (propertyName === undefined || propertyName.length === 0)
   ) {
-    throw new Error(
-      `aggregation.propertyName is required for aggregationType ${aggregationType}.`,
-    );
+    throw new Error(`aggregation.propertyName is required for aggregationType ${aggregationType}.`);
   }
 
   if (propertyName !== undefined && propertyName.length === 0) {
@@ -186,6 +171,21 @@ export function buildMetricsUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/data/metrics`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 export interface MetricActionExecutor {
   readonly actionType: string;
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -193,53 +193,72 @@ export interface MetricActionExecutor {
 
 class CreateMetricExecutor implements MetricActionExecutor {
   readonly actionType = CREATE_METRIC_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateMetricExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateMetricExecutor: not yet implemented. ' +
+        'Metric creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class EditMetricExecutor implements MetricActionExecutor {
   readonly actionType = EDIT_METRIC_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'EditMetricExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'EditMetricExecutor: not yet implemented. ' +
+        'Metric editing is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class DeleteMetricExecutor implements MetricActionExecutor {
   readonly actionType = DELETE_METRIC_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'DeleteMetricExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DeleteMetricExecutor: not yet implemented. ' +
+        'Metric deletion is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createMetricActionExecutors(): Record<string, MetricActionExecutor> {
+export function createMetricActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, MetricActionExecutor> {
   return {
-    [CREATE_METRIC_ACTION_TYPE]: new CreateMetricExecutor(),
-    [EDIT_METRIC_ACTION_TYPE]: new EditMetricExecutor(),
-    [DELETE_METRIC_ACTION_TYPE]: new DeleteMetricExecutor(),
+    [CREATE_METRIC_ACTION_TYPE]: new CreateMetricExecutor(apiConfig),
+    [EDIT_METRIC_ACTION_TYPE]: new EditMetricExecutor(apiConfig),
+    [DELETE_METRIC_ACTION_TYPE]: new DeleteMetricExecutor(apiConfig),
   };
 }
 
 export class BloomreachMetricsService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildMetricsUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get metricsUrl(): string {
@@ -247,16 +266,20 @@ export class BloomreachMetricsService {
   }
 
   async listMetrics(input?: ListMetricsInput): Promise<BloomreachMetric[]> {
+    void this.apiConfig;
     if (input !== undefined) {
       validateProject(input.project);
     }
 
     throw new Error(
-      'listMetrics: not yet implemented. Requires browser automation infrastructure.',
+      'listMetrics: the Bloomreach API does not provide an endpoint for metrics. ' +
+        'Metric data must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Data & Assets > Metrics in your project).',
     );
   }
 
   async viewMetricResults(input: ViewMetricResultsInput): Promise<MetricResults> {
+    void this.apiConfig;
     validateProject(input.project);
     validateMetricId(input.metricId);
 
@@ -269,7 +292,9 @@ export class BloomreachMetricsService {
     }
 
     throw new Error(
-      'viewMetricResults: not yet implemented. Requires browser automation infrastructure.',
+      'viewMetricResults: the Bloomreach API does not provide an endpoint for metric results. ' +
+        'Metric results must be viewed in the Bloomreach Engagement UI ' +
+        '(navigate to Data & Assets > Metrics and open the metric).',
     );
   }
 
@@ -277,9 +302,7 @@ export class BloomreachMetricsService {
     const project = validateProject(input.project);
     const name = validateMetricName(input.name);
     const description =
-      input.description === undefined
-        ? undefined
-        : validateDescription(input.description);
+      input.description === undefined ? undefined : validateDescription(input.description);
     const aggregation = validateAggregation(input.aggregation);
 
     const preview = {
@@ -303,16 +326,11 @@ export class BloomreachMetricsService {
   prepareEditMetric(input: EditMetricInput): PreparedMetricAction {
     const project = validateProject(input.project);
     const metricId = validateMetricId(input.metricId);
-    const name =
-      input.name === undefined ? undefined : validateMetricName(input.name);
+    const name = input.name === undefined ? undefined : validateMetricName(input.name);
     const description =
-      input.description === undefined
-        ? undefined
-        : validateDescription(input.description);
+      input.description === undefined ? undefined : validateDescription(input.description);
     const aggregation =
-      input.aggregation === undefined
-        ? undefined
-        : validateAggregation(input.aggregation);
+      input.aggregation === undefined ? undefined : validateAggregation(input.aggregation);
 
     const preview = {
       action: EDIT_METRIC_ACTION_TYPE,
