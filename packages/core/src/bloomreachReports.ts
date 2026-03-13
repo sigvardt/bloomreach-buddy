@@ -1,4 +1,6 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
+import { bloomreachApiFetch, buildDataPath } from './bloomreachApiClient.js';
 
 export const CREATE_REPORT_ACTION_TYPE = 'reports.create_report';
 export const CLONE_REPORT_ACTION_TYPE = 'reports.clone_report';
@@ -209,6 +211,19 @@ export function buildReportsUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/analytics/reports`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
 /**
  * Executor for a confirmed report mutation.
  * Execute methods require browser automation infrastructure (not yet built).
@@ -220,61 +235,91 @@ export interface ReportActionExecutor {
 
 class CreateReportExecutor implements ReportActionExecutor {
   readonly actionType = CREATE_REPORT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateReportExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateReportExecutor: not yet implemented. ' +
+        'Report creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CloneReportExecutor implements ReportActionExecutor {
   readonly actionType = CLONE_REPORT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CloneReportExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CloneReportExecutor: not yet implemented. ' +
+        'Report cloning is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ArchiveReportExecutor implements ReportActionExecutor {
   readonly actionType = ARCHIVE_REPORT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ArchiveReportExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ArchiveReportExecutor: not yet implemented. ' +
+        'Report archiving is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ExportReportExecutor implements ReportActionExecutor {
   readonly actionType = EXPORT_REPORT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ExportReportExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ExportReportExecutor: not yet implemented. ' +
+        'Report export is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createReportActionExecutors(): Record<
+export function createReportActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<
   string,
   ReportActionExecutor
 > {
   return {
-    [CREATE_REPORT_ACTION_TYPE]: new CreateReportExecutor(),
-    [CLONE_REPORT_ACTION_TYPE]: new CloneReportExecutor(),
-    [ARCHIVE_REPORT_ACTION_TYPE]: new ArchiveReportExecutor(),
-    [EXPORT_REPORT_ACTION_TYPE]: new ExportReportExecutor(),
+    [CREATE_REPORT_ACTION_TYPE]: new CreateReportExecutor(apiConfig),
+    [CLONE_REPORT_ACTION_TYPE]: new CloneReportExecutor(apiConfig),
+    [ARCHIVE_REPORT_ACTION_TYPE]: new ArchiveReportExecutor(apiConfig),
+    [EXPORT_REPORT_ACTION_TYPE]: new ExportReportExecutor(apiConfig),
   };
 }
 
@@ -286,9 +331,11 @@ export function createReportActionExecutors(): Record<
  */
 export class BloomreachReportsService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildReportsUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get reportsUrl(): string {
@@ -302,7 +349,9 @@ export class BloomreachReportsService {
     }
 
     throw new Error(
-      'listReports: not yet implemented. Requires browser automation infrastructure.',
+      'listReports: the Bloomreach API does not provide a list endpoint for reports. ' +
+        'Report IDs must be obtained from the Bloomreach Engagement UI ' +
+        '(found in the URL when viewing a report, e.g. "606488856f8cf6f848b20af8").',
     );
   }
 
@@ -311,7 +360,7 @@ export class BloomreachReportsService {
     input: ViewReportResultsInput,
   ): Promise<ReportResults> {
     validateProject(input.project);
-    validateReportId(input.reportId);
+    const reportId = validateReportId(input.reportId);
     if (input.limit !== undefined) {
       validateLimit(input.limit);
     }
@@ -319,9 +368,39 @@ export class BloomreachReportsService {
       validateSortOrder(input.sort.order);
     }
 
-    throw new Error(
-      'viewReportResults: not yet implemented. Requires browser automation infrastructure.',
+    const config = requireApiConfig(this.apiConfig, 'viewReportResults');
+    const path = buildDataPath(config, '/analyses/reports');
+
+    const response = await bloomreachApiFetch(config, path, {
+      body: {
+        analysis_id: reportId,
+        format: 'table_json',
+      },
+    });
+
+    const data = response as {
+      header?: string[];
+      rows?: unknown[][];
+      success?: boolean;
+      name?: string;
+    };
+    if (!data.success || !Array.isArray(data.rows)) {
+      throw new Error('viewReportResults: unexpected API response format.');
+    }
+
+    const columns = Array.isArray(data.header) ? data.header : [];
+    const rows = data.rows.map((row) =>
+      row.map((cell) => (cell === null || cell === undefined ? '' : String(cell))),
     );
+
+    return {
+      reportId,
+      reportName: data.name ?? reportId,
+      columns,
+      rows,
+      totalRows: rows.length,
+      dateRange: input.dateRange,
+    };
   }
 
   /** @throws {Error} If input validation fails. */
