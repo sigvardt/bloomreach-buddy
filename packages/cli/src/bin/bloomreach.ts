@@ -13,6 +13,7 @@ import {
   BloomreachFlowsService,
   BloomreachIntegrationsService,
   BloomreachInitiativesService,
+  BloomreachProjectSettingsService,
   BloomreachFunnelsService,
   BloomreachGeoAnalysesService,
   BloomreachMetricsService,
@@ -5715,6 +5716,539 @@ initiatives
           console.log(`  Initiative: ${options.initiativeId}`);
           console.log(`  Token:      ${result.confirmToken}`);
           console.log(`  Expires:    ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const projectSettings = program
+  .command('project-settings')
+  .description('Manage Bloomreach Engagement project settings');
+
+projectSettings
+  .command('view')
+  .description('View general project settings')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachProjectSettingsService(options.project);
+      const result = await service.viewProjectSettings({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Name:          ${result.name}`);
+        console.log(`Project type:  ${result.projectType}`);
+        console.log(`Project token: ${result.projectToken}`);
+        console.log(`Slug:          ${result.slug}`);
+        if (result.baseUrl) {
+          console.log(`Base URL:      ${result.baseUrl}`);
+        }
+        if (result.customUrl) {
+          console.log(`Custom URL:    ${result.customUrl}`);
+        }
+        if (result.calendarType) {
+          console.log(`Calendar type: ${result.calendarType}`);
+        }
+        console.log(`URL:           ${result.url}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+projectSettings
+  .command('token')
+  .description('View the project token')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachProjectSettingsService(options.project);
+      const result = await service.viewProjectToken({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Project token: ${result.projectToken}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+projectSettings
+  .command('terms')
+  .description('View terms and conditions')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachProjectSettingsService(options.project);
+      const result = await service.viewTermsAndConditions({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Accepted: ${result.accepted}`);
+        if (result.acceptedAt) {
+          console.log(`Accepted at: ${result.acceptedAt}`);
+        }
+        if (result.version) {
+          console.log(`Version: ${result.version}`);
+        }
+        if (result.dpaAccepted !== undefined) {
+          console.log(`DPA accepted: ${result.dpaAccepted}`);
+        }
+        console.log(`URL: ${result.url}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+projectSettings
+  .command('update-name')
+  .description('Prepare project name update (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Project name')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; name: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachProjectSettingsService(options.project);
+      const result = service.prepareUpdateProjectName({
+        project: options.project,
+        name: options.name,
+        operatorNote: options.note,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Project name update prepared.');
+        console.log(`  Name:    ${options.name}`);
+        console.log(`  Token:   ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+projectSettings
+  .command('update-url')
+  .description('Prepare custom URL update (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--custom-url <customUrl>', 'Custom URL')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; customUrl: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachProjectSettingsService(options.project);
+        const result = service.prepareUpdateCustomUrl({
+          project: options.project,
+          customUrl: options.customUrl,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Project custom URL update prepared.');
+          console.log(`  Custom URL: ${options.customUrl}`);
+          console.log(`  Token:      ${result.confirmToken}`);
+          console.log(`  Expires:    ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+projectSettings
+  .command('update-terms')
+  .description('Prepare terms and conditions update (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--accepted <accepted>', 'Whether terms are accepted (true or false)')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; accepted: string; note?: string; json?: boolean }) => {
+      try {
+        if (options.accepted !== 'true' && options.accepted !== 'false') {
+          throw new Error('Option --accepted must be "true" or "false".');
+        }
+
+        const service = new BloomreachProjectSettingsService(options.project);
+        const result = service.prepareUpdateTermsAndConditions({
+          project: options.project,
+          accepted: options.accepted === 'true',
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Project terms and conditions update prepared.');
+          console.log(`  Accepted: ${options.accepted}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const projectSettingsTags = projectSettings.command('tags').description('Manage custom tags');
+
+projectSettingsTags
+  .command('list')
+  .description('List custom tags')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachProjectSettingsService(options.project);
+      const result = await service.listCustomTags({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No custom tags found.');
+          return;
+        }
+        for (const tag of result) {
+          console.log(`  ${tag.name}`);
+          console.log(`    ID:    ${tag.id}`);
+          if (tag.color) {
+            console.log(`    Color: ${tag.color}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+projectSettingsTags
+  .command('create')
+  .description('Prepare custom tag creation (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Tag name')
+  .option('--color <color>', 'Tag color in hex format (e.g. #FF5733)')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      color?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachProjectSettingsService(options.project);
+        const result = service.prepareCreateCustomTag({
+          project: options.project,
+          name: options.name,
+          color: options.color,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Custom tag creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          if (options.color) {
+            console.log(`  Color:   ${options.color}`);
+          }
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+projectSettingsTags
+  .command('update')
+  .description('Prepare custom tag update (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--tag-id <id>', 'Tag ID')
+  .option('--name <name>', 'Tag name')
+  .option('--color <color>', 'Tag color in hex format (e.g. #FF5733)')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      tagId: string;
+      name?: string;
+      color?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachProjectSettingsService(options.project);
+        const result = service.prepareUpdateCustomTag({
+          project: options.project,
+          tagId: options.tagId,
+          name: options.name,
+          color: options.color,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Custom tag update prepared.');
+          console.log(`  Tag ID:  ${options.tagId}`);
+          if (options.name) {
+            console.log(`  Name:    ${options.name}`);
+          }
+          if (options.color) {
+            console.log(`  Color:   ${options.color}`);
+          }
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+projectSettingsTags
+  .command('delete')
+  .description('Prepare custom tag deletion (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--tag-id <id>', 'Tag ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; tagId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachProjectSettingsService(options.project);
+      const result = service.prepareDeleteCustomTag({
+        project: options.project,
+        tagId: options.tagId,
+        operatorNote: options.note,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Custom tag deletion prepared.');
+        console.log(`  Tag ID:  ${options.tagId}`);
+        console.log(`  Token:   ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+const projectSettingsVariables = projectSettings
+  .command('variables')
+  .description('Manage project variables');
+
+projectSettingsVariables
+  .command('list')
+  .description('List project variables')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachProjectSettingsService(options.project);
+      const result = await service.listProjectVariables({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No project variables found.');
+          return;
+        }
+        for (const variable of result) {
+          console.log(`  ${variable.name}`);
+          console.log(`    Value: ${variable.value}`);
+          if (variable.description) {
+            console.log(`    Description: ${variable.description}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+projectSettingsVariables
+  .command('create')
+  .description('Prepare variable creation (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Variable name')
+  .requiredOption('--value <value>', 'Variable value')
+  .option('--description <description>', 'Variable description')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      value: string;
+      description?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachProjectSettingsService(options.project);
+        const result = service.prepareCreateProjectVariable({
+          project: options.project,
+          name: options.name,
+          value: options.value,
+          description: options.description,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Project variable creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Value:   ${options.value}`);
+          if (options.description) {
+            console.log(`  Description: ${options.description}`);
+          }
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+projectSettingsVariables
+  .command('update')
+  .description('Prepare variable update (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--variable-name <name>', 'Variable name')
+  .option('--value <value>', 'Variable value')
+  .option('--description <description>', 'Variable description')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      variableName: string;
+      value?: string;
+      description?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachProjectSettingsService(options.project);
+        const result = service.prepareUpdateProjectVariable({
+          project: options.project,
+          variableName: options.variableName,
+          value: options.value,
+          description: options.description,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Project variable update prepared.');
+          console.log(`  Variable: ${options.variableName}`);
+          if (options.value !== undefined) {
+            console.log(`  Value:    ${options.value}`);
+          }
+          if (options.description !== undefined) {
+            console.log(`  Description: ${options.description}`);
+          }
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+projectSettingsVariables
+  .command('delete')
+  .description('Prepare variable deletion (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--variable-name <name>', 'Variable name')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; variableName: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachProjectSettingsService(options.project);
+        const result = service.prepareDeleteProjectVariable({
+          project: options.project,
+          variableName: options.variableName,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Project variable deletion prepared.');
+          console.log(`  Variable: ${options.variableName}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');
           console.log('To confirm, run:');
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
