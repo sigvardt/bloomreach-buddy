@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   DEPLOY_USE_CASE_ACTION_TYPE,
   FAVORITE_USE_CASE_ACTION_TYPE,
@@ -16,6 +16,18 @@ import {
   createUseCaseActionExecutors,
   BloomreachUseCasesService,
 } from '../index.js';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports DEPLOY_USE_CASE_ACTION_TYPE', () => {
@@ -86,6 +98,22 @@ describe('validateUseCaseId', () => {
   it('returns same value when already trimmed', () => {
     expect(validateUseCaseId('use-case-456')).toBe('use-case-456');
   });
+
+  it('accepts use case ID with dots and dashes', () => {
+    expect(validateUseCaseId('use-case-123.abc')).toBe('use-case-123.abc');
+  });
+
+  it('handles mixed whitespace (tabs and spaces)', () => {
+    expect(validateUseCaseId('\t use-case-123 \t')).toBe('use-case-123');
+  });
+
+  it('handles newline-only input', () => {
+    expect(() => validateUseCaseId('\n\n')).toThrow('must not be empty');
+  });
+
+  it('handles tab-only input', () => {
+    expect(() => validateUseCaseId('\t\t')).toThrow('must not be empty');
+  });
 });
 
 describe('validateUseCaseSearchQuery', () => {
@@ -99,6 +127,18 @@ describe('validateUseCaseSearchQuery', () => {
 
   it('throws for whitespace-only string', () => {
     expect(() => validateUseCaseSearchQuery('   ')).toThrow('must not be empty');
+  });
+
+  it('handles mixed whitespace (tabs and spaces)', () => {
+    expect(validateUseCaseSearchQuery('\t personalization \t')).toBe('personalization');
+  });
+
+  it('handles tab-only input', () => {
+    expect(() => validateUseCaseSearchQuery('\t\t')).toThrow('must not be empty');
+  });
+
+  it('handles newline-only input', () => {
+    expect(() => validateUseCaseSearchQuery('\n\n')).toThrow('must not be empty');
   });
 });
 
@@ -126,6 +166,10 @@ describe('validateGoalCategory', () => {
   it('throws for empty category', () => {
     expect(() => validateGoalCategory('')).toThrow('category must be one of');
   });
+
+  it('throws for case-sensitive mismatch', () => {
+    expect(() => validateGoalCategory('Awareness')).toThrow('category must be one of');
+  });
 });
 
 describe('validateUseCaseTag', () => {
@@ -148,6 +192,10 @@ describe('validateUseCaseTag', () => {
   it('throws for empty tag', () => {
     expect(() => validateUseCaseTag('')).toThrow('tag must be one of');
   });
+
+  it('throws for case-sensitive mismatch', () => {
+    expect(() => validateUseCaseTag('New')).toThrow('tag must be one of');
+  });
 });
 
 describe('buildUseCasesUrl', () => {
@@ -163,6 +211,20 @@ describe('buildUseCasesUrl', () => {
 
   it('encodes slashes in project name', () => {
     expect(buildUseCasesUrl('org/project')).toBe('/p/org%2Fproject/use-case-center/use-case-center');
+  });
+
+  it('encodes unicode characters', () => {
+    expect(buildUseCasesUrl('projekt åäö')).toBe(
+      '/p/projekt%20%C3%A5%C3%A4%C3%B6/use-case-center/use-case-center',
+    );
+  });
+
+  it('encodes hash character', () => {
+    expect(buildUseCasesUrl('my#project')).toBe('/p/my%23project/use-case-center/use-case-center');
+  });
+
+  it('keeps dashes unencoded', () => {
+    expect(buildUseCasesUrl('team-alpha')).toBe('/p/team-alpha/use-case-center/use-case-center');
   });
 });
 
@@ -185,8 +247,93 @@ describe('createUseCaseActionExecutors', () => {
   it('executors throw "not yet implemented" on execute', async () => {
     const executors = createUseCaseActionExecutors();
     for (const executor of Object.values(executors)) {
-      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+      await expect(executor.execute({})).rejects.toThrow('Bloomreach Engagement UI');
     }
+  });
+
+  it('accepts optional apiConfig parameter', () => {
+    const executors = createUseCaseActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(3);
+  });
+
+  it('executors still throw with apiConfig', async () => {
+    const executors = createUseCaseActionExecutors(TEST_API_CONFIG);
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow('Bloomreach Engagement UI');
+    }
+  });
+
+  it('executor actionType stays stable with apiConfig', () => {
+    const executors = createUseCaseActionExecutors(TEST_API_CONFIG);
+    expect(executors[DEPLOY_USE_CASE_ACTION_TYPE].actionType).toBe(DEPLOY_USE_CASE_ACTION_TYPE);
+    expect(executors[FAVORITE_USE_CASE_ACTION_TYPE].actionType).toBe(FAVORITE_USE_CASE_ACTION_TYPE);
+    expect(executors[UNFAVORITE_USE_CASE_ACTION_TYPE].actionType).toBe(
+      UNFAVORITE_USE_CASE_ACTION_TYPE,
+    );
+  });
+
+  it('executor map keys are exactly the 3 action types', () => {
+    const executors = createUseCaseActionExecutors();
+    expect(Object.keys(executors)).toEqual([
+      DEPLOY_USE_CASE_ACTION_TYPE,
+      FAVORITE_USE_CASE_ACTION_TYPE,
+      UNFAVORITE_USE_CASE_ACTION_TYPE,
+    ]);
+  });
+
+  it('deploy executor has specific UI-only message', async () => {
+    const executors = createUseCaseActionExecutors();
+    await expect(executors[DEPLOY_USE_CASE_ACTION_TYPE].execute({})).rejects.toThrow(
+      'Use case deployment is only available through the Bloomreach Engagement UI.',
+    );
+  });
+
+  it('favorite executor has specific UI-only message', async () => {
+    const executors = createUseCaseActionExecutors();
+    await expect(executors[FAVORITE_USE_CASE_ACTION_TYPE].execute({})).rejects.toThrow(
+      'Use case favoriting is only available through the Bloomreach Engagement UI.',
+    );
+  });
+
+  it('unfavorite executor has specific UI-only message', async () => {
+    const executors = createUseCaseActionExecutors();
+    await expect(executors[UNFAVORITE_USE_CASE_ACTION_TYPE].execute({})).rejects.toThrow(
+      'Use case unfavoriting is only available through the Bloomreach Engagement UI.',
+    );
+  });
+
+  it('returns identical action keys with or without apiConfig', () => {
+    const withoutConfig = Object.keys(createUseCaseActionExecutors()).sort();
+    const withConfig = Object.keys(createUseCaseActionExecutors(TEST_API_CONFIG)).sort();
+    expect(withConfig).toEqual(withoutConfig);
+  });
+
+  it('preserves actionType mapping with apiConfig', () => {
+    const executors = createUseCaseActionExecutors(TEST_API_CONFIG);
+    for (const [key, executor] of Object.entries(executors)) {
+      expect(executor.actionType).toBe(key);
+    }
+  });
+
+  it('deploy executor has specific UI-only message with apiConfig', async () => {
+    const executors = createUseCaseActionExecutors(TEST_API_CONFIG);
+    await expect(executors[DEPLOY_USE_CASE_ACTION_TYPE].execute({})).rejects.toThrow(
+      'Use case deployment is only available through the Bloomreach Engagement UI.',
+    );
+  });
+
+  it('favorite executor has specific UI-only message with apiConfig', async () => {
+    const executors = createUseCaseActionExecutors(TEST_API_CONFIG);
+    await expect(executors[FAVORITE_USE_CASE_ACTION_TYPE].execute({})).rejects.toThrow(
+      'Use case favoriting is only available through the Bloomreach Engagement UI.',
+    );
+  });
+
+  it('unfavorite executor has specific UI-only message with apiConfig', async () => {
+    const executors = createUseCaseActionExecutors(TEST_API_CONFIG);
+    await expect(executors[UNFAVORITE_USE_CASE_ACTION_TYPE].execute({})).rejects.toThrow(
+      'Use case unfavoriting is only available through the Bloomreach Engagement UI.',
+    );
   });
 });
 
@@ -210,12 +357,61 @@ describe('BloomreachUseCasesService', () => {
     it('throws for empty project', () => {
       expect(() => new BloomreachUseCasesService('')).toThrow('must not be empty');
     });
+
+    it('throws for whitespace-only project', () => {
+      expect(() => new BloomreachUseCasesService('   ')).toThrow('must not be empty');
+    });
+
+    it('encodes slashes in constructor project URL', () => {
+      const service = new BloomreachUseCasesService('org/project');
+      expect(service.useCasesUrl).toBe('/p/org%2Fproject/use-case-center/use-case-center');
+    });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachUseCasesService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachUseCasesService);
+    });
+
+    it('exposes use cases URL when constructed with apiConfig', () => {
+      const service = new BloomreachUseCasesService('test', TEST_API_CONFIG);
+      expect(service.useCasesUrl).toBe('/p/test/use-case-center/use-case-center');
+    });
+
+    it('encodes unicode in constructor project URL', () => {
+      const service = new BloomreachUseCasesService('projekt åäö');
+      expect(service.useCasesUrl).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/use-case-center/use-case-center');
+    });
+
+    it('encodes hash in constructor project URL', () => {
+      const service = new BloomreachUseCasesService('my#project');
+      expect(service.useCasesUrl).toBe('/p/my%23project/use-case-center/use-case-center');
+    });
   });
 
   describe('listUseCases', () => {
     it('throws not-yet-implemented error', async () => {
       const service = new BloomreachUseCasesService('test');
-      await expect(service.listUseCases()).rejects.toThrow('not yet implemented');
+      await expect(service.listUseCases()).rejects.toThrow('does not provide');
+    });
+
+    it('throws no-API-endpoint error', async () => {
+      const service = new BloomreachUseCasesService('test');
+      await expect(service.listUseCases()).rejects.toThrow('does not provide');
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachUseCasesService('test', TEST_API_CONFIG);
+      await expect(service.listUseCases()).rejects.toThrow('does not provide');
+    });
+
+    it('throws no-API-endpoint error for trimmed project', async () => {
+      const service = new BloomreachUseCasesService('test');
+      await expect(service.listUseCases({ project: '  test  ' })).rejects.toThrow('does not provide');
+    });
+
+    it('validates whitespace-only project', async () => {
+      const service = new BloomreachUseCasesService('test');
+      await expect(service.listUseCases({ project: '   ' })).rejects.toThrow('must not be empty');
     });
 
     it('validates category when provided', async () => {
@@ -238,6 +434,13 @@ describe('BloomreachUseCasesService', () => {
         service.listUseCases({ project: '', category: 'awareness', tag: 'new' }),
       ).rejects.toThrow('must not be empty');
     });
+
+    it('accepts valid category and tag before endpoint error', async () => {
+      const service = new BloomreachUseCasesService('test');
+      await expect(
+        service.listUseCases({ project: 'test', category: 'awareness', tag: 'new' }),
+      ).rejects.toThrow('does not provide');
+    });
   });
 
   describe('searchUseCases', () => {
@@ -245,13 +448,27 @@ describe('BloomreachUseCasesService', () => {
       const service = new BloomreachUseCasesService('test');
       await expect(
         service.searchUseCases({ project: 'test', query: 'cart abandonment' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide');
+    });
+
+    it('throws no-API-endpoint error even with apiConfig', async () => {
+      const service = new BloomreachUseCasesService('test', TEST_API_CONFIG);
+      await expect(
+        service.searchUseCases({ project: 'test', query: 'cart abandonment' }),
+      ).rejects.toThrow('does not provide');
     });
 
     it('validates project input', async () => {
       const service = new BloomreachUseCasesService('test');
       await expect(
         service.searchUseCases({ project: '', query: 'cart abandonment' }),
+      ).rejects.toThrow('must not be empty');
+    });
+
+    it('validates whitespace-only project', async () => {
+      const service = new BloomreachUseCasesService('test');
+      await expect(
+        service.searchUseCases({ project: '   ', query: 'cart abandonment' }),
       ).rejects.toThrow('must not be empty');
     });
 
@@ -283,6 +500,28 @@ describe('BloomreachUseCasesService', () => {
         }),
       ).rejects.toThrow('tag must be one of');
     });
+
+    it('accepts valid category and tag before endpoint error', async () => {
+      const service = new BloomreachUseCasesService('test');
+      await expect(
+        service.searchUseCases({
+          project: 'test',
+          query: 'cart abandonment',
+          category: 'retention',
+          tag: 'popular',
+        }),
+      ).rejects.toThrow('does not provide');
+    });
+
+    it('trims query before endpoint error', async () => {
+      const service = new BloomreachUseCasesService('test');
+      await expect(
+        service.searchUseCases({
+          project: 'test',
+          query: '  personalization  ',
+        }),
+      ).rejects.toThrow('does not provide');
+    });
   });
 
   describe('viewUseCase', () => {
@@ -290,7 +529,14 @@ describe('BloomreachUseCasesService', () => {
       const service = new BloomreachUseCasesService('test');
       await expect(
         service.viewUseCase({ project: 'test', useCaseId: 'use-case-1' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide');
+    });
+
+    it('throws no-API-endpoint error even with apiConfig', async () => {
+      const service = new BloomreachUseCasesService('test', TEST_API_CONFIG);
+      await expect(
+        service.viewUseCase({ project: 'test', useCaseId: 'use-case-1' }),
+      ).rejects.toThrow('does not provide');
     });
 
     it('validates project input', async () => {
@@ -313,17 +559,55 @@ describe('BloomreachUseCasesService', () => {
         'must not be empty',
       );
     });
+
+    it('validates whitespace-only project', async () => {
+      const service = new BloomreachUseCasesService('test');
+      await expect(
+        service.viewUseCase({ project: '   ', useCaseId: 'uc-1' }),
+      ).rejects.toThrow('must not be empty');
+    });
+
+    it('accepts use case ID with dots and dashes', async () => {
+      const service = new BloomreachUseCasesService('test');
+      await expect(
+        service.viewUseCase({ project: 'test', useCaseId: 'use-case-1.abc' }),
+      ).rejects.toThrow('does not provide');
+    });
+
+    it('trims useCaseId before endpoint error', async () => {
+      const service = new BloomreachUseCasesService('test');
+      await expect(
+        service.viewUseCase({ project: 'test', useCaseId: '  use-case-1  ' }),
+      ).rejects.toThrow('does not provide');
+    });
   });
 
   describe('listProjectUseCases', () => {
     it('throws not-yet-implemented error', async () => {
       const service = new BloomreachUseCasesService('test');
-      await expect(service.listProjectUseCases()).rejects.toThrow('not yet implemented');
+      await expect(service.listProjectUseCases()).rejects.toThrow('does not provide');
+    });
+
+    it('throws no-API-endpoint error even with apiConfig', async () => {
+      const service = new BloomreachUseCasesService('test', TEST_API_CONFIG);
+      await expect(service.listProjectUseCases()).rejects.toThrow('does not provide');
     });
 
     it('validates project when input is provided', async () => {
       const service = new BloomreachUseCasesService('test');
       await expect(service.listProjectUseCases({ project: '' })).rejects.toThrow('must not be empty');
+    });
+
+    it('validates whitespace-only project', async () => {
+      const service = new BloomreachUseCasesService('test');
+      await expect(service.listProjectUseCases({ project: '   ' })).rejects.toThrow('must not be empty');
+    });
+
+    it('accepts trimmed project before endpoint error', async () => {
+      const service = new BloomreachUseCasesService('test');
+      await expect(service.listProjectUseCases({ project: '  test  ' })).rejects.toThrow(
+        'does not provide',
+      );
     });
   });
 
@@ -373,6 +657,119 @@ describe('BloomreachUseCasesService', () => {
         service.prepareDeployUseCase({ project: '', useCaseId: 'use-case-123' }),
       ).toThrow('must not be empty');
     });
+
+    it('creates different prepared action ids across calls', () => {
+      const service = new BloomreachUseCasesService('test');
+      const nowSpy = vi.spyOn(Date, 'now');
+      nowSpy.mockReturnValueOnce(1_700_000_004_000);
+      nowSpy.mockReturnValueOnce(1_700_000_004_001);
+      nowSpy.mockReturnValueOnce(1_700_000_004_002);
+      nowSpy.mockReturnValueOnce(1_700_000_004_003);
+      nowSpy.mockReturnValueOnce(1_700_000_004_004);
+      nowSpy.mockReturnValueOnce(1_700_000_004_005);
+
+      const first = service.prepareDeployUseCase({ project: 'test', useCaseId: 'uc-1' });
+      const second = service.prepareDeployUseCase({ project: 'test', useCaseId: 'uc-2' });
+
+      expect(first.preparedActionId).not.toBe(second.preparedActionId);
+    });
+
+    it('creates different confirm tokens across calls', () => {
+      const service = new BloomreachUseCasesService('test');
+      const nowSpy = vi.spyOn(Date, 'now');
+      nowSpy.mockReturnValueOnce(1_700_000_004_100);
+      nowSpy.mockReturnValueOnce(1_700_000_004_101);
+      nowSpy.mockReturnValueOnce(1_700_000_004_102);
+      nowSpy.mockReturnValueOnce(1_700_000_004_103);
+      nowSpy.mockReturnValueOnce(1_700_000_004_104);
+      nowSpy.mockReturnValueOnce(1_700_000_004_105);
+
+      const first = service.prepareDeployUseCase({ project: 'test', useCaseId: 'uc-1' });
+      const second = service.prepareDeployUseCase({ project: 'test', useCaseId: 'uc-2' });
+
+      expect(first.confirmToken).not.toBe(second.confirmToken);
+    });
+
+    it('trims project in preview', () => {
+      const service = new BloomreachUseCasesService('test');
+      const result = service.prepareDeployUseCase({
+        project: '  my-project  ',
+        useCaseId: 'uc-1',
+      });
+      expect(result.preview).toEqual(expect.objectContaining({ project: 'my-project' }));
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachUseCasesService('test');
+      expect(() =>
+        service.prepareDeployUseCase({ project: '   ', useCaseId: 'uc-1' }),
+      ).toThrow('must not be empty');
+    });
+
+    it('accepts apiConfig in service and still prepares action', () => {
+      const service = new BloomreachUseCasesService('test', TEST_API_CONFIG);
+      const result = service.prepareDeployUseCase({
+        project: 'test',
+        useCaseId: 'uc-1',
+      });
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'use_cases.deploy',
+          project: 'test',
+          useCaseId: 'uc-1',
+        }),
+      );
+    });
+
+    it('keeps empty operatorNote in preview', () => {
+      const service = new BloomreachUseCasesService('test');
+      const result = service.prepareDeployUseCase({
+        project: 'test',
+        useCaseId: 'uc-1',
+        operatorNote: '',
+      });
+      expect(result.preview).toEqual(expect.objectContaining({ operatorNote: '' }));
+    });
+
+    it('keeps multiline operatorNote in preview', () => {
+      const service = new BloomreachUseCasesService('test');
+      const note = 'Line 1\nLine 2';
+      const result = service.prepareDeployUseCase({
+        project: 'test',
+        useCaseId: 'uc-1',
+        operatorNote: note,
+      });
+      expect(result.preview).toEqual(expect.objectContaining({ operatorNote: note }));
+    });
+
+    it('trims useCaseId in preview', () => {
+      const service = new BloomreachUseCasesService('test');
+      const result = service.prepareDeployUseCase({
+        project: 'test',
+        useCaseId: '  use-case-123  ',
+      });
+      expect(result.preview).toEqual(expect.objectContaining({ useCaseId: 'use-case-123' }));
+    });
+
+    it('produces token fields with expected prefixes', () => {
+      const service = new BloomreachUseCasesService('test');
+      const result = service.prepareDeployUseCase({
+        project: 'test',
+        useCaseId: 'use-case-123',
+      });
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.confirmToken).toMatch(/^ct_stub_/);
+      expect(result.expiresAtMs).toBeGreaterThan(Date.now());
+    });
+
+    it('accepts useCaseId with dots and dashes in preview', () => {
+      const service = new BloomreachUseCasesService('test');
+      const result = service.prepareDeployUseCase({
+        project: 'test',
+        useCaseId: 'use-case.123-alpha',
+      });
+      expect(result.preview).toEqual(expect.objectContaining({ useCaseId: 'use-case.123-alpha' }));
+    });
   });
 
   describe('prepareFavoriteUseCase', () => {
@@ -421,6 +818,119 @@ describe('BloomreachUseCasesService', () => {
         service.prepareFavoriteUseCase({ project: '', useCaseId: 'use-case-456' }),
       ).toThrow('must not be empty');
     });
+
+    it('creates different prepared action ids across calls', () => {
+      const service = new BloomreachUseCasesService('test');
+      const nowSpy = vi.spyOn(Date, 'now');
+      nowSpy.mockReturnValueOnce(1_700_000_005_000);
+      nowSpy.mockReturnValueOnce(1_700_000_005_001);
+      nowSpy.mockReturnValueOnce(1_700_000_005_002);
+      nowSpy.mockReturnValueOnce(1_700_000_005_003);
+      nowSpy.mockReturnValueOnce(1_700_000_005_004);
+      nowSpy.mockReturnValueOnce(1_700_000_005_005);
+
+      const first = service.prepareFavoriteUseCase({ project: 'test', useCaseId: 'uc-1' });
+      const second = service.prepareFavoriteUseCase({ project: 'test', useCaseId: 'uc-2' });
+
+      expect(first.preparedActionId).not.toBe(second.preparedActionId);
+    });
+
+    it('creates different confirm tokens across calls', () => {
+      const service = new BloomreachUseCasesService('test');
+      const nowSpy = vi.spyOn(Date, 'now');
+      nowSpy.mockReturnValueOnce(1_700_000_005_100);
+      nowSpy.mockReturnValueOnce(1_700_000_005_101);
+      nowSpy.mockReturnValueOnce(1_700_000_005_102);
+      nowSpy.mockReturnValueOnce(1_700_000_005_103);
+      nowSpy.mockReturnValueOnce(1_700_000_005_104);
+      nowSpy.mockReturnValueOnce(1_700_000_005_105);
+
+      const first = service.prepareFavoriteUseCase({ project: 'test', useCaseId: 'uc-1' });
+      const second = service.prepareFavoriteUseCase({ project: 'test', useCaseId: 'uc-2' });
+
+      expect(first.confirmToken).not.toBe(second.confirmToken);
+    });
+
+    it('trims project in preview', () => {
+      const service = new BloomreachUseCasesService('test');
+      const result = service.prepareFavoriteUseCase({
+        project: '  my-project  ',
+        useCaseId: 'uc-1',
+      });
+      expect(result.preview).toEqual(expect.objectContaining({ project: 'my-project' }));
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachUseCasesService('test');
+      expect(() =>
+        service.prepareFavoriteUseCase({ project: '   ', useCaseId: 'uc-1' }),
+      ).toThrow('must not be empty');
+    });
+
+    it('accepts apiConfig in service and still prepares action', () => {
+      const service = new BloomreachUseCasesService('test', TEST_API_CONFIG);
+      const result = service.prepareFavoriteUseCase({
+        project: 'test',
+        useCaseId: 'uc-1',
+      });
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'use_cases.favorite',
+          project: 'test',
+          useCaseId: 'uc-1',
+        }),
+      );
+    });
+
+    it('keeps empty operatorNote in preview', () => {
+      const service = new BloomreachUseCasesService('test');
+      const result = service.prepareFavoriteUseCase({
+        project: 'test',
+        useCaseId: 'uc-1',
+        operatorNote: '',
+      });
+      expect(result.preview).toEqual(expect.objectContaining({ operatorNote: '' }));
+    });
+
+    it('keeps multiline operatorNote in preview', () => {
+      const service = new BloomreachUseCasesService('test');
+      const note = 'Line 1\nLine 2';
+      const result = service.prepareFavoriteUseCase({
+        project: 'test',
+        useCaseId: 'uc-1',
+        operatorNote: note,
+      });
+      expect(result.preview).toEqual(expect.objectContaining({ operatorNote: note }));
+    });
+
+    it('trims useCaseId in preview', () => {
+      const service = new BloomreachUseCasesService('test');
+      const result = service.prepareFavoriteUseCase({
+        project: 'test',
+        useCaseId: '  use-case-456  ',
+      });
+      expect(result.preview).toEqual(expect.objectContaining({ useCaseId: 'use-case-456' }));
+    });
+
+    it('produces token fields with expected prefixes', () => {
+      const service = new BloomreachUseCasesService('test');
+      const result = service.prepareFavoriteUseCase({
+        project: 'test',
+        useCaseId: 'use-case-456',
+      });
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.confirmToken).toMatch(/^ct_stub_/);
+      expect(result.expiresAtMs).toBeGreaterThan(Date.now());
+    });
+
+    it('accepts useCaseId with dots and dashes in preview', () => {
+      const service = new BloomreachUseCasesService('test');
+      const result = service.prepareFavoriteUseCase({
+        project: 'test',
+        useCaseId: 'favorite.123-alpha',
+      });
+      expect(result.preview).toEqual(expect.objectContaining({ useCaseId: 'favorite.123-alpha' }));
+    });
   });
 
   describe('prepareUnfavoriteUseCase', () => {
@@ -468,6 +978,108 @@ describe('BloomreachUseCasesService', () => {
       expect(() =>
         service.prepareUnfavoriteUseCase({ project: '', useCaseId: 'use-case-789' }),
       ).toThrow('must not be empty');
+    });
+
+    it('creates different prepared action ids across calls', () => {
+      const service = new BloomreachUseCasesService('test');
+      const nowSpy = vi.spyOn(Date, 'now');
+      nowSpy.mockReturnValueOnce(1_700_000_006_000);
+      nowSpy.mockReturnValueOnce(1_700_000_006_001);
+      nowSpy.mockReturnValueOnce(1_700_000_006_002);
+      nowSpy.mockReturnValueOnce(1_700_000_006_003);
+      nowSpy.mockReturnValueOnce(1_700_000_006_004);
+      nowSpy.mockReturnValueOnce(1_700_000_006_005);
+
+      const first = service.prepareUnfavoriteUseCase({ project: 'test', useCaseId: 'uc-1' });
+      const second = service.prepareUnfavoriteUseCase({ project: 'test', useCaseId: 'uc-2' });
+
+      expect(first.preparedActionId).not.toBe(second.preparedActionId);
+    });
+
+    it('creates different confirm tokens across calls', () => {
+      const service = new BloomreachUseCasesService('test');
+      const nowSpy = vi.spyOn(Date, 'now');
+      nowSpy.mockReturnValueOnce(1_700_000_006_100);
+      nowSpy.mockReturnValueOnce(1_700_000_006_101);
+      nowSpy.mockReturnValueOnce(1_700_000_006_102);
+      nowSpy.mockReturnValueOnce(1_700_000_006_103);
+      nowSpy.mockReturnValueOnce(1_700_000_006_104);
+      nowSpy.mockReturnValueOnce(1_700_000_006_105);
+
+      const first = service.prepareUnfavoriteUseCase({ project: 'test', useCaseId: 'uc-1' });
+      const second = service.prepareUnfavoriteUseCase({ project: 'test', useCaseId: 'uc-2' });
+
+      expect(first.confirmToken).not.toBe(second.confirmToken);
+    });
+
+    it('trims project in preview', () => {
+      const service = new BloomreachUseCasesService('test');
+      const result = service.prepareUnfavoriteUseCase({
+        project: '  my-project  ',
+        useCaseId: 'uc-1',
+      });
+      expect(result.preview).toEqual(expect.objectContaining({ project: 'my-project' }));
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachUseCasesService('test');
+      expect(() =>
+        service.prepareUnfavoriteUseCase({ project: '   ', useCaseId: 'uc-1' }),
+      ).toThrow('must not be empty');
+    });
+
+    it('accepts apiConfig in service and still prepares action', () => {
+      const service = new BloomreachUseCasesService('test', TEST_API_CONFIG);
+      const result = service.prepareUnfavoriteUseCase({
+        project: 'test',
+        useCaseId: 'uc-1',
+      });
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'use_cases.unfavorite',
+          project: 'test',
+          useCaseId: 'uc-1',
+        }),
+      );
+    });
+
+    it('keeps empty operatorNote in preview', () => {
+      const service = new BloomreachUseCasesService('test');
+      const result = service.prepareUnfavoriteUseCase({
+        project: 'test',
+        useCaseId: 'uc-1',
+        operatorNote: '',
+      });
+      expect(result.preview).toEqual(expect.objectContaining({ operatorNote: '' }));
+    });
+
+    it('trims useCaseId in preview', () => {
+      const service = new BloomreachUseCasesService('test');
+      const result = service.prepareUnfavoriteUseCase({
+        project: 'test',
+        useCaseId: '  use-case-789  ',
+      });
+      expect(result.preview).toEqual(expect.objectContaining({ useCaseId: 'use-case-789' }));
+    });
+
+    it('produces token fields with expected prefixes', () => {
+      const service = new BloomreachUseCasesService('test');
+      const result = service.prepareUnfavoriteUseCase({
+        project: 'test',
+        useCaseId: 'use-case-789',
+      });
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.confirmToken).toMatch(/^ct_stub_/);
+      expect(result.expiresAtMs).toBeGreaterThan(Date.now());
+    });
+
+    it('accepts useCaseId with dots and dashes in preview', () => {
+      const service = new BloomreachUseCasesService('test');
+      const result = service.prepareUnfavoriteUseCase({
+        project: 'test',
+        useCaseId: 'unfavorite.123-alpha',
+      });
+      expect(result.preview).toEqual(expect.objectContaining({ useCaseId: 'unfavorite.123-alpha' }));
     });
   });
 });

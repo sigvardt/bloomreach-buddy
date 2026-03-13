@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const DEPLOY_USE_CASE_ACTION_TYPE = 'use_cases.deploy';
 export const FAVORITE_USE_CASE_ACTION_TYPE = 'use_cases.favorite';
@@ -124,6 +125,21 @@ export function buildUseCasesUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/use-case-center/use-case-center`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 export interface UseCaseActionExecutor {
   readonly actionType: string;
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -131,53 +147,86 @@ export interface UseCaseActionExecutor {
 
 class DeployUseCaseExecutor implements UseCaseActionExecutor {
   readonly actionType = DEPLOY_USE_CASE_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'DeployUseCaseExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DeployUseCaseExecutor: not yet implemented. ' +
+        'Use case deployment is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class FavoriteUseCaseExecutor implements UseCaseActionExecutor {
   readonly actionType = FAVORITE_USE_CASE_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'FavoriteUseCaseExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'FavoriteUseCaseExecutor: not yet implemented. ' +
+        'Use case favoriting is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class UnfavoriteUseCaseExecutor implements UseCaseActionExecutor {
   readonly actionType = UNFAVORITE_USE_CASE_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'UnfavoriteUseCaseExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'UnfavoriteUseCaseExecutor: not yet implemented. ' +
+        'Use case unfavoriting is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createUseCaseActionExecutors(): Record<string, UseCaseActionExecutor> {
+export function createUseCaseActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, UseCaseActionExecutor> {
   return {
-    [DEPLOY_USE_CASE_ACTION_TYPE]: new DeployUseCaseExecutor(),
-    [FAVORITE_USE_CASE_ACTION_TYPE]: new FavoriteUseCaseExecutor(),
-    [UNFAVORITE_USE_CASE_ACTION_TYPE]: new UnfavoriteUseCaseExecutor(),
+    [DEPLOY_USE_CASE_ACTION_TYPE]: new DeployUseCaseExecutor(apiConfig),
+    [FAVORITE_USE_CASE_ACTION_TYPE]: new FavoriteUseCaseExecutor(apiConfig),
+    [UNFAVORITE_USE_CASE_ACTION_TYPE]: new UnfavoriteUseCaseExecutor(apiConfig),
   };
 }
 
+/**
+ * Manages Bloomreach Engagement use cases - the template system for pre-built
+ * marketing automation strategies.
+ *
+ * Read methods return data directly. Mutation methods follow the two-phase
+ * commit pattern (prepare + confirm). Browser-dependent methods throw until
+ * Playwright infrastructure is available.
+ */
 export class BloomreachUseCasesService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildUseCasesUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get useCasesUrl(): string {
@@ -195,8 +244,11 @@ export class BloomreachUseCasesService {
       }
     }
 
+    void this.apiConfig;
     throw new Error(
-      'listUseCases: not yet implemented. Requires browser automation infrastructure.',
+      'listUseCases: the Bloomreach API does not provide a use case listing endpoint. ' +
+        'Use case data must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Use Case Center in your project).',
     );
   }
 
@@ -210,8 +262,10 @@ export class BloomreachUseCasesService {
       validateUseCaseTag(input.tag);
     }
 
+    void this.apiConfig;
     throw new Error(
-      'searchUseCases: not yet implemented. Requires browser automation infrastructure.',
+      'searchUseCases: the Bloomreach API does not provide a use case search endpoint. ' +
+        'Use case search is only available through the Bloomreach Engagement UI.',
     );
   }
 
@@ -219,8 +273,10 @@ export class BloomreachUseCasesService {
     validateProject(input.project);
     validateUseCaseId(input.useCaseId);
 
+    void this.apiConfig;
     throw new Error(
-      'viewUseCase: not yet implemented. Requires browser automation infrastructure.',
+      'viewUseCase: the Bloomreach API does not provide a use case detail endpoint. ' +
+        'Use case details are only available through the Bloomreach Engagement UI.',
     );
   }
 
@@ -231,8 +287,10 @@ export class BloomreachUseCasesService {
       validateProject(input.project);
     }
 
+    void this.apiConfig;
     throw new Error(
-      'listProjectUseCases: not yet implemented. Requires browser automation infrastructure.',
+      'listProjectUseCases: the Bloomreach API does not provide a project use case listing endpoint. ' +
+        'Project use case data is only available through the Bloomreach Engagement UI.',
     );
   }
 
