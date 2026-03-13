@@ -1,0 +1,29 @@
+{
+  "name": "@bloomreach-buddy/mcp",
+  "version": "0.0.1",
+  "description": "MCP server for Bloomreach Buddy",
+  "type": "module",
+  "bin": {
+    "bloomreach-mcp": "./dist/bin/bloomreach-mcp.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bloomreach-buddy/core": "0.0.1",
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0"
+  }
+}

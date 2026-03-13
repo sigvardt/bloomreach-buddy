@@ -15,6 +15,10 @@
     "sourceMap": true,
     "composite": true
   },
-  "references": [{ "path": "packages/core" }, { "path": "packages/cli" }],
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/cli" },
+    { "path": "packages/mcp" }
+  ],
   "files": []
 }
