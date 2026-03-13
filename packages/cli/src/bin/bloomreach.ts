@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import {
   BloomreachAssetManagerService,
   BloomreachCampaignCalendarService,
+  BloomreachCampaignSettingsService,
   BloomreachClient,
   BloomreachCustomersService,
   BloomreachDataManagerService,
@@ -2402,7 +2403,11 @@ geoAnalyses
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--name <name>', 'Geo analysis name')
   .requiredOption('--attribute <attribute>', 'Event or customer attribute for geographic mapping')
-  .option('--granularity <granularity>', 'Geographic granularity (country, region, city)', 'country')
+  .option(
+    '--granularity <granularity>',
+    'Geographic granularity (country, region, city)',
+    'country',
+  )
   .option('--customer-attributes <json>', 'JSON object of customer attribute filters')
   .option('--event-properties <json>', 'JSON object of event property filters')
   .option('--note <note>', 'Operator note for audit trail')
@@ -2537,9 +2542,7 @@ geoAnalyses
     },
   );
 
-const customers = program
-  .command('customers')
-  .description('Manage Bloomreach customer profiles');
+const customers = program.command('customers').description('Manage Bloomreach customer profiles');
 
 customers
   .command('list')
@@ -2548,38 +2551,36 @@ customers
   .option('--limit <limit>', 'Maximum number of customers to return', '50')
   .option('--offset <offset>', 'Offset for pagination', '0')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: { project: string; limit: string; offset: string; json?: boolean }) => {
-      try {
-        const service = new BloomreachCustomersService(options.project);
-        const result = await service.listCustomers({
-          project: options.project,
-          limit: parseInt(options.limit, 10),
-          offset: parseInt(options.offset, 10),
-        });
+  .action(async (options: { project: string; limit: string; offset: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachCustomersService(options.project);
+      const result = await service.listCustomers({
+        project: options.project,
+        limit: parseInt(options.limit, 10),
+        offset: parseInt(options.offset, 10),
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          if (result.length === 0) {
-            console.log('No customers found.');
-            return;
-          }
-
-          for (const customer of result) {
-            const identifiers = Object.entries(customer.customerIds)
-              .map(([key, value]) => `${key}=${value}`)
-              .join(', ');
-            console.log(`  ${identifiers || '(no customer IDs)'}`);
-            console.log(`    Properties: ${Object.keys(customer.properties).length}`);
-          }
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No customers found.');
+          return;
         }
-      } catch (error) {
-        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+
+        for (const customer of result) {
+          const identifiers = Object.entries(customer.customerIds)
+            .map(([key, value]) => `${key}=${value}`)
+            .join(', ');
+          console.log(`  ${identifiers || '(no customer IDs)'}`);
+          console.log(`    Properties: ${Object.keys(customer.properties).length}`);
+        }
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 customers
   .command('search')
@@ -2637,12 +2638,7 @@ customers
   .option('--id-type <idType>', 'Identifier type', 'registered')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: {
-      project: string;
-      customerId: string;
-      idType: string;
-      json?: boolean;
-    }) => {
+    async (options: { project: string; customerId: string; idType: string; json?: boolean }) => {
       try {
         const service = new BloomreachCustomersService(options.project);
         const result = await service.viewCustomer({
@@ -2818,37 +2814,35 @@ vouchers
   .option('--limit <limit>', 'Maximum number of pools to return', '50')
   .option('--offset <offset>', 'Offset for pagination', '0')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: { project: string; limit: string; offset: string; json?: boolean }) => {
-      try {
-        const service = new BloomreachVouchersService(options.project);
-        const result = await service.listVoucherPools({
-          project: options.project,
-          limit: parseInt(options.limit, 10),
-          offset: parseInt(options.offset, 10),
-        });
+  .action(async (options: { project: string; limit: string; offset: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachVouchersService(options.project);
+      const result = await service.listVoucherPools({
+        project: options.project,
+        limit: parseInt(options.limit, 10),
+        offset: parseInt(options.offset, 10),
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          if (result.length === 0) {
-            console.log('No voucher pools found.');
-            return;
-          }
-          for (const pool of result) {
-            console.log(`  ${pool.name}`);
-            console.log(`    Status:   ${pool.status}`);
-            console.log(`    Vouchers: ${pool.voucherCount} total, ${pool.redeemedCount} redeemed`);
-            console.log(`    ID:       ${pool.id}`);
-            console.log(`    URL:      ${pool.url}`);
-          }
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No voucher pools found.');
+          return;
         }
-      } catch (error) {
-        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        for (const pool of result) {
+          console.log(`  ${pool.name}`);
+          console.log(`    Status:   ${pool.status}`);
+          console.log(`    Vouchers: ${pool.voucherCount} total, ${pool.redeemedCount} redeemed`);
+          console.log(`    ID:       ${pool.id}`);
+          console.log(`    URL:      ${pool.url}`);
+        }
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 vouchers
   .command('view-status')
@@ -2858,12 +2852,7 @@ vouchers
   .option('--voucher-code <code>', 'Specific voucher code to check')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: {
-      project: string;
-      poolId: string;
-      voucherCode?: string;
-      json?: boolean;
-    }) => {
+    async (options: { project: string; poolId: string; voucherCode?: string; json?: boolean }) => {
       try {
         const service = new BloomreachVouchersService(options.project);
         const result = await service.viewVoucherStatus({
@@ -2921,9 +2910,7 @@ vouchers
       json?: boolean;
     }) => {
       try {
-        const voucherCodes = options.codes
-          ? (JSON.parse(options.codes) as string[])
-          : undefined;
+        const voucherCodes = options.codes ? (JSON.parse(options.codes) as string[]) : undefined;
         const autoGenerateCount = options.autoGenerate
           ? parseInt(options.autoGenerate, 10)
           : undefined;
@@ -2955,7 +2942,9 @@ vouchers
         } else {
           console.log('Voucher pool creation prepared.');
           console.log(`  Name:     ${options.name}`);
-          console.log(`  Vouchers: ${result.preview.voucherCount} (${result.preview.voucherSource})`);
+          console.log(
+            `  Vouchers: ${result.preview.voucherCount} (${result.preview.voucherSource})`,
+          );
           console.log(`  Token:    ${result.confirmToken}`);
           console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');
@@ -2988,9 +2977,7 @@ vouchers
       json?: boolean;
     }) => {
       try {
-        const voucherCodes = options.codes
-          ? (JSON.parse(options.codes) as string[])
-          : undefined;
+        const voucherCodes = options.codes ? (JSON.parse(options.codes) as string[]) : undefined;
         const autoGenerateCount = options.autoGenerate
           ? parseInt(options.autoGenerate, 10)
           : undefined;
@@ -3009,7 +2996,9 @@ vouchers
         } else {
           console.log('Add vouchers prepared.');
           console.log(`  Pool:     ${options.poolId}`);
-          console.log(`  Vouchers: ${result.preview.voucherCount} (${result.preview.voucherSource})`);
+          console.log(
+            `  Vouchers: ${result.preview.voucherCount} (${result.preview.voucherSource})`,
+          );
           console.log(`  Token:    ${result.confirmToken}`);
           console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');
@@ -3030,41 +3019,37 @@ vouchers
   .requiredOption('--pool-id <id>', 'Voucher pool ID to delete')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: { project: string; poolId: string; note?: string; json?: boolean }) => {
-      try {
-        const service = new BloomreachVouchersService(options.project);
-        const result = service.prepareDeleteVoucherPool({
-          project: options.project,
-          poolId: options.poolId,
-          operatorNote: options.note,
-        });
+  .action(async (options: { project: string; poolId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachVouchersService(options.project);
+      const result = service.prepareDeleteVoucherPool({
+        project: options.project,
+        poolId: options.poolId,
+        operatorNote: options.note,
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          console.log('Voucher pool deletion prepared.');
-          console.log(`  Pool:    ${options.poolId}`);
-          console.log(`  Token:   ${result.confirmToken}`);
-          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
-          console.log('');
-          console.log('To confirm, run:');
-          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
-        }
-      } catch (error) {
-        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Voucher pool deletion prepared.');
+        console.log(`  Pool:    ${options.poolId}`);
+        console.log(`  Token:   ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 const assets = program
   .command('assets')
   .description('Manage Asset Manager templates, snippets, and files');
 
-const assetEmailTemplates = assets
-  .command('email-templates')
-  .description('Manage email templates');
+const assetEmailTemplates = assets.command('email-templates').description('Manage email templates');
 
 assetEmailTemplates
   .command('list')
@@ -3298,9 +3283,7 @@ assetBlocks
     },
   );
 
-const assetCustomRows = assets
-  .command('custom-rows')
-  .description('Manage custom rows');
+const assetCustomRows = assets.command('custom-rows').description('Manage custom rows');
 
 assetCustomRows
   .command('list')
@@ -3600,33 +3583,31 @@ assetFiles
   .requiredOption('--file-id <id>', 'File ID')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: { project: string; fileId: string; note?: string; json?: boolean }) => {
-      try {
-        const service = new BloomreachAssetManagerService(options.project);
-        const result = service.prepareDeleteFile({
-          project: options.project,
-          fileId: options.fileId,
-          operatorNote: options.note,
-        });
+  .action(async (options: { project: string; fileId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachAssetManagerService(options.project);
+      const result = service.prepareDeleteFile({
+        project: options.project,
+        fileId: options.fileId,
+        operatorNote: options.note,
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          console.log('File deletion prepared.');
-          console.log(`  File:    ${options.fileId}`);
-          console.log(`  Token:   ${result.confirmToken}`);
-          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
-          console.log('');
-          console.log('To confirm, run:');
-          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
-        }
-      } catch (error) {
-        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('File deletion prepared.');
+        console.log(`  File:    ${options.fileId}`);
+        console.log(`  Token:   ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 assets
   .command('clone')
@@ -4067,7 +4048,10 @@ metrics
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--name <name>', 'Metric name')
   .requiredOption('--event-name <eventName>', 'Event name for aggregation')
-  .requiredOption('--aggregation-type <type>', 'Aggregation type (sum, count, average, min, max, unique)')
+  .requiredOption(
+    '--aggregation-type <type>',
+    'Aggregation type (sum, count, average, min, max, unique)',
+  )
   .option('--property-name <prop>', 'Event property name for property-based aggregations')
   .option('--description <desc>', 'Metric description')
   .option('--filters <json>', 'JSON object of metric filters')
@@ -4128,7 +4112,10 @@ metrics
   .requiredOption('--metric-id <id>', 'Metric ID')
   .option('--name <name>', 'New metric name')
   .option('--event-name <eventName>', 'New event name for aggregation')
-  .option('--aggregation-type <type>', 'New aggregation type (sum, count, average, min, max, unique)')
+  .option(
+    '--aggregation-type <type>',
+    'New aggregation type (sum, count, average, min, max, unique)',
+  )
   .option('--property-name <prop>', 'New event property name for property-based aggregations')
   .option('--description <desc>', 'New metric description')
   .option('--filters <json>', 'JSON object of metric filters')
@@ -4932,7 +4919,10 @@ exportsCmd
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--name <name>', 'Export name')
   .requiredOption('--export-type <type>', 'Export type (customers, events)')
-  .requiredOption('--data-selection <json>', 'JSON object: {"attributes":["a"],"events":["b"],"segments":["c"]}')
+  .requiredOption(
+    '--data-selection <json>',
+    'JSON object: {"attributes":["a"],"events":["b"],"segments":["c"]}',
+  )
   .requiredOption('--destination <json>', 'JSON object: {"type":"sftp","host":"...","path":"..."}')
   .option('--schedule <json>', 'JSON object: {"frequency":"daily","time":"09:00","timezone":"UTC"}')
   .option('--note <note>', 'Operator note for audit trail')
@@ -5022,11 +5012,20 @@ exportsCmd
   .description('Prepare configuring a recurring schedule (two-phase commit)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--export-id <id>', 'Export ID')
-  .requiredOption('--schedule <json>', 'JSON object: {"frequency":"weekly","daysOfWeek":[1,3,5],"time":"08:00","timezone":"UTC"}')
+  .requiredOption(
+    '--schedule <json>',
+    'JSON object: {"frequency":"weekly","daysOfWeek":[1,3,5],"time":"08:00","timezone":"UTC"}',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: { project: string; exportId: string; schedule: string; note?: string; json?: boolean }) => {
+    async (options: {
+      project: string;
+      exportId: string;
+      schedule: string;
+      note?: string;
+      json?: boolean;
+    }) => {
       try {
         const schedule = JSON.parse(options.schedule) as ExportSchedule;
 
@@ -5103,40 +5102,38 @@ integrations
   )
   .option('--status <status>', 'Filter by status (active, inactive, error, pending)')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: { project: string; type?: string; status?: string; json?: boolean }) => {
-      try {
-        const service = new BloomreachIntegrationsService(options.project);
-        const input: { project: string; type?: string; status?: string } = {
-          project: options.project,
-        };
-        if (options.type) input.type = options.type;
-        if (options.status) input.status = options.status;
+  .action(async (options: { project: string; type?: string; status?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachIntegrationsService(options.project);
+      const input: { project: string; type?: string; status?: string } = {
+        project: options.project,
+      };
+      if (options.type) input.type = options.type;
+      if (options.status) input.status = options.status;
 
-        const result = await service.listIntegrations(input);
+      const result = await service.listIntegrations(input);
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          if (result.length === 0) {
-            console.log('No integrations found.');
-            return;
-          }
-          for (const integration of result) {
-            console.log(`  ${integration.name}`);
-            console.log(`    Type:     ${integration.type}`);
-            console.log(`    Provider: ${integration.provider}`);
-            console.log(`    Status:   ${integration.status}`);
-            console.log(`    ID:       ${integration.id}`);
-            console.log(`    URL:      ${integration.url}`);
-          }
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No integrations found.');
+          return;
         }
-      } catch (error) {
-        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        for (const integration of result) {
+          console.log(`  ${integration.name}`);
+          console.log(`    Type:     ${integration.type}`);
+          console.log(`    Provider: ${integration.provider}`);
+          console.log(`    Status:   ${integration.status}`);
+          console.log(`    ID:       ${integration.id}`);
+          console.log(`    URL:      ${integration.url}`);
+        }
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 integrations
   .command('view')
@@ -5892,37 +5889,35 @@ projectSettings
   .requiredOption('--accepted <accepted>', 'Whether terms are accepted (true or false)')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: { project: string; accepted: string; note?: string; json?: boolean }) => {
-      try {
-        if (options.accepted !== 'true' && options.accepted !== 'false') {
-          throw new Error('Option --accepted must be "true" or "false".');
-        }
-
-        const service = new BloomreachProjectSettingsService(options.project);
-        const result = service.prepareUpdateTermsAndConditions({
-          project: options.project,
-          accepted: options.accepted === 'true',
-          operatorNote: options.note,
-        });
-
-        if (options.json) {
-          printJson(result);
-        } else {
-          console.log('Project terms and conditions update prepared.');
-          console.log(`  Accepted: ${options.accepted}`);
-          console.log(`  Token:    ${result.confirmToken}`);
-          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
-          console.log('');
-          console.log('To confirm, run:');
-          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
-        }
-      } catch (error) {
-        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+  .action(async (options: { project: string; accepted: string; note?: string; json?: boolean }) => {
+    try {
+      if (options.accepted !== 'true' && options.accepted !== 'false') {
+        throw new Error('Option --accepted must be "true" or "false".');
       }
-    },
-  );
+
+      const service = new BloomreachProjectSettingsService(options.project);
+      const result = service.prepareUpdateTermsAndConditions({
+        project: options.project,
+        accepted: options.accepted === 'true',
+        operatorNote: options.note,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Project terms and conditions update prepared.');
+        console.log(`  Accepted: ${options.accepted}`);
+        console.log(`  Token:    ${result.confirmToken}`);
+        console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 const projectSettingsTags = projectSettings.command('tags').description('Manage custom tags');
 
@@ -6249,6 +6244,1568 @@ projectSettingsVariables
           console.log(`  Variable: ${options.variableName}`);
           console.log(`  Token:    ${result.confirmToken}`);
           console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const campaignSettings = program
+  .command('campaign-settings')
+  .description('Manage Bloomreach campaign settings');
+
+campaignSettings
+  .command('defaults')
+  .description('View campaign defaults')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachCampaignSettingsService(options.project);
+      const result = await service.viewCampaignDefaults({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Campaign defaults');
+        if (result.defaultSenderName) {
+          console.log(`  Default sender name:  ${result.defaultSenderName}`);
+        }
+        if (result.defaultSenderEmail) {
+          console.log(`  Default sender email: ${result.defaultSenderEmail}`);
+        }
+        if (result.defaultReplyToEmail) {
+          console.log(`  Default reply-to:     ${result.defaultReplyToEmail}`);
+        }
+        if (result.defaultUtmSource) {
+          console.log(`  Default UTM source:   ${result.defaultUtmSource}`);
+        }
+        if (result.defaultUtmMedium) {
+          console.log(`  Default UTM medium:   ${result.defaultUtmMedium}`);
+        }
+        if (result.defaultUtmCampaign) {
+          console.log(`  Default UTM campaign: ${result.defaultUtmCampaign}`);
+        }
+        console.log(`  URL:                  ${result.url}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+campaignSettings
+  .command('update-defaults')
+  .description('Prepare campaign defaults update (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--default-sender-name <name>', 'Default sender name')
+  .option('--default-sender-email <email>', 'Default sender email address')
+  .option('--default-reply-to-email <email>', 'Default reply-to email address')
+  .option('--default-utm-source <source>', 'Default UTM source parameter')
+  .option('--default-utm-medium <medium>', 'Default UTM medium parameter')
+  .option('--default-utm-campaign <campaign>', 'Default UTM campaign parameter')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      defaultSenderName?: string;
+      defaultSenderEmail?: string;
+      defaultReplyToEmail?: string;
+      defaultUtmSource?: string;
+      defaultUtmMedium?: string;
+      defaultUtmCampaign?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareUpdateCampaignDefaults({
+          project: options.project,
+          defaultSenderName: options.defaultSenderName,
+          defaultSenderEmail: options.defaultSenderEmail,
+          defaultReplyToEmail: options.defaultReplyToEmail,
+          defaultUtmSource: options.defaultUtmSource,
+          defaultUtmMedium: options.defaultUtmMedium,
+          defaultUtmCampaign: options.defaultUtmCampaign,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Campaign defaults update prepared.');
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const campaignSettingsTimezones = campaignSettings
+  .command('timezones')
+  .description('Manage configured timezones');
+
+campaignSettingsTimezones
+  .command('list')
+  .description('List configured timezones')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachCampaignSettingsService(options.project);
+      const result = await service.listTimezones({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No timezones found.');
+          return;
+        }
+        for (const timezone of result) {
+          console.log(`  ${timezone.name}`);
+          console.log(`    ID: ${timezone.id}`);
+          if (timezone.utcOffset) {
+            console.log(`    UTC Offset: ${timezone.utcOffset}`);
+          }
+          if (timezone.isDefault) {
+            console.log('    Default: yes');
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+campaignSettingsTimezones
+  .command('create')
+  .description('Prepare timezone creation (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Timezone name (IANA format, e.g. "Europe/Prague")')
+  .option('--utc-offset <offset>', 'UTC offset (e.g. "+01:00")')
+  .option('--is-default', 'Set as default timezone')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      utcOffset?: string;
+      isDefault?: boolean;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareCreateTimezone({
+          project: options.project,
+          name: options.name,
+          utcOffset: options.utcOffset,
+          isDefault: options.isDefault,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Timezone creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+campaignSettingsTimezones
+  .command('update')
+  .description('Prepare timezone update (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--timezone-id <id>', 'Timezone ID')
+  .option('--name <name>', 'Timezone name (IANA format, e.g. "Europe/Prague")')
+  .option('--utc-offset <offset>', 'UTC offset (e.g. "+01:00")')
+  .option('--is-default', 'Set as default timezone')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      timezoneId: string;
+      name?: string;
+      utcOffset?: string;
+      isDefault?: boolean;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareUpdateTimezone({
+          project: options.project,
+          timezoneId: options.timezoneId,
+          name: options.name,
+          utcOffset: options.utcOffset,
+          isDefault: options.isDefault,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Timezone update prepared.');
+          console.log(`  Timezone ID: ${options.timezoneId}`);
+          if (options.name) {
+            console.log(`  Name:        ${options.name}`);
+          }
+          console.log(`  Token:       ${result.confirmToken}`);
+          console.log(`  Expires:     ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+campaignSettingsTimezones
+  .command('delete')
+  .description('Prepare timezone deletion (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--timezone-id <id>', 'Timezone ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; timezoneId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareDeleteTimezone({
+          project: options.project,
+          timezoneId: options.timezoneId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Timezone deletion prepared.');
+          console.log(`  Timezone ID: ${options.timezoneId}`);
+          console.log(`  Token:       ${result.confirmToken}`);
+          console.log(`  Expires:     ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const campaignSettingsLanguages = campaignSettings
+  .command('languages')
+  .description('Manage configured languages');
+
+campaignSettingsLanguages
+  .command('list')
+  .description('List configured languages')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachCampaignSettingsService(options.project);
+      const result = await service.listLanguages({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No languages found.');
+          return;
+        }
+        for (const language of result) {
+          console.log(`  ${language.name}`);
+          console.log(`    Code: ${language.code}`);
+          if (language.isDefault) {
+            console.log('    Default: yes');
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+campaignSettingsLanguages
+  .command('create')
+  .description('Prepare language creation (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--code <code>', 'Language code (ISO 639-1, e.g. "en")')
+  .requiredOption('--name <name>', 'Language name')
+  .option('--is-default', 'Set as default language')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      code: string;
+      name: string;
+      isDefault?: boolean;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareCreateLanguage({
+          project: options.project,
+          code: options.code,
+          name: options.name,
+          isDefault: options.isDefault,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Language creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+campaignSettingsLanguages
+  .command('update')
+  .description('Prepare language update (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--language-code <code>', 'Language code to update')
+  .option('--code <code>', 'Updated language code (ISO 639-1, e.g. "en")')
+  .option('--name <name>', 'Updated language name')
+  .option('--is-default', 'Set as default language')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      languageCode: string;
+      code?: string;
+      name?: string;
+      isDefault?: boolean;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareUpdateLanguage({
+          project: options.project,
+          languageCode: options.languageCode,
+          code: options.code,
+          name: options.name,
+          isDefault: options.isDefault,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Language update prepared.');
+          console.log(`  Language: ${options.languageCode}`);
+          if (options.name) {
+            console.log(`  Name:     ${options.name}`);
+          }
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+campaignSettingsLanguages
+  .command('delete')
+  .description('Prepare language deletion (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--language-code <code>', 'Language code')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; languageCode: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareDeleteLanguage({
+          project: options.project,
+          languageCode: options.languageCode,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Language deletion prepared.');
+          console.log(`  Language: ${options.languageCode}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const campaignSettingsFonts = campaignSettings
+  .command('fonts')
+  .description('Manage configured fonts');
+
+campaignSettingsFonts
+  .command('list')
+  .description('List configured fonts')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachCampaignSettingsService(options.project);
+      const result = await service.listFonts({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No fonts found.');
+          return;
+        }
+        for (const font of result) {
+          console.log(`  ${font.name}`);
+          console.log(`    ID: ${font.id}`);
+          console.log(`    Type: ${font.type}`);
+          if (font.fileUrl) {
+            console.log(`    File URL: ${font.fileUrl}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+campaignSettingsFonts
+  .command('create')
+  .description('Prepare font creation (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Font name')
+  .requiredOption('--type <type>', 'Font type')
+  .option('--file-url <url>', 'Font file URL')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      type: string;
+      fileUrl?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareCreateFont({
+          project: options.project,
+          name: options.name,
+          type: options.type,
+          fileUrl: options.fileUrl,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Font creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+campaignSettingsFonts
+  .command('update')
+  .description('Prepare font update (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--font-id <id>', 'Font ID')
+  .option('--name <name>', 'Updated font name')
+  .option('--type <type>', 'Updated font type')
+  .option('--file-url <url>', 'Updated font file URL')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      fontId: string;
+      name?: string;
+      type?: string;
+      fileUrl?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareUpdateFont({
+          project: options.project,
+          fontId: options.fontId,
+          name: options.name,
+          type: options.type,
+          fileUrl: options.fileUrl,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Font update prepared.');
+          console.log(`  Font ID: ${options.fontId}`);
+          if (options.name) {
+            console.log(`  Name:    ${options.name}`);
+          }
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+campaignSettingsFonts
+  .command('delete')
+  .description('Prepare font deletion (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--font-id <id>', 'Font ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; fontId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachCampaignSettingsService(options.project);
+      const result = service.prepareDeleteFont({
+        project: options.project,
+        fontId: options.fontId,
+        operatorNote: options.note,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Font deletion prepared.');
+        console.log(`  Font ID: ${options.fontId}`);
+        console.log(`  Token:   ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+const campaignSettingsThroughput = campaignSettings
+  .command('throughput')
+  .description('Manage throughput policies');
+
+campaignSettingsThroughput
+  .command('list')
+  .description('List throughput policies')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachCampaignSettingsService(options.project);
+      const result = await service.listThroughputPolicies({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No throughput policies found.');
+          return;
+        }
+        for (const policy of result) {
+          console.log(`  ${policy.name}`);
+          console.log(`    ID: ${policy.id}`);
+          if (policy.channel) {
+            console.log(`    Channel: ${policy.channel}`);
+          }
+          if (policy.maxRate !== undefined) {
+            console.log(`    Max rate: ${policy.maxRate}`);
+          }
+          if (policy.periodSeconds !== undefined) {
+            console.log(`    Period seconds: ${policy.periodSeconds}`);
+          }
+          if (policy.description) {
+            console.log(`    Description: ${policy.description}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+campaignSettingsThroughput
+  .command('create')
+  .description('Prepare throughput policy creation (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Policy name')
+  .option('--channel <channel>', 'Channel (email, sms, push, etc.)')
+  .option('--max-rate <rate>', 'Maximum send rate per period')
+  .option('--period-seconds <seconds>', 'Rate limit period in seconds')
+  .option('--description <description>', 'Human-readable description')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      channel?: string;
+      maxRate?: string;
+      periodSeconds?: string;
+      description?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const maxRate = options.maxRate !== undefined ? parseInt(options.maxRate, 10) : undefined;
+        const periodSeconds =
+          options.periodSeconds !== undefined ? parseInt(options.periodSeconds, 10) : undefined;
+
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareCreateThroughputPolicy({
+          project: options.project,
+          name: options.name,
+          channel: options.channel,
+          maxRate,
+          periodSeconds,
+          description: options.description,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Throughput policy creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+campaignSettingsThroughput
+  .command('update')
+  .description('Prepare throughput policy update (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--policy-id <id>', 'Policy ID')
+  .option('--name <name>', 'Updated policy name')
+  .option('--channel <channel>', 'Updated channel')
+  .option('--max-rate <rate>', 'Updated maximum send rate per period')
+  .option('--period-seconds <seconds>', 'Updated rate limit period in seconds')
+  .option('--description <description>', 'Updated human-readable description')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      policyId: string;
+      name?: string;
+      channel?: string;
+      maxRate?: string;
+      periodSeconds?: string;
+      description?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const maxRate = options.maxRate !== undefined ? parseInt(options.maxRate, 10) : undefined;
+        const periodSeconds =
+          options.periodSeconds !== undefined ? parseInt(options.periodSeconds, 10) : undefined;
+
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareUpdateThroughputPolicy({
+          project: options.project,
+          policyId: options.policyId,
+          name: options.name,
+          channel: options.channel,
+          maxRate,
+          periodSeconds,
+          description: options.description,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Throughput policy update prepared.');
+          console.log(`  Policy ID: ${options.policyId}`);
+          if (options.name) {
+            console.log(`  Name:      ${options.name}`);
+          }
+          console.log(`  Token:     ${result.confirmToken}`);
+          console.log(`  Expires:   ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+campaignSettingsThroughput
+  .command('delete')
+  .description('Prepare throughput policy deletion (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--policy-id <id>', 'Policy ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; policyId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachCampaignSettingsService(options.project);
+      const result = service.prepareDeleteThroughputPolicy({
+        project: options.project,
+        policyId: options.policyId,
+        operatorNote: options.note,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Throughput policy deletion prepared.');
+        console.log(`  Policy ID: ${options.policyId}`);
+        console.log(`  Token:     ${result.confirmToken}`);
+        console.log(`  Expires:   ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+const campaignSettingsFrequency = campaignSettings
+  .command('frequency')
+  .description('Manage frequency policies');
+
+campaignSettingsFrequency
+  .command('list')
+  .description('List frequency policies')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachCampaignSettingsService(options.project);
+      const result = await service.listFrequencyPolicies({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No frequency policies found.');
+          return;
+        }
+        for (const policy of result) {
+          console.log(`  ${policy.name}`);
+          console.log(`    ID: ${policy.id}`);
+          if (policy.policyType) {
+            console.log(`    Policy type: ${policy.policyType}`);
+          }
+          if (policy.maxSends !== undefined) {
+            console.log(`    Max sends: ${policy.maxSends}`);
+          }
+          if (policy.windowHours !== undefined) {
+            console.log(`    Window hours: ${policy.windowHours}`);
+          }
+          if (policy.channels && policy.channels.length > 0) {
+            console.log(`    Channels: ${policy.channels.join(', ')}`);
+          }
+          if (policy.description) {
+            console.log(`    Description: ${policy.description}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+campaignSettingsFrequency
+  .command('create')
+  .description('Prepare frequency policy creation (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Policy name')
+  .option('--policy-type <type>', 'Policy type (global or per-campaign)')
+  .option('--max-sends <count>', 'Maximum number of sends allowed')
+  .option('--window-hours <hours>', 'Frequency window in hours')
+  .option('--channels <channels>', 'Comma-separated channels (email,sms,push)')
+  .option('--description <description>', 'Human-readable description')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      policyType?: string;
+      maxSends?: string;
+      windowHours?: string;
+      channels?: string;
+      description?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const maxSends =
+          options.maxSends !== undefined ? parseInt(options.maxSends, 10) : undefined;
+        const windowHours =
+          options.windowHours !== undefined ? parseInt(options.windowHours, 10) : undefined;
+        const channels =
+          options.channels !== undefined
+            ? options.channels
+                .split(',')
+                .map((channel) => channel.trim())
+                .filter((channel) => channel.length > 0)
+            : undefined;
+
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareCreateFrequencyPolicy({
+          project: options.project,
+          name: options.name,
+          policyType: options.policyType,
+          maxSends,
+          windowHours,
+          channels,
+          description: options.description,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Frequency policy creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+campaignSettingsFrequency
+  .command('update')
+  .description('Prepare frequency policy update (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--policy-id <id>', 'Policy ID')
+  .option('--name <name>', 'Updated policy name')
+  .option('--policy-type <type>', 'Updated policy type')
+  .option('--max-sends <count>', 'Updated maximum sends')
+  .option('--window-hours <hours>', 'Updated frequency window in hours')
+  .option('--channels <channels>', 'Updated comma-separated channels')
+  .option('--description <description>', 'Updated human-readable description')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      policyId: string;
+      name?: string;
+      policyType?: string;
+      maxSends?: string;
+      windowHours?: string;
+      channels?: string;
+      description?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const maxSends =
+          options.maxSends !== undefined ? parseInt(options.maxSends, 10) : undefined;
+        const windowHours =
+          options.windowHours !== undefined ? parseInt(options.windowHours, 10) : undefined;
+        const channels =
+          options.channels !== undefined
+            ? options.channels
+                .split(',')
+                .map((channel) => channel.trim())
+                .filter((channel) => channel.length > 0)
+            : undefined;
+
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareUpdateFrequencyPolicy({
+          project: options.project,
+          policyId: options.policyId,
+          name: options.name,
+          policyType: options.policyType,
+          maxSends,
+          windowHours,
+          channels,
+          description: options.description,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Frequency policy update prepared.');
+          console.log(`  Policy ID: ${options.policyId}`);
+          if (options.name) {
+            console.log(`  Name:      ${options.name}`);
+          }
+          console.log(`  Token:     ${result.confirmToken}`);
+          console.log(`  Expires:   ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+campaignSettingsFrequency
+  .command('delete')
+  .description('Prepare frequency policy deletion (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--policy-id <id>', 'Policy ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; policyId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachCampaignSettingsService(options.project);
+      const result = service.prepareDeleteFrequencyPolicy({
+        project: options.project,
+        policyId: options.policyId,
+        operatorNote: options.note,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Frequency policy deletion prepared.');
+        console.log(`  Policy ID: ${options.policyId}`);
+        console.log(`  Token:     ${result.confirmToken}`);
+        console.log(`  Expires:   ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+const campaignSettingsConsents = campaignSettings
+  .command('consents')
+  .description('Manage consent categories');
+
+campaignSettingsConsents
+  .command('list')
+  .description('List consents')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachCampaignSettingsService(options.project);
+      const result = await service.listConsents({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No consents found.');
+          return;
+        }
+        for (const consent of result) {
+          console.log(`  ${consent.category}`);
+          console.log(`    ID: ${consent.id}`);
+          if (consent.description) {
+            console.log(`    Description: ${consent.description}`);
+          }
+          if (consent.consentType) {
+            console.log(`    Consent type: ${consent.consentType}`);
+          }
+          if (consent.legitimateInterest !== undefined) {
+            console.log(`    Legitimate interest: ${consent.legitimateInterest}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+campaignSettingsConsents
+  .command('create')
+  .description('Prepare consent creation (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--category <category>', 'Consent category')
+  .option('--description <description>', 'Human-readable description')
+  .option('--consent-type <type>', 'Consent type (opt-in or opt-out)')
+  .option('--legitimate-interest', 'Mark consent as legitimate interest')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      category: string;
+      description?: string;
+      consentType?: string;
+      legitimateInterest?: boolean;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareCreateConsent({
+          project: options.project,
+          category: options.category,
+          description: options.description,
+          consentType: options.consentType,
+          legitimateInterest: options.legitimateInterest,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Consent creation prepared.');
+          console.log(`  Name:    ${options.category}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+campaignSettingsConsents
+  .command('update')
+  .description('Prepare consent update (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--consent-id <id>', 'Consent ID')
+  .option('--category <category>', 'Updated consent category')
+  .option('--description <description>', 'Updated description')
+  .option('--consent-type <type>', 'Updated consent type')
+  .option('--legitimate-interest', 'Mark consent as legitimate interest')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      consentId: string;
+      category?: string;
+      description?: string;
+      consentType?: string;
+      legitimateInterest?: boolean;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareUpdateConsent({
+          project: options.project,
+          consentId: options.consentId,
+          category: options.category,
+          description: options.description,
+          consentType: options.consentType,
+          legitimateInterest: options.legitimateInterest,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Consent update prepared.');
+          console.log(`  Consent ID: ${options.consentId}`);
+          if (options.category) {
+            console.log(`  Category:   ${options.category}`);
+          }
+          console.log(`  Token:      ${result.confirmToken}`);
+          console.log(`  Expires:    ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+campaignSettingsConsents
+  .command('delete')
+  .description('Prepare consent deletion (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--consent-id <id>', 'Consent ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; consentId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareDeleteConsent({
+          project: options.project,
+          consentId: options.consentId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Consent deletion prepared.');
+          console.log(`  Consent ID: ${options.consentId}`);
+          console.log(`  Token:      ${result.confirmToken}`);
+          console.log(`  Expires:    ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const campaignSettingsUrlLists = campaignSettings
+  .command('url-lists')
+  .description('Manage global URL lists');
+
+campaignSettingsUrlLists
+  .command('list')
+  .description('List URL lists')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachCampaignSettingsService(options.project);
+      const result = await service.listUrlLists({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No URL lists found.');
+          return;
+        }
+        for (const list of result) {
+          console.log(`  ${list.name}`);
+          console.log(`    ID: ${list.id}`);
+          console.log(`    List type: ${list.listType}`);
+          if (list.urls && list.urls.length > 0) {
+            console.log(`    URLs: ${list.urls.join(', ')}`);
+          }
+          if (list.description) {
+            console.log(`    Description: ${list.description}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+campaignSettingsUrlLists
+  .command('create')
+  .description('Prepare URL list creation (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'URL list name')
+  .requiredOption('--list-type <type>', 'List type (allowlist or blocklist)')
+  .option('--urls <urls>', 'Comma-separated URLs')
+  .option('--description <description>', 'Human-readable description')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      listType: string;
+      urls?: string;
+      description?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const urls =
+          options.urls !== undefined
+            ? options.urls
+                .split(',')
+                .map((url) => url.trim())
+                .filter((url) => url.length > 0)
+            : undefined;
+
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareCreateUrlList({
+          project: options.project,
+          name: options.name,
+          listType: options.listType,
+          urls,
+          description: options.description,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('URL list creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+campaignSettingsUrlLists
+  .command('update')
+  .description('Prepare URL list update (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--url-list-id <id>', 'URL list ID')
+  .option('--name <name>', 'Updated URL list name')
+  .option('--list-type <type>', 'Updated list type')
+  .option('--urls <urls>', 'Updated comma-separated URLs')
+  .option('--description <description>', 'Updated description')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      urlListId: string;
+      name?: string;
+      listType?: string;
+      urls?: string;
+      description?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const urls =
+          options.urls !== undefined
+            ? options.urls
+                .split(',')
+                .map((url) => url.trim())
+                .filter((url) => url.length > 0)
+            : undefined;
+
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareUpdateUrlList({
+          project: options.project,
+          urlListId: options.urlListId,
+          name: options.name,
+          listType: options.listType,
+          urls,
+          description: options.description,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('URL list update prepared.');
+          console.log(`  URL list ID: ${options.urlListId}`);
+          if (options.name) {
+            console.log(`  Name:        ${options.name}`);
+          }
+          console.log(`  Token:       ${result.confirmToken}`);
+          console.log(`  Expires:     ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+campaignSettingsUrlLists
+  .command('delete')
+  .description('Prepare URL list deletion (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--url-list-id <id>', 'URL list ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; urlListId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareDeleteUrlList({
+          project: options.project,
+          urlListId: options.urlListId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('URL list deletion prepared.');
+          console.log(`  URL list ID: ${options.urlListId}`);
+          console.log(`  Token:       ${result.confirmToken}`);
+          console.log(`  Expires:     ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const campaignSettingsPageVariables = campaignSettings
+  .command('page-variables')
+  .description('Manage page variables');
+
+campaignSettingsPageVariables
+  .command('list')
+  .description('List page variables')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachCampaignSettingsService(options.project);
+      const result = await service.listPageVariables({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No page variables found.');
+          return;
+        }
+        for (const variable of result) {
+          console.log(`  ${variable.name}`);
+          console.log(`    ID: ${variable.id}`);
+          console.log(`    Value: ${variable.value}`);
+          if (variable.description) {
+            console.log(`    Description: ${variable.description}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+campaignSettingsPageVariables
+  .command('create')
+  .description('Prepare page variable creation (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Page variable name')
+  .requiredOption('--value <value>', 'Page variable value')
+  .option('--description <description>', 'Human-readable description')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      value: string;
+      description?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareCreatePageVariable({
+          project: options.project,
+          name: options.name,
+          value: options.value,
+          description: options.description,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Page variable creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+campaignSettingsPageVariables
+  .command('update')
+  .description('Prepare page variable update (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--page-variable-id <id>', 'Page variable ID')
+  .option('--name <name>', 'Updated page variable name')
+  .option('--value <value>', 'Updated page variable value')
+  .option('--description <description>', 'Updated description')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      pageVariableId: string;
+      name?: string;
+      value?: string;
+      description?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareUpdatePageVariable({
+          project: options.project,
+          pageVariableId: options.pageVariableId,
+          name: options.name,
+          value: options.value,
+          description: options.description,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Page variable update prepared.');
+          console.log(`  Page variable ID: ${options.pageVariableId}`);
+          if (options.name) {
+            console.log(`  Name:             ${options.name}`);
+          }
+          console.log(`  Token:            ${result.confirmToken}`);
+          console.log(`  Expires:          ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+campaignSettingsPageVariables
+  .command('delete')
+  .description('Prepare page variable deletion (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--page-variable-id <id>', 'Page variable ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; pageVariableId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachCampaignSettingsService(options.project);
+        const result = service.prepareDeletePageVariable({
+          project: options.project,
+          pageVariableId: options.pageVariableId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Page variable deletion prepared.');
+          console.log(`  Page variable ID: ${options.pageVariableId}`);
+          console.log(`  Token:            ${result.confirmToken}`);
+          console.log(`  Expires:          ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');
           console.log('To confirm, run:');
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
