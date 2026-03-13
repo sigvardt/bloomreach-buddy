@@ -24,6 +24,7 @@ import {
   BloomreachRetentionsService,
   BloomreachScenariosService,
   BloomreachSecuritySettingsService,
+  BloomreachSegmentationsService,
   BloomreachSurveysService,
   BloomreachTagManagerService,
   BloomreachTrendsService,
@@ -54,6 +55,7 @@ import type {
   ReportGrouping,
   ReportSortConfig,
   RetentionFilter,
+  SegmentCondition,
   SurveyDisplayConditions,
   SurveyQuestion,
   TagTriggerConditions,
@@ -9093,6 +9095,250 @@ reports
         console.error(
           `Error: ${error instanceof Error ? error.message : String(error)}`,
         );
+        process.exit(1);
+      }
+    },
+  );
+
+const segmentations = program
+  .command('segmentations')
+  .description('Manage Bloomreach Engagement customer segmentations');
+
+segmentations
+  .command('list')
+  .description('List all segmentations in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachSegmentationsService(options.project);
+      const result = await service.listSegmentations({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No segmentations found.');
+          return;
+        }
+        for (const seg of result) {
+          console.log(`  ${seg.name}`);
+          console.log(`    Customers: ${seg.customerCount ?? 'unknown'}`);
+          console.log(`    ID:        ${seg.id}`);
+          console.log(`    URL:       ${seg.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+segmentations
+  .command('view-size')
+  .description('View the number of customers matching a segmentation')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--segmentation-id <id>', 'Segmentation ID')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; segmentationId: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachSegmentationsService(options.project);
+      const result = await service.viewSegmentSize({
+        project: options.project,
+        segmentationId: options.segmentationId,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Segment Size: ${result.segmentationId}`);
+        console.log(`  Customers: ${result.customerCount}`);
+        console.log(`  Computed:  ${result.computedAt}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+segmentations
+  .command('view-customers')
+  .description('Browse customers matching a segmentation')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--segmentation-id <id>', 'Segmentation ID')
+  .option('--limit <n>', 'Maximum number of customers to return')
+  .option('--offset <n>', 'Offset for pagination')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      segmentationId: string;
+      limit?: string;
+      offset?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachSegmentationsService(options.project);
+        const result = await service.viewSegmentCustomers({
+          project: options.project,
+          segmentationId: options.segmentationId,
+          limit: options.limit !== undefined ? parseInt(options.limit, 10) : undefined,
+          offset: options.offset !== undefined ? parseInt(options.offset, 10) : undefined,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log(`Segment Customers: ${result.segmentationId}`);
+          console.log(`  Total:  ${result.total}`);
+          console.log(`  Shown:  ${result.customers.length}`);
+          console.log(`  Offset: ${result.offset}`);
+          for (const customer of result.customers) {
+            console.log(`    ${customer.customerId}`);
+          }
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+segmentations
+  .command('create')
+  .description('Prepare creation of a new segmentation (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Segmentation name')
+  .requiredOption(
+    '--conditions <json>',
+    'JSON array of conditions [{type, attribute, operator, value?}]',
+  )
+  .option('--operator <op>', 'Logical operator for conditions (and, or)', 'and')
+  .option('--start-date <date>', 'Start date for event conditions (YYYY-MM-DD)')
+  .option('--end-date <date>', 'End date for event conditions (YYYY-MM-DD)')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      conditions: string;
+      operator: string;
+      startDate?: string;
+      endDate?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const conditions = JSON.parse(options.conditions) as SegmentCondition[];
+        const dateRange =
+          options.startDate || options.endDate
+            ? { startDate: options.startDate, endDate: options.endDate }
+            : undefined;
+
+        const service = new BloomreachSegmentationsService(options.project);
+        const result = service.prepareCreateSegmentation({
+          project: options.project,
+          name: options.name,
+          conditions,
+          logicalOperator: options.operator as 'and' | 'or',
+          dateRange,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Segmentation creation prepared.');
+          console.log(`  Name:     ${options.name}`);
+          console.log(`  Operator: ${options.operator}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+segmentations
+  .command('clone')
+  .description('Prepare cloning a segmentation (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--segmentation-id <id>', 'Segmentation ID to clone')
+  .option('--new-name <name>', 'Name for the cloned segmentation')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      segmentationId: string;
+      newName?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachSegmentationsService(options.project);
+        const result = service.prepareCloneSegmentation({
+          project: options.project,
+          segmentationId: options.segmentationId,
+          newName: options.newName,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Segmentation clone prepared.');
+          console.log(`  Source:   ${options.segmentationId}`);
+          console.log(`  New name: ${options.newName ?? '(auto-generated)'}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+segmentations
+  .command('archive')
+  .description('Prepare archiving a segmentation (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--segmentation-id <id>', 'Segmentation ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; segmentationId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachSegmentationsService(options.project);
+        const result = service.prepareArchiveSegmentation({
+          project: options.project,
+          segmentationId: options.segmentationId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Segmentation archive prepared.');
+          console.log(`  Segmentation: ${options.segmentationId}`);
+          console.log(`  Token:        ${result.confirmToken}`);
+          console.log(`  Expires:      ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
