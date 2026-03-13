@@ -9,6 +9,7 @@ export * from './bloomreachScenarios.js';
 export * from './bloomreachSurveys.js';
 export * from './bloomreachRetentions.js';
 export * from './bloomreachTrends.js';
+export * from './bloomreachCustomers.js';
 export * from './bloomreachGeoAnalyses.js';
 
 export interface BloomreachClientConfig {
