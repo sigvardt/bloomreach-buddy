@@ -21,6 +21,7 @@ export * from './bloomreachExports.js';
 export * from './bloomreachInitiatives.js';
 export * from './bloomreachIntegrations.js';
 export * from './bloomreachProjectSettings.js';
+export * from './bloomreachChannelSettings.js';
 
 export interface BloomreachClientConfig {
   /** Bloomreach environment ID */
