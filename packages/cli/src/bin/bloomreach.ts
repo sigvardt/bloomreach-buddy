@@ -3256,9 +3256,9 @@ vouchers
 
 const assets = program
   .command('assets')
-  .description('Manage Asset Manager templates, snippets, and files');
+  .description('Manage Bloomreach Asset Manager — email/weblayer templates, blocks, custom rows, snippets, and files used in campaigns');
 
-const assetEmailTemplates = assets.command('email-templates').description('Manage email templates');
+const assetEmailTemplates = assets.command('email-templates').description('Manage email templates — reusable HTML layouts for marketing and transactional emails');
 
 assetEmailTemplates
   .command('list')
@@ -3340,7 +3340,7 @@ assetEmailTemplates
 
 const assetWeblayerTemplates = assets
   .command('weblayer-templates')
-  .description('Manage weblayer templates');
+  .description('Manage weblayer templates — pop-ups, banners, and in-page content personalization layers');
 
 assetWeblayerTemplates
   .command('list')
@@ -3416,7 +3416,7 @@ assetWeblayerTemplates
     },
   );
 
-const assetBlocks = assets.command('blocks').description('Manage content blocks');
+const assetBlocks = assets.command('blocks').description('Manage content blocks — reusable drag-and-drop sections for the visual email editor');
 
 assetBlocks
   .command('list')
@@ -3492,7 +3492,7 @@ assetBlocks
     },
   );
 
-const assetCustomRows = assets.command('custom-rows').description('Manage custom rows');
+const assetCustomRows = assets.command('custom-rows').description('Manage custom rows — custom HTML rows that extend the visual editor row library');
 
 assetCustomRows
   .command('list')
@@ -3568,7 +3568,7 @@ assetCustomRows
     },
   );
 
-const assetSnippets = assets.command('snippets').description('Manage snippets');
+const assetSnippets = assets.command('snippets').description('Manage snippets — reusable Jinja or HTML fragments embedded in templates');
 
 assetSnippets
   .command('list')
@@ -3696,7 +3696,7 @@ assetSnippets
     },
   );
 
-const assetFiles = assets.command('files').description('Manage files');
+const assetFiles = assets.command('files').description('Manage files — images, documents, and fonts uploaded for use in campaigns');
 
 assetFiles
   .command('list')
@@ -3724,6 +3724,7 @@ assetFiles
           console.log(`  ${file.name}`);
           console.log(`    Category: ${file.category}`);
           console.log(`    MIME:     ${file.mimeType}`);
+          console.log(`    Size:     ${file.fileSize !== undefined ? `${file.fileSize} bytes` : 'n/a'}`);
           console.log(`    ID:       ${file.id}`);
           console.log(`    URL:      ${file.url}`);
         }
