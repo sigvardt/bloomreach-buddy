@@ -8623,11 +8623,11 @@ evaluationSettingsVoucherMapping
 
 const weblayers = program
   .command('weblayers')
-  .description('Manage Bloomreach Engagement weblayers');
+  .description('Manage Bloomreach Engagement weblayers (UI-only — no REST API)');
 
 weblayers
   .command('list')
-  .description('List all weblayers in the project')
+  .description('List all weblayers in the project (UI-only — no REST API endpoint)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .option('--status <status>', 'Filter by status (active, inactive, draft, archived)')
   .option('--json', 'Output as JSON')
@@ -8664,7 +8664,7 @@ weblayers
 
 weblayers
   .command('view-performance')
-  .description('View impressions, clicks and conversions for a weblayer')
+  .description('View impressions, clicks and conversions for a weblayer (UI-only — no REST API endpoint)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--weblayer-id <id>', 'Weblayer ID')
   .option('--json', 'Output as JSON')
@@ -8695,7 +8695,7 @@ weblayers
 
 weblayers
   .command('create')
-  .description('Prepare creation of a new weblayer (two-phase commit)')
+  .description('Prepare creation of a new weblayer (two-phase commit, UI-only). Supports: display type, targeting conditions, A/B testing')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--name <name>', 'Weblayer name')
   .option('--display-type <type>', 'Display type (overlay, banner, popup, slide_in)')
@@ -8772,6 +8772,9 @@ weblayers
           printJson(result);
         } else {
           console.log('Weblayer creation prepared.');
+          if (options.displayType) {
+            console.log(`  Type:    ${options.displayType}`);
+          }
           console.log(`  Name:    ${options.name}`);
           console.log(`  Token:   ${result.confirmToken}`);
           console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
@@ -8788,7 +8791,7 @@ weblayers
 
 weblayers
   .command('start')
-  .description('Prepare starting a weblayer (two-phase commit)')
+  .description('Prepare starting a weblayer (two-phase commit, UI-only). Activates the weblayer for visitor display')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--weblayer-id <id>', 'Weblayer ID')
   .option('--note <note>', 'Operator note for audit trail')
@@ -8823,7 +8826,7 @@ weblayers
 
 weblayers
   .command('stop')
-  .description('Prepare stopping a weblayer (two-phase commit)')
+  .description('Prepare stopping a weblayer (two-phase commit, UI-only). Deactivates the weblayer')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--weblayer-id <id>', 'Weblayer ID')
   .option('--note <note>', 'Operator note for audit trail')
@@ -8858,7 +8861,7 @@ weblayers
 
 weblayers
   .command('clone')
-  .description('Prepare cloning a weblayer (two-phase commit)')
+  .description('Prepare cloning a weblayer (two-phase commit, UI-only). Creates a copy with optional new name')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--weblayer-id <id>', 'Weblayer ID to clone')
   .option('--new-name <name>', 'Name for the cloned weblayer')
@@ -8902,7 +8905,7 @@ weblayers
 
 weblayers
   .command('archive')
-  .description('Prepare archiving a weblayer (two-phase commit)')
+  .description('Prepare archiving a weblayer (two-phase commit, UI-only). Moves weblayer to archived state')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--weblayer-id <id>', 'Weblayer ID')
   .option('--note <note>', 'Operator note for audit trail')

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   CREATE_WEBLAYER_ACTION_TYPE,
   START_WEBLAYER_ACTION_TYPE,
@@ -20,6 +20,18 @@ import {
   createWeblayerActionExecutors,
   BloomreachWeblayersService,
 } from '../index.js';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_WEBLAYER_ACTION_TYPE', () => {
@@ -99,6 +111,18 @@ describe('validateWeblayerName', () => {
     expect(() => validateWeblayerName('   ')).toThrow('must not be empty');
   });
 
+  it('handles mixed whitespace (tabs and spaces)', () => {
+    expect(validateWeblayerName('\t Weblayer \t')).toBe('Weblayer');
+  });
+
+  it('handles newline-only input', () => {
+    expect(() => validateWeblayerName('\n\n')).toThrow('must not be empty');
+  });
+
+  it('handles tab-only input', () => {
+    expect(() => validateWeblayerName('\t\t')).toThrow('must not be empty');
+  });
+
   it('throws for name exceeding maximum length', () => {
     const name = 'x'.repeat(201);
     expect(() => validateWeblayerName(name)).toThrow('must not exceed 200 characters');
@@ -146,6 +170,22 @@ describe('validateWeblayerId', () => {
 
   it('returns same value when already trimmed', () => {
     expect(validateWeblayerId('weblayer-456')).toBe('weblayer-456');
+  });
+
+  it('accepts weblayer ID with dots and dashes', () => {
+    expect(validateWeblayerId('wl-123.abc')).toBe('wl-123.abc');
+  });
+
+  it('handles mixed whitespace (tabs and spaces)', () => {
+    expect(validateWeblayerId('\t wl-123 \t')).toBe('wl-123');
+  });
+
+  it('handles newline-only input', () => {
+    expect(() => validateWeblayerId('\n\n')).toThrow('must not be empty');
+  });
+
+  it('handles tab-only input', () => {
+    expect(() => validateWeblayerId('\t\t')).toThrow('must not be empty');
   });
 });
 
@@ -204,6 +244,25 @@ describe('validateWeblayerABTestConfig', () => {
     ).toThrow('A/B test variants must be an integer between 2 and 10');
   });
 
+  it('throws for non-integer variants', () => {
+    expect(() =>
+      validateWeblayerABTestConfig({
+        enabled: true,
+        variants: 2.5,
+      }),
+    ).toThrow('A/B test variants must be an integer between 2 and 10');
+  });
+
+  it('accepts exactly 2 variants', () => {
+    const config = { enabled: true, variants: 2 };
+    expect(validateWeblayerABTestConfig(config)).toEqual(config);
+  });
+
+  it('accepts exactly 10 variants', () => {
+    const config = { enabled: true, variants: 10 };
+    expect(validateWeblayerABTestConfig(config)).toEqual(config);
+  });
+
   it('throws for split percentage below 0', () => {
     expect(() =>
       validateWeblayerABTestConfig({
@@ -222,6 +281,16 @@ describe('validateWeblayerABTestConfig', () => {
         splitPercentage: 101,
       }),
     ).toThrow('A/B test split percentage must be between 0 and 100');
+  });
+
+  it('accepts split percentage at exactly 0', () => {
+    const config = { enabled: true, variants: 2, splitPercentage: 0 };
+    expect(validateWeblayerABTestConfig(config)).toEqual(config);
+  });
+
+  it('accepts split percentage at exactly 100', () => {
+    const config = { enabled: true, variants: 2, splitPercentage: 100 };
+    expect(validateWeblayerABTestConfig(config)).toEqual(config);
   });
 });
 
@@ -260,6 +329,28 @@ describe('validateDisplayConditions', () => {
       'frequencyCap must be greater than or equal to 1',
     );
   });
+
+  it('accepts delayMs at exactly 0', () => {
+    expect(validateDisplayConditions({ delayMs: 0 })).toEqual({ delayMs: 0 });
+  });
+
+  it('accepts scrollPercentage at exactly 0', () => {
+    expect(validateDisplayConditions({ scrollPercentage: 0 })).toEqual({ scrollPercentage: 0 });
+  });
+
+  it('accepts scrollPercentage at exactly 100', () => {
+    expect(validateDisplayConditions({ scrollPercentage: 100 })).toEqual({
+      scrollPercentage: 100,
+    });
+  });
+
+  it('accepts frequencyCap at exactly 1', () => {
+    expect(validateDisplayConditions({ frequencyCap: 1 })).toEqual({ frequencyCap: 1 });
+  });
+
+  it('accepts empty conditions object', () => {
+    expect(validateDisplayConditions({})).toEqual({});
+  });
 });
 
 describe('buildWeblayersUrl', () => {
@@ -273,6 +364,18 @@ describe('buildWeblayersUrl', () => {
 
   it('encodes slashes in project name', () => {
     expect(buildWeblayersUrl('org/project')).toBe('/p/org%2Fproject/campaigns/banners');
+  });
+
+  it('encodes unicode characters', () => {
+    expect(buildWeblayersUrl('projekt åäö')).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/campaigns/banners');
+  });
+
+  it('encodes hash character', () => {
+    expect(buildWeblayersUrl('my#project')).toBe('/p/my%23project/campaigns/banners');
+  });
+
+  it('keeps dashes unencoded', () => {
+    expect(buildWeblayersUrl('team-alpha')).toBe('/p/team-alpha/campaigns/banners');
   });
 });
 
@@ -297,8 +400,44 @@ describe('createWeblayerActionExecutors', () => {
   it('executors throw "not yet implemented" on execute', async () => {
     const executors = createWeblayerActionExecutors();
     for (const executor of Object.values(executors)) {
-      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+      await expect(executor.execute({})).rejects.toThrow(
+        'only available through the Bloomreach Engagement UI',
+      );
     }
+  });
+
+  it('accepts optional apiConfig parameter', () => {
+    const executors = createWeblayerActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(5);
+  });
+
+  it('executors still throw with apiConfig', async () => {
+    const executors = createWeblayerActionExecutors(TEST_API_CONFIG);
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow('Bloomreach Engagement UI');
+    }
+  });
+
+  it('executor actionType stays stable with apiConfig', () => {
+    const executors = createWeblayerActionExecutors(TEST_API_CONFIG);
+    expect(executors[CREATE_WEBLAYER_ACTION_TYPE].actionType).toBe(CREATE_WEBLAYER_ACTION_TYPE);
+    expect(executors[START_WEBLAYER_ACTION_TYPE].actionType).toBe(START_WEBLAYER_ACTION_TYPE);
+    expect(executors[STOP_WEBLAYER_ACTION_TYPE].actionType).toBe(STOP_WEBLAYER_ACTION_TYPE);
+    expect(executors[CLONE_WEBLAYER_ACTION_TYPE].actionType).toBe(CLONE_WEBLAYER_ACTION_TYPE);
+    expect(executors[ARCHIVE_WEBLAYER_ACTION_TYPE].actionType).toBe(
+      ARCHIVE_WEBLAYER_ACTION_TYPE,
+    );
+  });
+
+  it('executor map keys are exactly the 5 action types', () => {
+    const executors = createWeblayerActionExecutors();
+    expect(Object.keys(executors)).toEqual([
+      CREATE_WEBLAYER_ACTION_TYPE,
+      START_WEBLAYER_ACTION_TYPE,
+      STOP_WEBLAYER_ACTION_TYPE,
+      CLONE_WEBLAYER_ACTION_TYPE,
+      ARCHIVE_WEBLAYER_ACTION_TYPE,
+    ]);
   });
 });
 
@@ -322,12 +461,51 @@ describe('BloomreachWeblayersService', () => {
     it('throws for empty project', () => {
       expect(() => new BloomreachWeblayersService('')).toThrow('must not be empty');
     });
+
+    it('throws for whitespace-only project', () => {
+      expect(() => new BloomreachWeblayersService('   ')).toThrow('must not be empty');
+    });
+
+    it('encodes slashes in constructor project URL', () => {
+      const service = new BloomreachWeblayersService('org/project');
+      expect(service.weblayersUrl).toBe('/p/org%2Fproject/campaigns/banners');
+    });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachWeblayersService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachWeblayersService);
+    });
+
+    it('exposes weblayers URL when constructed with apiConfig', () => {
+      const service = new BloomreachWeblayersService('test', TEST_API_CONFIG);
+      expect(service.weblayersUrl).toBe('/p/test/campaigns/banners');
+    });
+
+    it('encodes unicode in constructor project URL', () => {
+      const service = new BloomreachWeblayersService('projekt åäö');
+      expect(service.weblayersUrl).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/campaigns/banners');
+    });
+
+    it('encodes hash in constructor project URL', () => {
+      const service = new BloomreachWeblayersService('my#project');
+      expect(service.weblayersUrl).toBe('/p/my%23project/campaigns/banners');
+    });
   });
 
   describe('listWeblayers', () => {
     it('throws not-yet-implemented error', async () => {
       const service = new BloomreachWeblayersService('test');
-      await expect(service.listWeblayers()).rejects.toThrow('not yet implemented');
+      await expect(service.listWeblayers()).rejects.toThrow('does not provide');
+    });
+
+    it('throws no-API-endpoint error even with apiConfig', async () => {
+      const service = new BloomreachWeblayersService('test', TEST_API_CONFIG);
+      await expect(service.listWeblayers()).rejects.toThrow('does not provide');
+    });
+
+    it('throws no-API-endpoint error for trimmed project', async () => {
+      const service = new BloomreachWeblayersService('test');
+      await expect(service.listWeblayers({ project: '  test  ' })).rejects.toThrow('does not provide');
     });
 
     it('validates status when provided', async () => {
@@ -343,6 +521,13 @@ describe('BloomreachWeblayersService', () => {
         service.listWeblayers({ project: '', status: 'active' }),
       ).rejects.toThrow('must not be empty');
     });
+
+    it('validates whitespace-only project', async () => {
+      const service = new BloomreachWeblayersService('test');
+      await expect(
+        service.listWeblayers({ project: '   ', status: 'active' }),
+      ).rejects.toThrow('must not be empty');
+    });
   });
 
   describe('viewWeblayerPerformance', () => {
@@ -350,7 +535,14 @@ describe('BloomreachWeblayersService', () => {
       const service = new BloomreachWeblayersService('test');
       await expect(
         service.viewWeblayerPerformance({ project: 'test', weblayerId: 'weblayer-1' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide');
+    });
+
+    it('throws no-API-endpoint error even with apiConfig', async () => {
+      const service = new BloomreachWeblayersService('test', TEST_API_CONFIG);
+      await expect(
+        service.viewWeblayerPerformance({ project: 'test', weblayerId: 'weblayer-1' }),
+      ).rejects.toThrow('does not provide');
     });
 
     it('validates project input', async () => {
@@ -365,6 +557,20 @@ describe('BloomreachWeblayersService', () => {
       await expect(
         service.viewWeblayerPerformance({ project: 'test', weblayerId: '   ' }),
       ).rejects.toThrow('Weblayer ID must not be empty');
+    });
+
+    it('validates whitespace-only project', async () => {
+      const service = new BloomreachWeblayersService('test');
+      await expect(
+        service.viewWeblayerPerformance({ project: '   ', weblayerId: 'weblayer-1' }),
+      ).rejects.toThrow('must not be empty');
+    });
+
+    it('validates weblayer ID with dots and dashes', async () => {
+      const service = new BloomreachWeblayersService('test');
+      await expect(
+        service.viewWeblayerPerformance({ project: 'test', weblayerId: 'wl-1.abc' }),
+      ).rejects.toThrow('does not provide');
     });
   });
 
@@ -461,6 +667,84 @@ describe('BloomreachWeblayersService', () => {
         }),
       ).toThrow('displayType must be one of');
     });
+
+    it('creates different prepared action ids across calls', () => {
+      const service = new BloomreachWeblayersService('test');
+      const nowSpy = vi.spyOn(Date, 'now');
+      nowSpy.mockReturnValueOnce(1_700_000_000_000);
+      nowSpy.mockReturnValueOnce(1_700_000_000_001);
+      nowSpy.mockReturnValueOnce(1_700_000_000_002);
+      nowSpy.mockReturnValueOnce(1_700_000_000_003);
+      nowSpy.mockReturnValueOnce(1_700_000_000_004);
+      nowSpy.mockReturnValueOnce(1_700_000_000_005);
+
+      const first = service.prepareCreateWeblayer({ project: 'test', name: 'A' });
+      const second = service.prepareCreateWeblayer({ project: 'test', name: 'B' });
+
+      expect(first.preparedActionId).not.toBe(second.preparedActionId);
+    });
+
+    it('creates different confirm tokens across calls', () => {
+      const service = new BloomreachWeblayersService('test');
+      const nowSpy = vi.spyOn(Date, 'now');
+      nowSpy.mockReturnValueOnce(1_700_000_000_100);
+      nowSpy.mockReturnValueOnce(1_700_000_000_101);
+      nowSpy.mockReturnValueOnce(1_700_000_000_102);
+      nowSpy.mockReturnValueOnce(1_700_000_000_103);
+      nowSpy.mockReturnValueOnce(1_700_000_000_104);
+      nowSpy.mockReturnValueOnce(1_700_000_000_105);
+
+      const first = service.prepareCreateWeblayer({ project: 'test', name: 'A' });
+      const second = service.prepareCreateWeblayer({ project: 'test', name: 'B' });
+
+      expect(first.confirmToken).not.toBe(second.confirmToken);
+    });
+
+    it('trims project in preview', () => {
+      const service = new BloomreachWeblayersService('test');
+      const result = service.prepareCreateWeblayer({ project: '  my-project  ', name: 'My Weblayer' });
+      expect(result.preview).toEqual(expect.objectContaining({ project: 'my-project' }));
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachWeblayersService('test');
+      expect(() => service.prepareCreateWeblayer({ project: '   ', name: 'Weblayer' })).toThrow(
+        'must not be empty',
+      );
+    });
+
+    it('accepts apiConfig in service and still prepares action', () => {
+      const service = new BloomreachWeblayersService('test', TEST_API_CONFIG);
+      const result = service.prepareCreateWeblayer({ project: 'test', name: 'API Weblayer' });
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'weblayers.create_weblayer',
+          project: 'test',
+          name: 'API Weblayer',
+        }),
+      );
+    });
+
+    it('keeps empty operatorNote in preview', () => {
+      const service = new BloomreachWeblayersService('test');
+      const result = service.prepareCreateWeblayer({
+        project: 'test',
+        name: 'My Weblayer',
+        operatorNote: '',
+      });
+      expect(result.preview).toEqual(expect.objectContaining({ operatorNote: '' }));
+    });
+
+    it('keeps multiline operatorNote in preview', () => {
+      const service = new BloomreachWeblayersService('test');
+      const note = 'Line 1\nLine 2';
+      const result = service.prepareCreateWeblayer({
+        project: 'test',
+        name: 'My Weblayer',
+        operatorNote: note,
+      });
+      expect(result.preview).toEqual(expect.objectContaining({ operatorNote: note }));
+    });
   });
 
   describe('prepareStartWeblayer', () => {
@@ -508,6 +792,41 @@ describe('BloomreachWeblayersService', () => {
         service.prepareStartWeblayer({ project: '', weblayerId: 'weblayer-123' }),
       ).toThrow('must not be empty');
     });
+
+    it('creates different prepared action ids across calls', () => {
+      const service = new BloomreachWeblayersService('test');
+      const nowSpy = vi.spyOn(Date, 'now');
+      nowSpy.mockReturnValueOnce(1_700_000_001_000);
+      nowSpy.mockReturnValueOnce(1_700_000_001_001);
+      nowSpy.mockReturnValueOnce(1_700_000_001_002);
+      nowSpy.mockReturnValueOnce(1_700_000_001_003);
+      nowSpy.mockReturnValueOnce(1_700_000_001_004);
+      nowSpy.mockReturnValueOnce(1_700_000_001_005);
+
+      const first = service.prepareStartWeblayer({ project: 'test', weblayerId: 'wl-1' });
+      const second = service.prepareStartWeblayer({ project: 'test', weblayerId: 'wl-2' });
+
+      expect(first.preparedActionId).not.toBe(second.preparedActionId);
+    });
+
+    it('accepts apiConfig in service and still prepares action', () => {
+      const service = new BloomreachWeblayersService('test', TEST_API_CONFIG);
+      const result = service.prepareStartWeblayer({ project: 'test', weblayerId: 'wl-1' });
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'weblayers.start_weblayer',
+          project: 'test',
+          weblayerId: 'wl-1',
+        }),
+      );
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachWeblayersService('test');
+      expect(() =>
+        service.prepareStartWeblayer({ project: '   ', weblayerId: 'weblayer-123' }),
+      ).toThrow('must not be empty');
+    });
   });
 
   describe('prepareStopWeblayer', () => {
@@ -553,6 +872,41 @@ describe('BloomreachWeblayersService', () => {
       const service = new BloomreachWeblayersService('test');
       expect(() =>
         service.prepareStopWeblayer({ project: '', weblayerId: 'weblayer-456' }),
+      ).toThrow('must not be empty');
+    });
+
+    it('creates different prepared action ids across calls', () => {
+      const service = new BloomreachWeblayersService('test');
+      const nowSpy = vi.spyOn(Date, 'now');
+      nowSpy.mockReturnValueOnce(1_700_000_002_000);
+      nowSpy.mockReturnValueOnce(1_700_000_002_001);
+      nowSpy.mockReturnValueOnce(1_700_000_002_002);
+      nowSpy.mockReturnValueOnce(1_700_000_002_003);
+      nowSpy.mockReturnValueOnce(1_700_000_002_004);
+      nowSpy.mockReturnValueOnce(1_700_000_002_005);
+
+      const first = service.prepareStopWeblayer({ project: 'test', weblayerId: 'wl-1' });
+      const second = service.prepareStopWeblayer({ project: 'test', weblayerId: 'wl-2' });
+
+      expect(first.preparedActionId).not.toBe(second.preparedActionId);
+    });
+
+    it('accepts apiConfig in service and still prepares action', () => {
+      const service = new BloomreachWeblayersService('test', TEST_API_CONFIG);
+      const result = service.prepareStopWeblayer({ project: 'test', weblayerId: 'wl-1' });
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'weblayers.stop_weblayer',
+          project: 'test',
+          weblayerId: 'wl-1',
+        }),
+      );
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachWeblayersService('test');
+      expect(() =>
+        service.prepareStopWeblayer({ project: '   ', weblayerId: 'weblayer-456' }),
       ).toThrow('must not be empty');
     });
   });
@@ -611,6 +965,41 @@ describe('BloomreachWeblayersService', () => {
         }),
       ).toThrow('must not be empty');
     });
+
+    it('creates different prepared action ids across calls', () => {
+      const service = new BloomreachWeblayersService('test');
+      const nowSpy = vi.spyOn(Date, 'now');
+      nowSpy.mockReturnValueOnce(1_700_000_003_000);
+      nowSpy.mockReturnValueOnce(1_700_000_003_001);
+      nowSpy.mockReturnValueOnce(1_700_000_003_002);
+      nowSpy.mockReturnValueOnce(1_700_000_003_003);
+      nowSpy.mockReturnValueOnce(1_700_000_003_004);
+      nowSpy.mockReturnValueOnce(1_700_000_003_005);
+
+      const first = service.prepareCloneWeblayer({ project: 'test', weblayerId: 'wl-1' });
+      const second = service.prepareCloneWeblayer({ project: 'test', weblayerId: 'wl-2' });
+
+      expect(first.preparedActionId).not.toBe(second.preparedActionId);
+    });
+
+    it('accepts apiConfig in service and still prepares action', () => {
+      const service = new BloomreachWeblayersService('test', TEST_API_CONFIG);
+      const result = service.prepareCloneWeblayer({ project: 'test', weblayerId: 'wl-1' });
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'weblayers.clone_weblayer',
+          project: 'test',
+          weblayerId: 'wl-1',
+        }),
+      );
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachWeblayersService('test');
+      expect(() =>
+        service.prepareCloneWeblayer({ project: '   ', weblayerId: 'weblayer-789' }),
+      ).toThrow('must not be empty');
+    });
   });
 
   describe('prepareArchiveWeblayer', () => {
@@ -656,6 +1045,41 @@ describe('BloomreachWeblayersService', () => {
       const service = new BloomreachWeblayersService('test');
       expect(() =>
         service.prepareArchiveWeblayer({ project: '', weblayerId: 'weblayer-900' }),
+      ).toThrow('must not be empty');
+    });
+
+    it('creates different prepared action ids across calls', () => {
+      const service = new BloomreachWeblayersService('test');
+      const nowSpy = vi.spyOn(Date, 'now');
+      nowSpy.mockReturnValueOnce(1_700_000_004_000);
+      nowSpy.mockReturnValueOnce(1_700_000_004_001);
+      nowSpy.mockReturnValueOnce(1_700_000_004_002);
+      nowSpy.mockReturnValueOnce(1_700_000_004_003);
+      nowSpy.mockReturnValueOnce(1_700_000_004_004);
+      nowSpy.mockReturnValueOnce(1_700_000_004_005);
+
+      const first = service.prepareArchiveWeblayer({ project: 'test', weblayerId: 'wl-1' });
+      const second = service.prepareArchiveWeblayer({ project: 'test', weblayerId: 'wl-2' });
+
+      expect(first.preparedActionId).not.toBe(second.preparedActionId);
+    });
+
+    it('accepts apiConfig in service and still prepares action', () => {
+      const service = new BloomreachWeblayersService('test', TEST_API_CONFIG);
+      const result = service.prepareArchiveWeblayer({ project: 'test', weblayerId: 'wl-1' });
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'weblayers.archive_weblayer',
+          project: 'test',
+          weblayerId: 'wl-1',
+        }),
+      );
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachWeblayersService('test');
+      expect(() =>
+        service.prepareArchiveWeblayer({ project: '   ', weblayerId: 'weblayer-900' }),
       ).toThrow('must not be empty');
     });
   });
