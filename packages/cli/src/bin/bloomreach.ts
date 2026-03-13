@@ -6,6 +6,7 @@ import {
   BloomreachCampaignCalendarService,
   BloomreachDashboardsService,
   BloomreachEmailCampaignsService,
+  BloomreachFlowsService,
   BloomreachFunnelsService,
   BloomreachPerformanceService,
   BloomreachRetentionsService,
@@ -16,6 +17,8 @@ import {
 import type {
   EmailCampaignSchedule,
   EmailCampaignABTestConfig,
+  FlowEvent,
+  FlowFilter,
   FunnelStep,
   FunnelFilter,
   SurveyQuestion,
@@ -81,9 +84,7 @@ dashboards
         }
       }
     } catch (error) {
-      console.error(
-        `Error: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
       process.exit(1);
     }
   });
@@ -132,9 +133,7 @@ dashboards
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -148,12 +147,7 @@ dashboards
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: {
-      project: string;
-      dashboardId: string;
-      note?: string;
-      json?: boolean;
-    }) => {
+    async (options: { project: string; dashboardId: string; note?: string; json?: boolean }) => {
       try {
         const service = new BloomreachDashboardsService(options.project);
         const result = service.prepareSetHomeDashboard({
@@ -174,9 +168,7 @@ dashboards
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -190,12 +182,7 @@ dashboards
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: {
-      project: string;
-      dashboardId: string;
-      note?: string;
-      json?: boolean;
-    }) => {
+    async (options: { project: string; dashboardId: string; note?: string; json?: boolean }) => {
       try {
         const service = new BloomreachDashboardsService(options.project);
         const result = service.prepareDeleteDashboard({
@@ -216,9 +203,7 @@ dashboards
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -236,12 +221,7 @@ performance
   .option('--end-date <date>', 'End date (YYYY-MM-DD)')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: {
-      project: string;
-      startDate?: string;
-      endDate?: string;
-      json?: boolean;
-    }) => {
+    async (options: { project: string; startDate?: string; endDate?: string; json?: boolean }) => {
       try {
         const service = new BloomreachPerformanceService(options.project);
         const dateRange =
@@ -261,9 +241,7 @@ performance
           printJson(result.metrics);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -275,7 +253,10 @@ performance
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
   .option('--end-date <date>', 'End date (YYYY-MM-DD)')
-  .option('--channel <channel>', 'Filter to specific channel (email, sms, push, whatsapp, weblayer, in_app_message)')
+  .option(
+    '--channel <channel>',
+    'Filter to specific channel (email, sms, push, whatsapp, weblayer, in_app_message)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -305,9 +286,7 @@ performance
           printJson(result.metrics);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -318,87 +297,75 @@ performance
   .description('View Bloomreach billing, event-tracking and usage statistics')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: { project: string; json?: boolean }) => {
-      try {
-        const service = new BloomreachPerformanceService(options.project);
-        const result = await service.viewBloomreachUsage({
-          project: options.project,
-        });
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachPerformanceService(options.project);
+      const result = await service.viewBloomreachUsage({
+        project: options.project,
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          console.log(`Bloomreach Usage: ${result.project}`);
-          console.log(`  Source: ${result.source_url}`);
-          printJson(result.metrics);
-        }
-      } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        process.exit(1);
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Bloomreach Usage: ${result.project}`);
+        console.log(`  Source: ${result.source_url}`);
+        printJson(result.metrics);
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 performance
   .command('overview')
   .description('View high-level project statistics')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: { project: string; json?: boolean }) => {
-      try {
-        const service = new BloomreachPerformanceService(options.project);
-        const result = await service.viewProjectOverview({
-          project: options.project,
-        });
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachPerformanceService(options.project);
+      const result = await service.viewProjectOverview({
+        project: options.project,
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          console.log(`Project Overview: ${result.project}`);
-          console.log(`  Source: ${result.source_url}`);
-          printJson(result.metrics);
-        }
-      } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        process.exit(1);
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Project Overview: ${result.project}`);
+        console.log(`  Source: ${result.source_url}`);
+        printJson(result.metrics);
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 performance
   .command('health')
   .description('View project health and data-quality indicators')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: { project: string; json?: boolean }) => {
-      try {
-        const service = new BloomreachPerformanceService(options.project);
-        const result = await service.viewProjectHealth({
-          project: options.project,
-        });
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachPerformanceService(options.project);
+      const result = await service.viewProjectHealth({
+        project: options.project,
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          console.log(`Project Health: ${result.project}`);
-          console.log(`  Source: ${result.source_url}`);
-          printJson(result.metrics);
-        }
-      } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        process.exit(1);
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Project Health: ${result.project}`);
+        console.log(`  Source: ${result.source_url}`);
+        printJson(result.metrics);
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 const scenarios = program
   .command('scenarios')
@@ -431,7 +398,7 @@ scenarios
           project: options.project,
         };
         if (options.status) input.status = options.status;
-        if (options.tags) input.tags = options.tags.split(',').map(t => t.trim());
+        if (options.tags) input.tags = options.tags.split(',').map((t) => t.trim());
         if (options.owner) input.owner = options.owner;
 
         const result = await service.listScenarios(input);
@@ -454,9 +421,7 @@ scenarios
           }
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -468,40 +433,32 @@ scenarios
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--scenario-id <id>', 'Scenario ID')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: {
-      project: string;
-      scenarioId: string;
-      json?: boolean;
-    }) => {
-      try {
-        const service = new BloomreachScenariosService(options.project);
-        const result = await service.viewScenario({
-          project: options.project,
-          scenarioId: options.scenarioId,
-        });
+  .action(async (options: { project: string; scenarioId: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachScenariosService(options.project);
+      const result = await service.viewScenario({
+        project: options.project,
+        scenarioId: options.scenarioId,
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          console.log(`Scenario: ${result.name}`);
-          console.log(`  Status: ${result.status}`);
-          console.log(`  Nodes:  ${result.nodes.length}`);
-          if (result.triggerDescription) {
-            console.log(`  Trigger: ${result.triggerDescription}`);
-          }
-          if (result.performance) {
-            console.log(`  Performance: ${JSON.stringify(result.performance)}`);
-          }
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Scenario: ${result.name}`);
+        console.log(`  Status: ${result.status}`);
+        console.log(`  Nodes:  ${result.nodes.length}`);
+        if (result.triggerDescription) {
+          console.log(`  Trigger: ${result.triggerDescription}`);
         }
-      } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        process.exit(1);
+        if (result.performance) {
+          console.log(`  Performance: ${JSON.stringify(result.performance)}`);
+        }
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 scenarios
   .command('create')
@@ -527,7 +484,7 @@ scenarios
           project: options.project,
           name: options.name,
           templateId: options.templateId,
-          tags: options.tags ? options.tags.split(',').map(t => t.trim()) : undefined,
+          tags: options.tags ? options.tags.split(',').map((t) => t.trim()) : undefined,
           operatorNote: options.note,
         });
 
@@ -543,9 +500,7 @@ scenarios
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -559,12 +514,7 @@ scenarios
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: {
-      project: string;
-      scenarioId: string;
-      note?: string;
-      json?: boolean;
-    }) => {
+    async (options: { project: string; scenarioId: string; note?: string; json?: boolean }) => {
       try {
         const service = new BloomreachScenariosService(options.project);
         const result = service.prepareStartScenario({
@@ -585,9 +535,7 @@ scenarios
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -601,12 +549,7 @@ scenarios
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: {
-      project: string;
-      scenarioId: string;
-      note?: string;
-      json?: boolean;
-    }) => {
+    async (options: { project: string; scenarioId: string; note?: string; json?: boolean }) => {
       try {
         const service = new BloomreachScenariosService(options.project);
         const result = service.prepareStopScenario({
@@ -627,9 +570,7 @@ scenarios
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -673,9 +614,7 @@ scenarios
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -689,12 +628,7 @@ scenarios
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: {
-      project: string;
-      scenarioId: string;
-      note?: string;
-      json?: boolean;
-    }) => {
+    async (options: { project: string; scenarioId: string; note?: string; json?: boolean }) => {
       try {
         const service = new BloomreachScenariosService(options.project);
         const result = service.prepareArchiveScenario({
@@ -715,9 +649,7 @@ scenarios
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -731,46 +663,41 @@ emailCampaigns
   .command('list')
   .description('List all email campaigns in the project')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .option('--status <status>', 'Filter by status (draft, scheduled, sending, sent, paused, archived)')
+  .option(
+    '--status <status>',
+    'Filter by status (draft, scheduled, sending, sent, paused, archived)',
+  )
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: {
-      project: string;
-      status?: string;
-      json?: boolean;
-    }) => {
-      try {
-        const service = new BloomreachEmailCampaignsService(options.project);
-        const input: { project: string; status?: string } = {
-          project: options.project,
-        };
-        if (options.status) input.status = options.status;
+  .action(async (options: { project: string; status?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachEmailCampaignsService(options.project);
+      const input: { project: string; status?: string } = {
+        project: options.project,
+      };
+      if (options.status) input.status = options.status;
 
-        const result = await service.listEmailCampaigns(input);
+      const result = await service.listEmailCampaigns(input);
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          if (result.length === 0) {
-            console.log('No email campaigns found.');
-            return;
-          }
-          for (const campaign of result) {
-            console.log(`  ${campaign.name}`);
-            console.log(`    Status:  ${campaign.status}`);
-            console.log(`    Subject: ${campaign.subjectLine}`);
-            console.log(`    ID:      ${campaign.id}`);
-            console.log(`    URL:     ${campaign.url}`);
-          }
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No email campaigns found.');
+          return;
         }
-      } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        process.exit(1);
+        for (const campaign of result) {
+          console.log(`  ${campaign.name}`);
+          console.log(`    Status:  ${campaign.status}`);
+          console.log(`    Subject: ${campaign.subjectLine}`);
+          console.log(`    ID:      ${campaign.id}`);
+          console.log(`    URL:     ${campaign.url}`);
+        }
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 emailCampaigns
   .command('view-results')
@@ -778,41 +705,33 @@ emailCampaigns
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--campaign-id <id>', 'Email campaign ID')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: {
-      project: string;
-      campaignId: string;
-      json?: boolean;
-    }) => {
-      try {
-        const service = new BloomreachEmailCampaignsService(options.project);
-        const result = await service.viewCampaignResults({
-          project: options.project,
-          campaignId: options.campaignId,
-        });
+  .action(async (options: { project: string; campaignId: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachEmailCampaignsService(options.project);
+      const result = await service.viewCampaignResults({
+        project: options.project,
+        campaignId: options.campaignId,
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          console.log(`Campaign Results: ${result.campaignId}`);
-          console.log(`  Sent:         ${result.sent}`);
-          console.log(`  Delivered:    ${result.delivered}`);
-          console.log(`  Opened:       ${result.opened}`);
-          console.log(`  Clicked:      ${result.clicked}`);
-          console.log(`  Bounced:      ${result.bounced}`);
-          console.log(`  Unsubscribed: ${result.unsubscribed}`);
-          console.log(`  Open Rate:    ${(result.openRate * 100).toFixed(1)}%`);
-          console.log(`  CTR:          ${(result.clickThroughRate * 100).toFixed(1)}%`);
-          console.log(`  Revenue:      ${result.revenue}`);
-        }
-      } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        process.exit(1);
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Campaign Results: ${result.campaignId}`);
+        console.log(`  Sent:         ${result.sent}`);
+        console.log(`  Delivered:    ${result.delivered}`);
+        console.log(`  Opened:       ${result.opened}`);
+        console.log(`  Clicked:      ${result.clicked}`);
+        console.log(`  Bounced:      ${result.bounced}`);
+        console.log(`  Unsubscribed: ${result.unsubscribed}`);
+        console.log(`  Open Rate:    ${(result.openRate * 100).toFixed(1)}%`);
+        console.log(`  CTR:          ${(result.clickThroughRate * 100).toFixed(1)}%`);
+        console.log(`  Revenue:      ${result.revenue}`);
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 emailCampaigns
   .command('create')
@@ -861,9 +780,7 @@ emailCampaigns
           abTest = {
             enabled: true,
             variants: parseInt(options.abVariants, 10),
-            splitPercentage: options.abSplit
-              ? parseInt(options.abSplit, 10)
-              : undefined,
+            splitPercentage: options.abSplit ? parseInt(options.abSplit, 10) : undefined,
             winnerCriteria: options.abWinner,
           };
         }
@@ -893,9 +810,7 @@ emailCampaigns
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -909,12 +824,7 @@ emailCampaigns
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: {
-      project: string;
-      campaignId: string;
-      note?: string;
-      json?: boolean;
-    }) => {
+    async (options: { project: string; campaignId: string; note?: string; json?: boolean }) => {
       try {
         const service = new BloomreachEmailCampaignsService(options.project);
         const result = service.prepareSendEmailCampaign({
@@ -935,9 +845,7 @@ emailCampaigns
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -981,9 +889,7 @@ emailCampaigns
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -997,12 +903,7 @@ emailCampaigns
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: {
-      project: string;
-      campaignId: string;
-      note?: string;
-      json?: boolean;
-    }) => {
+    async (options: { project: string; campaignId: string; note?: string; json?: boolean }) => {
       try {
         const service = new BloomreachEmailCampaignsService(options.project);
         const result = service.prepareArchiveEmailCampaign({
@@ -1023,9 +924,7 @@ emailCampaigns
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -1041,44 +940,36 @@ surveys
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .option('--status <status>', 'Filter by status (active, inactive, draft, archived)')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: {
-      project: string;
-      status?: string;
-      json?: boolean;
-    }) => {
-      try {
-        const service = new BloomreachSurveysService(options.project);
-        const input: { project: string; status?: string } = {
-          project: options.project,
-        };
-        if (options.status) input.status = options.status;
+  .action(async (options: { project: string; status?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachSurveysService(options.project);
+      const input: { project: string; status?: string } = {
+        project: options.project,
+      };
+      if (options.status) input.status = options.status;
 
-        const result = await service.listSurveys(input);
+      const result = await service.listSurveys(input);
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          if (result.length === 0) {
-            console.log('No surveys found.');
-            return;
-          }
-          for (const survey of result) {
-            console.log(`  ${survey.name}`);
-            console.log(`    Status:    ${survey.status}`);
-            console.log(`    Questions: ${survey.questions.length}`);
-            console.log(`    ID:        ${survey.id}`);
-            console.log(`    URL:       ${survey.url}`);
-          }
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No surveys found.');
+          return;
         }
-      } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        process.exit(1);
+        for (const survey of result) {
+          console.log(`  ${survey.name}`);
+          console.log(`    Status:    ${survey.status}`);
+          console.log(`    Questions: ${survey.questions.length}`);
+          console.log(`    ID:        ${survey.id}`);
+          console.log(`    URL:       ${survey.url}`);
+        }
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 surveys
   .command('view-results')
@@ -1086,47 +977,42 @@ surveys
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--survey-id <id>', 'Survey ID')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: {
-      project: string;
-      surveyId: string;
-      json?: boolean;
-    }) => {
-      try {
-        const service = new BloomreachSurveysService(options.project);
-        const result = await service.viewSurveyResults({
-          project: options.project,
-          surveyId: options.surveyId,
-        });
+  .action(async (options: { project: string; surveyId: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachSurveysService(options.project);
+      const result = await service.viewSurveyResults({
+        project: options.project,
+        surveyId: options.surveyId,
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          console.log(`Survey Results: ${result.surveyId}`);
-          console.log(`  Total Responses:  ${result.totalResponses}`);
-          console.log(`  Completion Rate:  ${(result.completionRate * 100).toFixed(1)}%`);
-          for (const dist of result.responseDistribution) {
-            console.log(`  Question: ${dist.questionText}`);
-            for (const [answer, count] of Object.entries(dist.answers)) {
-              console.log(`    ${answer}: ${count}`);
-            }
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Survey Results: ${result.surveyId}`);
+        console.log(`  Total Responses:  ${result.totalResponses}`);
+        console.log(`  Completion Rate:  ${(result.completionRate * 100).toFixed(1)}%`);
+        for (const dist of result.responseDistribution) {
+          console.log(`  Question: ${dist.questionText}`);
+          for (const [answer, count] of Object.entries(dist.answers)) {
+            console.log(`    ${answer}: ${count}`);
           }
         }
-      } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        process.exit(1);
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 surveys
   .command('create')
   .description('Prepare creation of a new on-site survey (two-phase commit)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--name <name>', 'Survey name')
-  .requiredOption('--questions <json>', 'JSON array of questions [{id, type, text, options?, required?}]')
+  .requiredOption(
+    '--questions <json>',
+    'JSON array of questions [{id, type, text, options?, required?}]',
+  )
   .option('--audience <audience>', 'Target audience segment')
   .option('--page-url <url>', 'Page URL where survey appears')
   .option('--trigger-event <event>', 'Trigger event name')
@@ -1192,9 +1078,7 @@ surveys
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -1207,40 +1091,31 @@ surveys
   .requiredOption('--survey-id <id>', 'Survey ID')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: {
-      project: string;
-      surveyId: string;
-      note?: string;
-      json?: boolean;
-    }) => {
-      try {
-        const service = new BloomreachSurveysService(options.project);
-        const result = service.prepareStartSurvey({
-          project: options.project,
-          surveyId: options.surveyId,
-          operatorNote: options.note,
-        });
+  .action(async (options: { project: string; surveyId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachSurveysService(options.project);
+      const result = service.prepareStartSurvey({
+        project: options.project,
+        surveyId: options.surveyId,
+        operatorNote: options.note,
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          console.log('Survey start prepared.');
-          console.log(`  Survey:  ${options.surveyId}`);
-          console.log(`  Token:   ${result.confirmToken}`);
-          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
-          console.log('');
-          console.log('To confirm, run:');
-          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
-        }
-      } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        process.exit(1);
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Survey start prepared.');
+        console.log(`  Survey:  ${options.surveyId}`);
+        console.log(`  Token:   ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 surveys
   .command('stop')
@@ -1249,40 +1124,31 @@ surveys
   .requiredOption('--survey-id <id>', 'Survey ID')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: {
-      project: string;
-      surveyId: string;
-      note?: string;
-      json?: boolean;
-    }) => {
-      try {
-        const service = new BloomreachSurveysService(options.project);
-        const result = service.prepareStopSurvey({
-          project: options.project,
-          surveyId: options.surveyId,
-          operatorNote: options.note,
-        });
+  .action(async (options: { project: string; surveyId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachSurveysService(options.project);
+      const result = service.prepareStopSurvey({
+        project: options.project,
+        surveyId: options.surveyId,
+        operatorNote: options.note,
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          console.log('Survey stop prepared.');
-          console.log(`  Survey:  ${options.surveyId}`);
-          console.log(`  Token:   ${result.confirmToken}`);
-          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
-          console.log('');
-          console.log('To confirm, run:');
-          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
-        }
-      } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        process.exit(1);
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Survey stop prepared.');
+        console.log(`  Survey:  ${options.surveyId}`);
+        console.log(`  Token:   ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 surveys
   .command('archive')
@@ -1291,40 +1157,31 @@ surveys
   .requiredOption('--survey-id <id>', 'Survey ID')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
-  .action(
-    async (options: {
-      project: string;
-      surveyId: string;
-      note?: string;
-      json?: boolean;
-    }) => {
-      try {
-        const service = new BloomreachSurveysService(options.project);
-        const result = service.prepareArchiveSurvey({
-          project: options.project,
-          surveyId: options.surveyId,
-          operatorNote: options.note,
-        });
+  .action(async (options: { project: string; surveyId: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachSurveysService(options.project);
+      const result = service.prepareArchiveSurvey({
+        project: options.project,
+        surveyId: options.surveyId,
+        operatorNote: options.note,
+      });
 
-        if (options.json) {
-          printJson(result);
-        } else {
-          console.log('Survey archive prepared.');
-          console.log(`  Survey:  ${options.surveyId}`);
-          console.log(`  Token:   ${result.confirmToken}`);
-          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
-          console.log('');
-          console.log('To confirm, run:');
-          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
-        }
-      } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
-        process.exit(1);
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Survey archive prepared.');
+        console.log(`  Survey:  ${options.surveyId}`);
+        console.log(`  Token:   ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
       }
-    },
-  );
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
 
 const campaignCalendar = program
   .command('campaigns-calendar')
@@ -1338,12 +1195,7 @@ campaignCalendar
   .option('--end-date <date>', 'End date (YYYY-MM-DD)')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: {
-      project: string;
-      startDate?: string;
-      endDate?: string;
-      json?: boolean;
-    }) => {
+    async (options: { project: string; startDate?: string; endDate?: string; json?: boolean }) => {
       try {
         const service = new BloomreachCampaignCalendarService(options.project);
         const result = await service.viewCampaignCalendar({
@@ -1370,9 +1222,7 @@ campaignCalendar
           }
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -1385,7 +1235,10 @@ campaignCalendar
   .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
   .option('--end-date <date>', 'End date (YYYY-MM-DD)')
   .option('--type <type>', 'Campaign type (email, sms, push, in_app, weblayer, webhook)')
-  .option('--status <status>', 'Campaign status (draft, scheduled, running, paused, stopped, finished)')
+  .option(
+    '--status <status>',
+    'Campaign status (draft, scheduled, running, paused, stopped, finished)',
+  )
   .option('--channel <channel>', 'Channel (email, sms, push, in_app, weblayer, webhook)')
   .option('--json', 'Output as JSON')
   .action(
@@ -1427,9 +1280,7 @@ campaignCalendar
           }
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -1442,7 +1293,10 @@ campaignCalendar
   .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
   .option('--end-date <date>', 'End date (YYYY-MM-DD)')
   .option('--type <type>', 'Campaign type filter (email, sms, push, in_app, weblayer, webhook)')
-  .option('--status <status>', 'Campaign status filter (draft, scheduled, running, paused, stopped, finished)')
+  .option(
+    '--status <status>',
+    'Campaign status filter (draft, scheduled, running, paused, stopped, finished)',
+  )
   .option('--channel <channel>', 'Channel filter (email, sms, push, in_app, weblayer, webhook)')
   .option('--format <format>', 'Export format (json, csv)', 'json')
   .option('--note <note>', 'Operator note for audit trail')
@@ -1484,17 +1338,13 @@ campaignCalendar
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
   );
 
-const trends = program
-  .command('trends')
-  .description('Manage Bloomreach Engagement trend analyses');
+const trends = program.command('trends').description('Manage Bloomreach Engagement trend analyses');
 
 trends
   .command('list')
@@ -1522,9 +1372,7 @@ trends
         }
       }
     } catch (error) {
-      console.error(
-        `Error: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
       process.exit(1);
     }
   });
@@ -1573,9 +1421,7 @@ trends
           }
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -1587,7 +1433,11 @@ trends
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--name <name>', 'Trend analysis name')
   .requiredOption('--events <csv>', 'Events to track (comma-separated)')
-  .option('--granularity <granularity>', 'Time granularity (hourly, daily, weekly, monthly)', 'daily')
+  .option(
+    '--granularity <granularity>',
+    'Time granularity (hourly, daily, weekly, monthly)',
+    'daily',
+  )
   .option('--customer-attributes <json>', 'JSON object of customer attribute filters')
   .option('--event-properties <json>', 'JSON object of event property filters')
   .option('--note <note>', 'Operator note for audit trail')
@@ -1612,17 +1462,14 @@ trends
           >;
         }
         if (options.eventProperties) {
-          filters.eventProperties = JSON.parse(options.eventProperties) as Record<
-            string,
-            string
-          >;
+          filters.eventProperties = JSON.parse(options.eventProperties) as Record<string, string>;
         }
 
         const service = new BloomreachTrendsService(options.project);
         const result = service.prepareCreateTrendAnalysis({
           project: options.project,
           name: options.name,
-          events: options.events.split(',').map(event => event.trim()),
+          events: options.events.split(',').map((event) => event.trim()),
           granularity: options.granularity,
           filters: Object.keys(filters).length > 0 ? filters : undefined,
           operatorNote: options.note,
@@ -1640,9 +1487,7 @@ trends
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -1686,9 +1531,7 @@ trends
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -1702,12 +1545,7 @@ trends
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: {
-      project: string;
-      analysisId: string;
-      note?: string;
-      json?: boolean;
-    }) => {
+    async (options: { project: string; analysisId: string; note?: string; json?: boolean }) => {
       try {
         const service = new BloomreachTrendsService(options.project);
         const result = service.prepareArchiveTrendAnalysis({
@@ -1728,9 +1566,7 @@ trends
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -1766,9 +1602,7 @@ funnels
         }
       }
     } catch (error) {
-      console.error(
-        `Error: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
       process.exit(1);
     }
   });
@@ -1816,9 +1650,7 @@ funnels
           }
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -1856,10 +1688,7 @@ funnels
           >;
         }
         if (options.eventProperties) {
-          filters.eventProperties = JSON.parse(options.eventProperties) as Record<
-            string,
-            string
-          >;
+          filters.eventProperties = JSON.parse(options.eventProperties) as Record<string, string>;
         }
 
         const service = new BloomreachFunnelsService(options.project);
@@ -1868,9 +1697,7 @@ funnels
           name: options.name,
           steps,
           timeLimitMs:
-            options.timeLimitMs !== undefined
-              ? parseInt(options.timeLimitMs, 10)
-              : undefined,
+            options.timeLimitMs !== undefined ? parseInt(options.timeLimitMs, 10) : undefined,
           filters: Object.keys(filters).length > 0 ? filters : undefined,
           operatorNote: options.note,
         });
@@ -1887,9 +1714,7 @@ funnels
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -1933,9 +1758,7 @@ funnels
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -1949,12 +1772,7 @@ funnels
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: {
-      project: string;
-      analysisId: string;
-      note?: string;
-      json?: boolean;
-    }) => {
+    async (options: { project: string; analysisId: string; note?: string; json?: boolean }) => {
       try {
         const service = new BloomreachFunnelsService(options.project);
         const result = service.prepareArchiveFunnelAnalysis({
@@ -1975,9 +1793,7 @@ funnels
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -2014,9 +1830,7 @@ retentions
         }
       }
     } catch (error) {
-      console.error(
-        `Error: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
       process.exit(1);
     }
   });
@@ -2067,9 +1881,7 @@ retentions
           }
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -2112,10 +1924,7 @@ retentions
           >;
         }
         if (options.eventProperties) {
-          filters.eventProperties = JSON.parse(options.eventProperties) as Record<
-            string,
-            string
-          >;
+          filters.eventProperties = JSON.parse(options.eventProperties) as Record<string, string>;
         }
 
         const dateRange =
@@ -2147,9 +1956,7 @@ retentions
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -2193,9 +2000,7 @@ retentions
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
@@ -2209,12 +2014,7 @@ retentions
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
-    async (options: {
-      project: string;
-      analysisId: string;
-      note?: string;
-      json?: boolean;
-    }) => {
+    async (options: { project: string; analysisId: string; note?: string; json?: boolean }) => {
       try {
         const service = new BloomreachRetentionsService(options.project);
         const result = service.prepareArchiveRetentionAnalysis({
@@ -2235,9 +2035,250 @@ retentions
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
         }
       } catch (error) {
-        console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const flows = program
+  .command('flows')
+  .description('Manage Bloomreach Engagement flow analyses (Sankey-style journey visualization)');
+
+flows
+  .command('list')
+  .description('List all flow analyses in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachFlowsService(options.project);
+      const result = await service.listFlowAnalyses({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No flow analyses found.');
+          return;
+        }
+        for (const flow of result) {
+          console.log(`  ${flow.name}`);
+          console.log(`    Starting event: ${flow.startingEvent}`);
+          console.log(`    Events:         ${flow.events.length}`);
+          console.log(`    Max depth:      ${flow.maxJourneyDepth ?? 'none'}`);
+          console.log(`    ID:             ${flow.id}`);
+          console.log(`    URL:            ${flow.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+flows
+  .command('view-results')
+  .description('View journey paths, volumes and drop-offs for a flow analysis')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--analysis-id <id>', 'Flow analysis ID')
+  .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
+  .option('--end-date <date>', 'End date (YYYY-MM-DD)')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      analysisId: string;
+      startDate?: string;
+      endDate?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachFlowsService(options.project);
+        const result = await service.viewFlowResults({
+          project: options.project,
+          analysisId: options.analysisId,
+          startDate: options.startDate,
+          endDate: options.endDate,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log(`Flow Analysis: ${result.analysisName}`);
+          console.log(`  Starting event:  ${result.startingEvent}`);
+          console.log(`  Date range:      ${result.startDate} to ${result.endDate}`);
+          console.log(`  Total journeys:  ${result.totalJourneys}`);
+          console.log(`  Max depth:       ${result.maxJourneyDepth ?? 'none'}`);
+          if (result.paths.length === 0) {
+            console.log('  Paths: none');
+          } else {
+            console.log('  Top paths:');
+            for (const path of result.paths) {
+              console.log(
+                `    ${path.events.join(' → ')} | volume=${path.volume}, conversion=${path.conversionRate}`,
+              );
+            }
+          }
+          if (result.dropOffs.length > 0) {
+            console.log('  Drop-offs:');
+            for (const dropOff of result.dropOffs) {
+              console.log(
+                `    After ${dropOff.afterEvent}: volume=${dropOff.volume}, rate=${dropOff.dropOffRate}`,
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+flows
+  .command('create')
+  .description('Prepare creation of a new flow analysis (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Flow analysis name')
+  .requiredOption('--starting-event <event>', 'Starting event for the journey')
+  .requiredOption('--events <json>', 'JSON array of events to track [{order, eventName, label?}]')
+  .option('--max-journey-depth <n>', 'Maximum journey depth (1-20)')
+  .option('--customer-attributes <json>', 'JSON object of customer attribute filters')
+  .option('--event-properties <json>', 'JSON object of event property filters')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      startingEvent: string;
+      events: string;
+      maxJourneyDepth?: string;
+      customerAttributes?: string;
+      eventProperties?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const events = JSON.parse(options.events) as FlowEvent[];
+        const filters: FlowFilter = {};
+        if (options.customerAttributes) {
+          filters.customerAttributes = JSON.parse(options.customerAttributes) as Record<
+            string,
+            string
+          >;
+        }
+        if (options.eventProperties) {
+          filters.eventProperties = JSON.parse(options.eventProperties) as Record<string, string>;
+        }
+
+        const service = new BloomreachFlowsService(options.project);
+        const result = service.prepareCreateFlowAnalysis({
+          project: options.project,
+          name: options.name,
+          startingEvent: options.startingEvent,
+          events,
+          maxJourneyDepth:
+            options.maxJourneyDepth !== undefined
+              ? parseInt(options.maxJourneyDepth, 10)
+              : undefined,
+          filters: Object.keys(filters).length > 0 ? filters : undefined,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Flow analysis creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+flows
+  .command('clone')
+  .description('Prepare cloning a flow analysis (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--analysis-id <id>', 'Flow analysis ID to clone')
+  .option('--new-name <name>', 'Name for the cloned analysis')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      analysisId: string;
+      newName?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachFlowsService(options.project);
+        const result = service.prepareCloneFlowAnalysis({
+          project: options.project,
+          analysisId: options.analysisId,
+          newName: options.newName,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Flow analysis clone prepared.');
+          console.log(`  Source:   ${options.analysisId}`);
+          console.log(`  New name: ${options.newName ?? '(auto-generated)'}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+flows
+  .command('archive')
+  .description('Prepare archiving a flow analysis (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--analysis-id <id>', 'Flow analysis ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; analysisId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachFlowsService(options.project);
+        const result = service.prepareArchiveFlowAnalysis({
+          project: options.project,
+          analysisId: options.analysisId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Flow analysis archive prepared.');
+          console.log(`  Analysis: ${options.analysisId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     },
