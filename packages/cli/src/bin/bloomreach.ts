@@ -7,6 +7,7 @@ import {
   BloomreachAssetManagerService,
   BloomreachCampaignCalendarService,
   BloomreachCampaignSettingsService,
+  BloomreachChannelSettingsService,
   BloomreachCatalogsService,
   BloomreachClient,
   BloomreachCustomersService,
@@ -11218,5 +11219,492 @@ access
       process.exit(1);
     }
   });
+
+// ---------------------------------------------------------------------------
+// Channel Settings
+// ---------------------------------------------------------------------------
+
+const channelSettings = program
+  .command('channel-settings')
+  .description(
+    'Manage Bloomreach channel configuration (email, push, SMS, mobile messaging, payments, Facebook)',
+  );
+
+channelSettings
+  .command('view-email')
+  .description(
+    'View email channel settings including sender domains, DKIM/SPF status, and default from address ' +
+      '(note: requires browser automation — not yet implemented)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachChannelSettingsService(options.project);
+      const result = await service.viewEmailSettings({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Email Channel Settings');
+        if (result.defaultFromAddress) {
+          console.log(`  Default From: ${result.defaultFromAddress}`);
+        }
+        if (result.senderDomains && result.senderDomains.length > 0) {
+          console.log(`  Sender Domains: ${result.senderDomains.join(', ')}`);
+        }
+        console.log(`  DKIM: ${result.dkimConfigured ? 'configured' : 'not configured'}`);
+        console.log(`  SPF:  ${result.spfConfigured ? 'configured' : 'not configured'}`);
+        console.log(`  URL:  ${result.url}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+channelSettings
+  .command('view-push')
+  .description(
+    'View push notification settings including provider, Firebase, and APNs status ' +
+      '(note: requires browser automation — not yet implemented)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachChannelSettingsService(options.project);
+      const result = await service.viewPushNotificationSettings({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Push Notification Settings');
+        if (result.provider) {
+          console.log(`  Provider: ${result.provider}`);
+        }
+        console.log(
+          `  Firebase: ${result.firebaseConfigured ? 'configured' : 'not configured'}`,
+        );
+        console.log(`  APNs:     ${result.apnsConfigured ? 'configured' : 'not configured'}`);
+        console.log(`  URL:      ${result.url}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+channelSettings
+  .command('view-sms')
+  .description(
+    'View SMS channel settings including provider and sender number ' +
+      '(note: requires browser automation — not yet implemented)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachChannelSettingsService(options.project);
+      const result = await service.viewSmsSettings({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('SMS Channel Settings');
+        if (result.provider) {
+          console.log(`  Provider:      ${result.provider}`);
+        }
+        if (result.senderNumber) {
+          console.log(`  Sender Number: ${result.senderNumber}`);
+        }
+        console.log(`  URL:           ${result.url}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+channelSettings
+  .command('view-mobile-messaging')
+  .description(
+    'View mobile messaging settings including WhatsApp and RCS status ' +
+      '(note: requires browser automation — not yet implemented)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachChannelSettingsService(options.project);
+      const result = await service.viewMobileMessagingSettings({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Mobile Messaging Settings');
+        console.log(
+          `  WhatsApp: ${result.whatsappConfigured ? 'configured' : 'not configured'}`,
+        );
+        console.log(`  RCS:      ${result.rcsConfigured ? 'configured' : 'not configured'}`);
+        console.log(`  URL:      ${result.url}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+channelSettings
+  .command('view-payment-tracking')
+  .description(
+    'View payment tracking settings including provider and enabled status ' +
+      '(note: requires browser automation — not yet implemented)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachChannelSettingsService(options.project);
+      const result = await service.viewPaymentTrackingSettings({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Payment Tracking Settings');
+        if (result.provider) {
+          console.log(`  Provider: ${result.provider}`);
+        }
+        console.log(`  Enabled:  ${result.enabled ? 'yes' : 'no'}`);
+        console.log(`  URL:      ${result.url}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+channelSettings
+  .command('view-facebook-messaging')
+  .description(
+    'View Facebook Messaging settings including page connection status ' +
+      '(note: requires browser automation — not yet implemented)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachChannelSettingsService(options.project);
+      const result = await service.viewFacebookMessagingSettings({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Facebook Messaging Settings');
+        console.log(
+          `  Page Connected: ${result.pageConnected ? 'yes' : 'no'}`,
+        );
+        if (result.pageName) {
+          console.log(`  Page Name:      ${result.pageName}`);
+        }
+        console.log(`  URL:            ${result.url}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+channelSettings
+  .command('configure-email-domain')
+  .description(
+    'Prepare configuration of an email sender domain (two-phase commit). ' +
+      'Domain max 253 characters.',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--domain <domain>', 'Email sender domain (e.g. mail.example.com)')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; domain: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachChannelSettingsService(options.project);
+        const result = service.prepareConfigureEmailDomain({
+          project: options.project,
+          domain: options.domain,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Email domain configuration prepared.');
+          console.log(`  Domain:  ${options.domain}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+channelSettings
+  .command('configure-push-provider')
+  .description(
+    'Prepare configuration of a push notification provider (two-phase commit). ' +
+      'Provider name max 100 characters.',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--provider <provider>', 'Push notification provider name (e.g. firebase, apns)')
+  .option(
+    '--firebase-credentials <creds>',
+    'Firebase service account credentials (JSON string or path)',
+  )
+  .option('--apns-certificate <cert>', 'APNs certificate (PEM string or path)')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      provider: string;
+      firebaseCredentials?: string;
+      apnsCertificate?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachChannelSettingsService(options.project);
+        const result = service.prepareConfigurePushProvider({
+          project: options.project,
+          provider: options.provider,
+          firebaseCredentials: options.firebaseCredentials,
+          apnsCertificate: options.apnsCertificate,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Push provider configuration prepared.');
+          console.log(`  Provider: ${options.provider}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+channelSettings
+  .command('configure-sms-provider')
+  .description(
+    'Prepare configuration of an SMS provider (two-phase commit). ' +
+      'Provider name max 100 characters, sender number max 30 characters.',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--provider <provider>', 'SMS provider name (e.g. twilio, vonage)')
+  .option('--sender-number <number>', 'Sender phone number (e.g. +15551234567)')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      provider: string;
+      senderNumber?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachChannelSettingsService(options.project);
+        const result = service.prepareConfigureSmsProvider({
+          project: options.project,
+          provider: options.provider,
+          senderNumber: options.senderNumber,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('SMS provider configuration prepared.');
+          console.log(`  Provider: ${options.provider}`);
+          if (options.senderNumber) {
+            console.log(`  Sender:   ${options.senderNumber}`);
+          }
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+channelSettings
+  .command('configure-mobile-messaging')
+  .description(
+    'Prepare configuration of mobile messaging channels (two-phase commit). ' +
+      'Supports WhatsApp and RCS toggles.',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--provider <provider>', 'Mobile messaging provider name')
+  .option('--whatsapp-enabled', 'Enable WhatsApp messaging')
+  .option('--no-whatsapp-enabled', 'Disable WhatsApp messaging')
+  .option('--rcs-enabled', 'Enable RCS messaging')
+  .option('--no-rcs-enabled', 'Disable RCS messaging')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      provider: string;
+      whatsappEnabled?: boolean;
+      rcsEnabled?: boolean;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachChannelSettingsService(options.project);
+        const result = service.prepareConfigureMobileMessaging({
+          project: options.project,
+          provider: options.provider,
+          whatsappEnabled: options.whatsappEnabled,
+          rcsEnabled: options.rcsEnabled,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Mobile messaging configuration prepared.');
+          console.log(`  Provider: ${options.provider}`);
+          if (options.whatsappEnabled !== undefined) {
+            console.log(`  WhatsApp: ${options.whatsappEnabled ? 'enabled' : 'disabled'}`);
+          }
+          if (options.rcsEnabled !== undefined) {
+            console.log(`  RCS:      ${options.rcsEnabled ? 'enabled' : 'disabled'}`);
+          }
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+channelSettings
+  .command('configure-payment-tracking')
+  .description(
+    'Prepare configuration of payment tracking (two-phase commit). ' +
+      'Provider name max 100 characters.',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--provider <provider>', 'Payment tracking provider name (e.g. stripe, braintree)')
+  .option('--enabled', 'Enable payment tracking')
+  .option('--no-enabled', 'Disable payment tracking')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      provider: string;
+      enabled?: boolean;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachChannelSettingsService(options.project);
+        const result = service.prepareConfigurePaymentTracking({
+          project: options.project,
+          provider: options.provider,
+          enabled: options.enabled,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Payment tracking configuration prepared.');
+          console.log(`  Provider: ${options.provider}`);
+          if (options.enabled !== undefined) {
+            console.log(`  Enabled:  ${options.enabled ? 'yes' : 'no'}`);
+          }
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+channelSettings
+  .command('configure-facebook-messaging')
+  .description(
+    'Prepare configuration of Facebook Messaging integration (two-phase commit). ' +
+      'Requires a Facebook Page ID.',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--page-id <id>', 'Facebook Page ID to connect')
+  .option('--access-token <token>', 'Facebook Page access token')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      pageId: string;
+      accessToken?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachChannelSettingsService(options.project);
+        const result = service.prepareConfigureFacebookMessaging({
+          project: options.project,
+          pageId: options.pageId,
+          accessToken: options.accessToken,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Facebook Messaging configuration prepared.');
+          console.log(`  Page ID: ${options.pageId}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
 
 program.parse();
