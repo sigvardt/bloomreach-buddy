@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 // ---------------------------------------------------------------------------
 // Action type constants
@@ -648,6 +649,21 @@ export function buildPageVariablesUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/project-settings/page-variables`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 // ---------------------------------------------------------------------------
 // Action executor interface + implementations
 // ---------------------------------------------------------------------------
@@ -659,284 +675,459 @@ export interface CampaignSettingsActionExecutor {
 
 class UpdateCampaignDefaultsExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = UPDATE_CAMPAIGN_DEFAULTS_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'UpdateCampaignDefaultsExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'UpdateCampaignDefaultsExecutor: not yet implemented. ' +
+        'Campaign defaults updates are only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CreateTimezoneExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = CREATE_TIMEZONE_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateTimezoneExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateTimezoneExecutor: not yet implemented. ' +
+        'Timezone creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class UpdateTimezoneExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = UPDATE_TIMEZONE_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'UpdateTimezoneExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'UpdateTimezoneExecutor: not yet implemented. ' +
+        'Timezone updates are only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class DeleteTimezoneExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = DELETE_TIMEZONE_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'DeleteTimezoneExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DeleteTimezoneExecutor: not yet implemented. ' +
+        'Timezone deletion is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CreateLanguageExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = CREATE_LANGUAGE_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateLanguageExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateLanguageExecutor: not yet implemented. ' +
+        'Language creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class UpdateLanguageExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = UPDATE_LANGUAGE_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'UpdateLanguageExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'UpdateLanguageExecutor: not yet implemented. ' +
+        'Language updates are only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class DeleteLanguageExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = DELETE_LANGUAGE_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'DeleteLanguageExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DeleteLanguageExecutor: not yet implemented. ' +
+        'Language deletion is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CreateFontExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = CREATE_FONT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateFontExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateFontExecutor: not yet implemented. ' +
+        'Font creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class UpdateFontExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = UPDATE_FONT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'UpdateFontExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'UpdateFontExecutor: not yet implemented. ' +
+        'Font updates are only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class DeleteFontExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = DELETE_FONT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'DeleteFontExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DeleteFontExecutor: not yet implemented. ' +
+        'Font deletion is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CreateThroughputPolicyExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = CREATE_THROUGHPUT_POLICY_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateThroughputPolicyExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateThroughputPolicyExecutor: not yet implemented. ' +
+        'Throughput policy creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class UpdateThroughputPolicyExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = UPDATE_THROUGHPUT_POLICY_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'UpdateThroughputPolicyExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'UpdateThroughputPolicyExecutor: not yet implemented. ' +
+        'Throughput policy updates are only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class DeleteThroughputPolicyExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = DELETE_THROUGHPUT_POLICY_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'DeleteThroughputPolicyExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DeleteThroughputPolicyExecutor: not yet implemented. ' +
+        'Throughput policy deletion is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CreateFrequencyPolicyExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = CREATE_FREQUENCY_POLICY_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateFrequencyPolicyExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateFrequencyPolicyExecutor: not yet implemented. ' +
+        'Frequency policy creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class UpdateFrequencyPolicyExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = UPDATE_FREQUENCY_POLICY_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'UpdateFrequencyPolicyExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'UpdateFrequencyPolicyExecutor: not yet implemented. ' +
+        'Frequency policy updates are only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class DeleteFrequencyPolicyExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = DELETE_FREQUENCY_POLICY_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'DeleteFrequencyPolicyExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DeleteFrequencyPolicyExecutor: not yet implemented. ' +
+        'Frequency policy deletion is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CreateConsentExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = CREATE_CONSENT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateConsentExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateConsentExecutor: not yet implemented. ' +
+        'Consent creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class UpdateConsentExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = UPDATE_CONSENT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'UpdateConsentExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'UpdateConsentExecutor: not yet implemented. ' +
+        'Consent updates are only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class DeleteConsentExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = DELETE_CONSENT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'DeleteConsentExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DeleteConsentExecutor: not yet implemented. ' +
+        'Consent deletion is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CreateUrlListExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = CREATE_URL_LIST_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateUrlListExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateUrlListExecutor: not yet implemented. ' +
+        'URL list creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class UpdateUrlListExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = UPDATE_URL_LIST_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'UpdateUrlListExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'UpdateUrlListExecutor: not yet implemented. ' +
+        'URL list updates are only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class DeleteUrlListExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = DELETE_URL_LIST_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'DeleteUrlListExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DeleteUrlListExecutor: not yet implemented. ' +
+        'URL list deletion is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CreatePageVariableExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = CREATE_PAGE_VARIABLE_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreatePageVariableExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreatePageVariableExecutor: not yet implemented. ' +
+        'Page variable creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class UpdatePageVariableExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = UPDATE_PAGE_VARIABLE_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'UpdatePageVariableExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'UpdatePageVariableExecutor: not yet implemented. ' +
+        'Page variable updates are only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class DeletePageVariableExecutor implements CampaignSettingsActionExecutor {
   readonly actionType = DELETE_PAGE_VARIABLE_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'DeletePageVariableExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DeletePageVariableExecutor: not yet implemented. ' +
+        'Page variable deletion is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createCampaignSettingsActionExecutors(): Record<
+export function createCampaignSettingsActionExecutors(apiConfig?: BloomreachApiConfig): Record<
   string,
   CampaignSettingsActionExecutor
 > {
   return {
-    [UPDATE_CAMPAIGN_DEFAULTS_ACTION_TYPE]: new UpdateCampaignDefaultsExecutor(),
-    [CREATE_TIMEZONE_ACTION_TYPE]: new CreateTimezoneExecutor(),
-    [UPDATE_TIMEZONE_ACTION_TYPE]: new UpdateTimezoneExecutor(),
-    [DELETE_TIMEZONE_ACTION_TYPE]: new DeleteTimezoneExecutor(),
-    [CREATE_LANGUAGE_ACTION_TYPE]: new CreateLanguageExecutor(),
-    [UPDATE_LANGUAGE_ACTION_TYPE]: new UpdateLanguageExecutor(),
-    [DELETE_LANGUAGE_ACTION_TYPE]: new DeleteLanguageExecutor(),
-    [CREATE_FONT_ACTION_TYPE]: new CreateFontExecutor(),
-    [UPDATE_FONT_ACTION_TYPE]: new UpdateFontExecutor(),
-    [DELETE_FONT_ACTION_TYPE]: new DeleteFontExecutor(),
-    [CREATE_THROUGHPUT_POLICY_ACTION_TYPE]: new CreateThroughputPolicyExecutor(),
-    [UPDATE_THROUGHPUT_POLICY_ACTION_TYPE]: new UpdateThroughputPolicyExecutor(),
-    [DELETE_THROUGHPUT_POLICY_ACTION_TYPE]: new DeleteThroughputPolicyExecutor(),
-    [CREATE_FREQUENCY_POLICY_ACTION_TYPE]: new CreateFrequencyPolicyExecutor(),
-    [UPDATE_FREQUENCY_POLICY_ACTION_TYPE]: new UpdateFrequencyPolicyExecutor(),
-    [DELETE_FREQUENCY_POLICY_ACTION_TYPE]: new DeleteFrequencyPolicyExecutor(),
-    [CREATE_CONSENT_ACTION_TYPE]: new CreateConsentExecutor(),
-    [UPDATE_CONSENT_ACTION_TYPE]: new UpdateConsentExecutor(),
-    [DELETE_CONSENT_ACTION_TYPE]: new DeleteConsentExecutor(),
-    [CREATE_URL_LIST_ACTION_TYPE]: new CreateUrlListExecutor(),
-    [UPDATE_URL_LIST_ACTION_TYPE]: new UpdateUrlListExecutor(),
-    [DELETE_URL_LIST_ACTION_TYPE]: new DeleteUrlListExecutor(),
-    [CREATE_PAGE_VARIABLE_ACTION_TYPE]: new CreatePageVariableExecutor(),
-    [UPDATE_PAGE_VARIABLE_ACTION_TYPE]: new UpdatePageVariableExecutor(),
-    [DELETE_PAGE_VARIABLE_ACTION_TYPE]: new DeletePageVariableExecutor(),
+    [UPDATE_CAMPAIGN_DEFAULTS_ACTION_TYPE]: new UpdateCampaignDefaultsExecutor(apiConfig),
+    [CREATE_TIMEZONE_ACTION_TYPE]: new CreateTimezoneExecutor(apiConfig),
+    [UPDATE_TIMEZONE_ACTION_TYPE]: new UpdateTimezoneExecutor(apiConfig),
+    [DELETE_TIMEZONE_ACTION_TYPE]: new DeleteTimezoneExecutor(apiConfig),
+    [CREATE_LANGUAGE_ACTION_TYPE]: new CreateLanguageExecutor(apiConfig),
+    [UPDATE_LANGUAGE_ACTION_TYPE]: new UpdateLanguageExecutor(apiConfig),
+    [DELETE_LANGUAGE_ACTION_TYPE]: new DeleteLanguageExecutor(apiConfig),
+    [CREATE_FONT_ACTION_TYPE]: new CreateFontExecutor(apiConfig),
+    [UPDATE_FONT_ACTION_TYPE]: new UpdateFontExecutor(apiConfig),
+    [DELETE_FONT_ACTION_TYPE]: new DeleteFontExecutor(apiConfig),
+    [CREATE_THROUGHPUT_POLICY_ACTION_TYPE]: new CreateThroughputPolicyExecutor(apiConfig),
+    [UPDATE_THROUGHPUT_POLICY_ACTION_TYPE]: new UpdateThroughputPolicyExecutor(apiConfig),
+    [DELETE_THROUGHPUT_POLICY_ACTION_TYPE]: new DeleteThroughputPolicyExecutor(apiConfig),
+    [CREATE_FREQUENCY_POLICY_ACTION_TYPE]: new CreateFrequencyPolicyExecutor(apiConfig),
+    [UPDATE_FREQUENCY_POLICY_ACTION_TYPE]: new UpdateFrequencyPolicyExecutor(apiConfig),
+    [DELETE_FREQUENCY_POLICY_ACTION_TYPE]: new DeleteFrequencyPolicyExecutor(apiConfig),
+    [CREATE_CONSENT_ACTION_TYPE]: new CreateConsentExecutor(apiConfig),
+    [UPDATE_CONSENT_ACTION_TYPE]: new UpdateConsentExecutor(apiConfig),
+    [DELETE_CONSENT_ACTION_TYPE]: new DeleteConsentExecutor(apiConfig),
+    [CREATE_URL_LIST_ACTION_TYPE]: new CreateUrlListExecutor(apiConfig),
+    [UPDATE_URL_LIST_ACTION_TYPE]: new UpdateUrlListExecutor(apiConfig),
+    [DELETE_URL_LIST_ACTION_TYPE]: new DeleteUrlListExecutor(apiConfig),
+    [CREATE_PAGE_VARIABLE_ACTION_TYPE]: new CreatePageVariableExecutor(apiConfig),
+    [UPDATE_PAGE_VARIABLE_ACTION_TYPE]: new UpdatePageVariableExecutor(apiConfig),
+    [DELETE_PAGE_VARIABLE_ACTION_TYPE]: new DeletePageVariableExecutor(apiConfig),
   };
 }
 
@@ -945,6 +1136,7 @@ export function createCampaignSettingsActionExecutors(): Record<
 // ---------------------------------------------------------------------------
 
 export class BloomreachCampaignSettingsService {
+  private readonly apiConfig?: BloomreachApiConfig;
   private readonly campaignsUrl: string;
   private readonly timezonesUrl: string;
   private readonly languagesUrl: string;
@@ -955,8 +1147,9 @@ export class BloomreachCampaignSettingsService {
   private readonly urlListsUrl: string;
   private readonly pageVariablesUrl: string;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     const validated = validateProject(project);
+    this.apiConfig = apiConfig;
     this.campaignsUrl = buildCampaignSettingsUrl(validated);
     this.timezonesUrl = buildTimezonesUrl(validated);
     this.languagesUrl = buildLanguagesUrl(validated);
@@ -1005,60 +1198,107 @@ export class BloomreachCampaignSettingsService {
   }
 
   async viewCampaignDefaults(
-    _input?: ViewCampaignDefaultsInput,
+    input?: ViewCampaignDefaultsInput,
   ): Promise<BloomreachCampaignDefaults> {
+    void this.apiConfig;
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'viewCampaignDefaults: not yet implemented. Requires browser automation infrastructure.',
+      'viewCampaignDefaults: not yet implemented. the Bloomreach API does not provide an endpoint for campaign defaults. ' +
+        'Campaign defaults must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Campaigns).',
     );
   }
 
-  async listTimezones(_input?: ListTimezonesInput): Promise<BloomreachTimezone[]> {
+  async listTimezones(input?: ListTimezonesInput): Promise<BloomreachTimezone[]> {
+    void this.apiConfig;
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'listTimezones: not yet implemented. Requires browser automation infrastructure.',
+      'listTimezones: not yet implemented. the Bloomreach API does not provide an endpoint for timezones. ' +
+        'Timezones must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Timezones).',
     );
   }
 
-  async listLanguages(_input?: ListLanguagesInput): Promise<BloomreachLanguage[]> {
+  async listLanguages(input?: ListLanguagesInput): Promise<BloomreachLanguage[]> {
+    void this.apiConfig;
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'listLanguages: not yet implemented. Requires browser automation infrastructure.',
+      'listLanguages: not yet implemented. the Bloomreach API does not provide an endpoint for languages. ' +
+        'Languages must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Languages).',
     );
   }
 
-  async listFonts(_input?: ListFontsInput): Promise<BloomreachFont[]> {
-    throw new Error('listFonts: not yet implemented. Requires browser automation infrastructure.');
+  async listFonts(input?: ListFontsInput): Promise<BloomreachFont[]> {
+    void this.apiConfig;
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
+    throw new Error(
+      'listFonts: not yet implemented. the Bloomreach API does not provide an endpoint for fonts. ' +
+        'Fonts must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Fonts).',
+    );
   }
 
   async listThroughputPolicies(
-    _input?: ListThroughputPoliciesInput,
+    input?: ListThroughputPoliciesInput,
   ): Promise<BloomreachThroughputPolicy[]> {
+    void this.apiConfig;
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'listThroughputPolicies: not yet implemented. Requires browser automation infrastructure.',
+      'listThroughputPolicies: not yet implemented. the Bloomreach API does not provide an endpoint for throughput policies. ' +
+        'Throughput policies must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Throughput Policy).',
     );
   }
 
   async listFrequencyPolicies(
-    _input?: ListFrequencyPoliciesInput,
+    input?: ListFrequencyPoliciesInput,
   ): Promise<BloomreachFrequencyPolicy[]> {
+    void this.apiConfig;
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'listFrequencyPolicies: not yet implemented. Requires browser automation infrastructure.',
+      'listFrequencyPolicies: not yet implemented. the Bloomreach API does not provide an endpoint for frequency policies. ' +
+        'Frequency policies must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Campaign Frequency Policies).',
     );
   }
 
-  async listConsents(_input?: ListConsentsInput): Promise<BloomreachConsent[]> {
+  async listConsents(input?: ListConsentsInput): Promise<BloomreachConsent[]> {
+    void this.apiConfig;
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'listConsents: not yet implemented. Requires browser automation infrastructure.',
+      'listConsents: not yet implemented. the Bloomreach API does not provide an endpoint for consents. ' +
+        'Consents must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Consents).',
     );
   }
 
-  async listUrlLists(_input?: ListUrlListsInput): Promise<BloomreachUrlList[]> {
+  async listUrlLists(input?: ListUrlListsInput): Promise<BloomreachUrlList[]> {
+    void this.apiConfig;
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'listUrlLists: not yet implemented. Requires browser automation infrastructure.',
+      'listUrlLists: not yet implemented. the Bloomreach API does not provide an endpoint for URL lists. ' +
+        'URL lists must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Global URL Lists).',
     );
   }
 
-  async listPageVariables(_input?: ListPageVariablesInput): Promise<BloomreachPageVariable[]> {
+  async listPageVariables(input?: ListPageVariablesInput): Promise<BloomreachPageVariable[]> {
+    void this.apiConfig;
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'listPageVariables: not yet implemented. Requires browser automation infrastructure.',
+      'listPageVariables: not yet implemented. the Bloomreach API does not provide an endpoint for page variables. ' +
+        'Page variables must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Page Variables).',
     );
   }
 

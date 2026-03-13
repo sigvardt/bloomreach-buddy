@@ -6528,12 +6528,19 @@ projectSettingsVariables
 
 const campaignSettings = program
   .command('campaign-settings')
-  .description('Manage Bloomreach campaign settings');
+  .description(
+    'Manage Bloomreach campaign settings (sender defaults, timezones, languages, fonts, throughput/frequency policies, consents, URL lists, and page variables)',
+  );
 
 campaignSettings
   .command('defaults')
-  .description('View campaign defaults')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description(
+    'View campaign defaults — sender name, email, reply-to address, and UTM parameters (note: UI-only, no REST API endpoint)',
+  )
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -6572,15 +6579,23 @@ campaignSettings
 
 campaignSettings
   .command('update-defaults')
-  .description('Prepare campaign defaults update (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description(
+    'Prepare campaign defaults update (two-phase commit, UI-only). Updates sender identity and UTM tracking parameters.',
+  )
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .option('--default-sender-name <name>', 'Default sender name')
   .option('--default-sender-email <email>', 'Default sender email address')
   .option('--default-reply-to-email <email>', 'Default reply-to email address')
   .option('--default-utm-source <source>', 'Default UTM source parameter')
   .option('--default-utm-medium <medium>', 'Default UTM medium parameter')
   .option('--default-utm-campaign <campaign>', 'Default UTM campaign parameter')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -6626,12 +6641,17 @@ campaignSettings
 
 const campaignSettingsTimezones = campaignSettings
   .command('timezones')
-  .description('Manage configured timezones');
+  .description(
+    'Manage project timezones — defines available timezones for campaign scheduling and delivery windows',
+  );
 
 campaignSettingsTimezones
   .command('list')
-  .description('List configured timezones')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description('List configured timezones (note: UI-only, no REST API endpoint)')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -6664,12 +6684,21 @@ campaignSettingsTimezones
 
 campaignSettingsTimezones
   .command('create')
-  .description('Prepare timezone creation (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--name <name>', 'Timezone name (IANA format, e.g. "Europe/Prague")')
-  .option('--utc-offset <offset>', 'UTC offset (e.g. "+01:00")')
-  .option('--is-default', 'Set as default timezone')
-  .option('--note <note>', 'Operator note for audit trail')
+  .description('Prepare timezone creation (two-phase commit, UI-only)')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
+  .requiredOption(
+    '--name <name>',
+    'Timezone name in IANA format (e.g. "Europe/Prague", "America/New_York")',
+  )
+  .option('--utc-offset <offset>', 'UTC offset in ±HH:MM format (e.g. "+01:00", "-05:00")')
+  .option('--is-default', 'Set as the project default timezone')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -6710,13 +6739,24 @@ campaignSettingsTimezones
 
 campaignSettingsTimezones
   .command('update')
-  .description('Prepare timezone update (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description(
+    'Prepare timezone update (two-phase commit, UI-only). Updates timezone name, UTC offset, and default status.',
+  )
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--timezone-id <id>', 'Timezone ID')
-  .option('--name <name>', 'Timezone name (IANA format, e.g. "Europe/Prague")')
-  .option('--utc-offset <offset>', 'UTC offset (e.g. "+01:00")')
-  .option('--is-default', 'Set as default timezone')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--name <name>',
+    'Timezone name in IANA format (e.g. "Europe/Prague", "America/New_York")',
+  )
+  .option('--utc-offset <offset>', 'UTC offset in ±HH:MM format (e.g. "+01:00", "-05:00")')
+  .option('--is-default', 'Set as the project default timezone')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -6762,10 +6802,16 @@ campaignSettingsTimezones
 
 campaignSettingsTimezones
   .command('delete')
-  .description('Prepare timezone deletion (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description('Prepare timezone deletion (two-phase commit, UI-only).')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--timezone-id <id>', 'Timezone ID')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: { project: string; timezoneId: string; note?: string; json?: boolean }) => {
@@ -6797,12 +6843,17 @@ campaignSettingsTimezones
 
 const campaignSettingsLanguages = campaignSettings
   .command('languages')
-  .description('Manage configured languages');
+  .description(
+    'Manage project languages — defines available languages for campaign localization and content translation',
+  );
 
 campaignSettingsLanguages
   .command('list')
   .description('List configured languages')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -6833,11 +6884,17 @@ campaignSettingsLanguages
 campaignSettingsLanguages
   .command('create')
   .description('Prepare language creation (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--code <code>', 'Language code (ISO 639-1, e.g. "en")')
-  .requiredOption('--name <name>', 'Language name')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
+  .requiredOption('--code <code>', 'ISO 639-1 language code (e.g. "en", "cs", "da")')
+  .requiredOption('--name <name>', 'Human-readable language name (e.g. "English", "Czech")')
   .option('--is-default', 'Set as default language')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -6879,12 +6936,18 @@ campaignSettingsLanguages
 campaignSettingsLanguages
   .command('update')
   .description('Prepare language update (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--language-code <code>', 'Language code to update')
-  .option('--code <code>', 'Updated language code (ISO 639-1, e.g. "en")')
-  .option('--name <name>', 'Updated language name')
+  .option('--code <code>', 'ISO 639-1 language code (e.g. "en", "cs", "da")')
+  .option('--name <name>', 'Human-readable language name (e.g. "English", "Czech")')
   .option('--is-default', 'Set as default language')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -6931,9 +6994,15 @@ campaignSettingsLanguages
 campaignSettingsLanguages
   .command('delete')
   .description('Prepare language deletion (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--language-code <code>', 'Language code')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: { project: string; languageCode: string; note?: string; json?: boolean }) => {
@@ -6965,12 +7034,17 @@ campaignSettingsLanguages
 
 const campaignSettingsFonts = campaignSettings
   .command('fonts')
-  .description('Manage configured fonts');
+  .description(
+    'Manage email fonts — system and custom fonts available in the email template editor',
+  );
 
 campaignSettingsFonts
   .command('list')
   .description('List configured fonts')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -7002,11 +7076,17 @@ campaignSettingsFonts
 campaignSettingsFonts
   .command('create')
   .description('Prepare font creation (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--name <name>', 'Font name')
-  .requiredOption('--type <type>', 'Font type')
-  .option('--file-url <url>', 'Font file URL')
-  .option('--note <note>', 'Operator note for audit trail')
+  .requiredOption('--type <type>', 'Font type: "system" (web-safe) or "custom" (uploaded file)')
+  .option('--file-url <url>', 'URL to the font file (for custom fonts, e.g. WOFF2 format)')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -7048,12 +7128,18 @@ campaignSettingsFonts
 campaignSettingsFonts
   .command('update')
   .description('Prepare font update (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--font-id <id>', 'Font ID')
   .option('--name <name>', 'Updated font name')
-  .option('--type <type>', 'Updated font type')
-  .option('--file-url <url>', 'Updated font file URL')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option('--type <type>', 'Font type: "system" (web-safe) or "custom" (uploaded file)')
+  .option('--file-url <url>', 'URL to the font file (for custom fonts, e.g. WOFF2 format)')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -7100,9 +7186,15 @@ campaignSettingsFonts
 campaignSettingsFonts
   .command('delete')
   .description('Prepare font deletion (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--font-id <id>', 'Font ID')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; fontId: string; note?: string; json?: boolean }) => {
     try {
@@ -7132,12 +7224,17 @@ campaignSettingsFonts
 
 const campaignSettingsThroughput = campaignSettings
   .command('throughput')
-  .description('Manage throughput policies');
+  .description(
+    'Manage throughput policies — controls maximum send rate per time period to prevent deliverability issues',
+  );
 
 campaignSettingsThroughput
   .command('list')
   .description('List throughput policies')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -7177,13 +7274,22 @@ campaignSettingsThroughput
 campaignSettingsThroughput
   .command('create')
   .description('Prepare throughput policy creation (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--name <name>', 'Policy name')
-  .option('--channel <channel>', 'Channel (email, sms, push, etc.)')
-  .option('--max-rate <rate>', 'Maximum send rate per period')
-  .option('--period-seconds <seconds>', 'Rate limit period in seconds')
+  .option('--channel <channel>', 'Channel this policy applies to (e.g. "email", "sms", "push")')
+  .option('--max-rate <rate>', 'Maximum send rate per period (integer)')
+  .option(
+    '--period-seconds <seconds>',
+    'Time period in seconds for the rate limit (e.g. 60 for per-minute, 3600 for hourly)',
+  )
   .option('--description <description>', 'Human-readable description')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -7233,14 +7339,23 @@ campaignSettingsThroughput
 campaignSettingsThroughput
   .command('update')
   .description('Prepare throughput policy update (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--policy-id <id>', 'Policy ID')
   .option('--name <name>', 'Updated policy name')
-  .option('--channel <channel>', 'Updated channel')
-  .option('--max-rate <rate>', 'Updated maximum send rate per period')
-  .option('--period-seconds <seconds>', 'Updated rate limit period in seconds')
+  .option('--channel <channel>', 'Channel this policy applies to (e.g. "email", "sms", "push")')
+  .option('--max-rate <rate>', 'Maximum send rate per period (integer)')
+  .option(
+    '--period-seconds <seconds>',
+    'Time period in seconds for the rate limit (e.g. 60 for per-minute, 3600 for hourly)',
+  )
   .option('--description <description>', 'Updated human-readable description')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -7295,9 +7410,15 @@ campaignSettingsThroughput
 campaignSettingsThroughput
   .command('delete')
   .description('Prepare throughput policy deletion (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--policy-id <id>', 'Policy ID')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; policyId: string; note?: string; json?: boolean }) => {
     try {
@@ -7327,12 +7448,17 @@ campaignSettingsThroughput
 
 const campaignSettingsFrequency = campaignSettings
   .command('frequency')
-  .description('Manage frequency policies');
+  .description(
+    'Manage frequency policies — caps how often customers receive campaigns to prevent fatigue',
+  );
 
 campaignSettingsFrequency
   .command('list')
   .description('List frequency policies')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -7375,14 +7501,23 @@ campaignSettingsFrequency
 campaignSettingsFrequency
   .command('create')
   .description('Prepare frequency policy creation (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--name <name>', 'Policy name')
-  .option('--policy-type <type>', 'Policy type (global or per-campaign)')
-  .option('--max-sends <count>', 'Maximum number of sends allowed')
-  .option('--window-hours <hours>', 'Frequency window in hours')
-  .option('--channels <channels>', 'Comma-separated channels (email,sms,push)')
+  .option('--policy-type <type>', 'Policy scope: "global" (all campaigns) or "per-campaign"')
+  .option('--max-sends <count>', 'Maximum number of sends allowed within the time window')
+  .option(
+    '--window-hours <hours>',
+    'Time window in hours for the frequency cap (e.g. 24 for daily, 168 for weekly)',
+  )
+  .option('--channels <channels>', 'Comma-separated channels this policy applies to (e.g. "email,push")')
   .option('--description <description>', 'Human-readable description')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -7442,15 +7577,24 @@ campaignSettingsFrequency
 campaignSettingsFrequency
   .command('update')
   .description('Prepare frequency policy update (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--policy-id <id>', 'Policy ID')
   .option('--name <name>', 'Updated policy name')
-  .option('--policy-type <type>', 'Updated policy type')
-  .option('--max-sends <count>', 'Updated maximum sends')
-  .option('--window-hours <hours>', 'Updated frequency window in hours')
-  .option('--channels <channels>', 'Updated comma-separated channels')
+  .option('--policy-type <type>', 'Policy scope: "global" (all campaigns) or "per-campaign"')
+  .option('--max-sends <count>', 'Maximum number of sends allowed within the time window')
+  .option(
+    '--window-hours <hours>',
+    'Time window in hours for the frequency cap (e.g. 24 for daily, 168 for weekly)',
+  )
+  .option('--channels <channels>', 'Comma-separated channels this policy applies to (e.g. "email,push")')
   .option('--description <description>', 'Updated human-readable description')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -7515,9 +7659,15 @@ campaignSettingsFrequency
 campaignSettingsFrequency
   .command('delete')
   .description('Prepare frequency policy deletion (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--policy-id <id>', 'Policy ID')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; policyId: string; note?: string; json?: boolean }) => {
     try {
@@ -7547,12 +7697,17 @@ campaignSettingsFrequency
 
 const campaignSettingsConsents = campaignSettings
   .command('consents')
-  .description('Manage consent categories');
+  .description(
+    'Manage consent categories — defines consent types for GDPR/privacy compliance and opt-in/opt-out management',
+  );
 
 campaignSettingsConsents
   .command('list')
   .description('List consents')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -7589,12 +7744,27 @@ campaignSettingsConsents
 campaignSettingsConsents
   .command('create')
   .description('Prepare consent creation (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--category <category>', 'Consent category')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
+  .requiredOption(
+    '--category <category>',
+    'Consent category name (e.g. "Marketing", "Transactional", "Analytics")',
+  )
   .option('--description <description>', 'Human-readable description')
-  .option('--consent-type <type>', 'Consent type (opt-in or opt-out)')
-  .option('--legitimate-interest', 'Mark consent as legitimate interest')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--consent-type <type>',
+    'Consent model: "opt-in" (explicit consent required) or "opt-out" (consent assumed until withdrawn)',
+  )
+  .option(
+    '--legitimate-interest',
+    'Whether legitimate interest applies under GDPR (no explicit consent needed)',
+  )
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -7638,13 +7808,28 @@ campaignSettingsConsents
 campaignSettingsConsents
   .command('update')
   .description('Prepare consent update (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--consent-id <id>', 'Consent ID')
-  .option('--category <category>', 'Updated consent category')
+  .option(
+    '--category <category>',
+    'Consent category name (e.g. "Marketing", "Transactional", "Analytics")',
+  )
   .option('--description <description>', 'Updated description')
-  .option('--consent-type <type>', 'Updated consent type')
-  .option('--legitimate-interest', 'Mark consent as legitimate interest')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--consent-type <type>',
+    'Consent model: "opt-in" (explicit consent required) or "opt-out" (consent assumed until withdrawn)',
+  )
+  .option(
+    '--legitimate-interest',
+    'Whether legitimate interest applies under GDPR (no explicit consent needed)',
+  )
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -7693,9 +7878,15 @@ campaignSettingsConsents
 campaignSettingsConsents
   .command('delete')
   .description('Prepare consent deletion (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--consent-id <id>', 'Consent ID')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: { project: string; consentId: string; note?: string; json?: boolean }) => {
@@ -7727,12 +7918,15 @@ campaignSettingsConsents
 
 const campaignSettingsUrlLists = campaignSettings
   .command('url-lists')
-  .description('Manage global URL lists');
+  .description('Manage global URL lists — allowlists and blocklists for link validation in campaigns');
 
 campaignSettingsUrlLists
   .command('list')
   .description('List URL lists')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -7767,12 +7961,21 @@ campaignSettingsUrlLists
 campaignSettingsUrlLists
   .command('create')
   .description('Prepare URL list creation (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--name <name>', 'URL list name')
-  .requiredOption('--list-type <type>', 'List type (allowlist or blocklist)')
-  .option('--urls <urls>', 'Comma-separated URLs')
+  .requiredOption(
+    '--list-type <type>',
+    'List type: "allowlist" (permitted URLs) or "blocklist" (blocked URLs)',
+  )
+  .option('--urls <urls>', 'Comma-separated URLs to include in the list')
   .option('--description <description>', 'Human-readable description')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -7824,13 +8027,19 @@ campaignSettingsUrlLists
 campaignSettingsUrlLists
   .command('update')
   .description('Prepare URL list update (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--url-list-id <id>', 'URL list ID')
   .option('--name <name>', 'Updated URL list name')
-  .option('--list-type <type>', 'Updated list type')
-  .option('--urls <urls>', 'Updated comma-separated URLs')
+  .option('--list-type <type>', 'List type: "allowlist" (permitted URLs) or "blocklist" (blocked URLs)')
+  .option('--urls <urls>', 'Comma-separated URLs to include in the list')
   .option('--description <description>', 'Updated description')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -7887,9 +8096,15 @@ campaignSettingsUrlLists
 campaignSettingsUrlLists
   .command('delete')
   .description('Prepare URL list deletion (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--url-list-id <id>', 'URL list ID')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: { project: string; urlListId: string; note?: string; json?: boolean }) => {
@@ -7921,12 +8136,17 @@ campaignSettingsUrlLists
 
 const campaignSettingsPageVariables = campaignSettings
   .command('page-variables')
-  .description('Manage page variables');
+  .description(
+    'Manage page variables — template variables with default values used across campaign templates',
+  );
 
 campaignSettingsPageVariables
   .command('list')
   .description('List page variables')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -7958,11 +8178,17 @@ campaignSettingsPageVariables
 campaignSettingsPageVariables
   .command('create')
   .description('Prepare page variable creation (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--name <name>', 'Page variable name')
-  .requiredOption('--value <value>', 'Page variable value')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
+  .requiredOption('--name <name>', 'Variable name used in templates (e.g. "hero_title", "banner_url")')
+  .requiredOption('--value <value>', 'Default value for the variable (max 5000 characters)')
   .option('--description <description>', 'Human-readable description')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -8004,12 +8230,18 @@ campaignSettingsPageVariables
 campaignSettingsPageVariables
   .command('update')
   .description('Prepare page variable update (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--page-variable-id <id>', 'Page variable ID')
-  .option('--name <name>', 'Updated page variable name')
-  .option('--value <value>', 'Updated page variable value')
+  .option('--name <name>', 'Variable name used in templates (e.g. "hero_title", "banner_url")')
+  .option('--value <value>', 'Default value for the variable (max 5000 characters)')
   .option('--description <description>', 'Updated description')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -8056,9 +8288,15 @@ campaignSettingsPageVariables
 campaignSettingsPageVariables
   .command('delete')
   .description('Prepare page variable deletion (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption(
+    '--project <project>',
+    'Bloomreach project identifier (from Settings > Access Management)',
+  )
   .requiredOption('--page-variable-id <id>', 'Page variable ID')
-  .option('--note <note>', 'Operator note for audit trail')
+  .option(
+    '--note <note>',
+    'Optional note describing the reason for this change (for audit trail)',
+  )
   .option('--json', 'Output as JSON')
   .action(
     async (options: { project: string; pageVariableId: string; note?: string; json?: boolean }) => {
