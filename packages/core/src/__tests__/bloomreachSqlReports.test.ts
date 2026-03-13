@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
 import {
   CREATE_SQL_REPORT_ACTION_TYPE,
   EXECUTE_SQL_REPORT_ACTION_TYPE,
@@ -20,6 +21,17 @@ import {
   createSqlReportActionExecutors,
   BloomreachSqlReportsService,
 } from '../index.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_SQL_REPORT_ACTION_TYPE', () => {
@@ -107,6 +119,24 @@ describe('validateSqlReportName', () => {
     const name = 'x'.repeat(201);
     expect(() => validateSqlReportName(name)).toThrow('must not exceed 200 characters');
   });
+
+  it('accepts mixed whitespace around valid name', () => {
+    expect(validateSqlReportName(' \t  Monthly Report \n ')).toBe('Monthly Report');
+  });
+
+  it('preserves internal spacing in valid name', () => {
+    expect(validateSqlReportName('Monthly   Report')).toBe('Monthly   Report');
+  });
+
+  it('accepts punctuation-heavy name after trim', () => {
+    expect(validateSqlReportName('  [Q1] Revenue Report (v2)  ')).toBe('[Q1] Revenue Report (v2)');
+  });
+
+  it('throws for too-long name even with surrounding whitespace', () => {
+    expect(() => validateSqlReportName(`  ${'x'.repeat(201)}  `)).toThrow(
+      'must not exceed 200 characters',
+    );
+  });
 });
 
 describe('validateSqlReportId', () => {
@@ -124,6 +154,30 @@ describe('validateSqlReportId', () => {
 
   it('returns same value when already trimmed', () => {
     expect(validateSqlReportId('report-456')).toBe('report-456');
+  });
+
+  it('returns ID containing dots and dashes', () => {
+    expect(validateSqlReportId('report.v2-alpha')).toBe('report.v2-alpha');
+  });
+
+  it('returns ID containing colons', () => {
+    expect(validateSqlReportId('report:daily:1')).toBe('report:daily:1');
+  });
+
+  it('returns trimmed ID with mixed whitespace', () => {
+    expect(validateSqlReportId(' \n\treport-789\t ')).toBe('report-789');
+  });
+
+  it('returns unicode ID', () => {
+    expect(validateSqlReportId('rapport-åäö')).toBe('rapport-åäö');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateSqlReportId('\t')).toThrow('must not be empty');
+  });
+
+  it('throws for mixed-whitespace-only string', () => {
+    expect(() => validateSqlReportId(' \n\t ')).toThrow('must not be empty');
   });
 });
 
@@ -152,6 +206,22 @@ describe('validateSqlQuery', () => {
   it('throws for query exceeding maximum length', () => {
     const query = 'x'.repeat(10001);
     expect(() => validateSqlQuery(query)).toThrow('must not exceed 10000 characters');
+  });
+
+  it('accepts mixed whitespace around valid query', () => {
+    expect(validateSqlQuery(' \t  SELECT * FROM users \n ')).toBe('SELECT * FROM users');
+  });
+
+  it('preserves internal whitespace in query', () => {
+    expect(validateSqlQuery('SELECT *\n  FROM users\n  WHERE id = 1')).toBe(
+      'SELECT *\n  FROM users\n  WHERE id = 1',
+    );
+  });
+
+  it('throws for too-long query even with surrounding whitespace', () => {
+    expect(() => validateSqlQuery(`  ${'x'.repeat(10001)}  `)).toThrow(
+      'must not exceed 10000 characters',
+    );
   });
 });
 
@@ -241,6 +311,123 @@ describe('createSqlReportActionExecutors', () => {
       await expect(executor.execute({})).rejects.toThrow('not yet implemented');
     }
   });
+
+  it('create executor mentions UI-only in error', async () => {
+    const executors = createSqlReportActionExecutors();
+    await expect(executors[CREATE_SQL_REPORT_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('execute executor mentions UI-only in error', async () => {
+    const executors = createSqlReportActionExecutors();
+    await expect(executors[EXECUTE_SQL_REPORT_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('export executor mentions UI-only in error', async () => {
+    const executors = createSqlReportActionExecutors();
+    await expect(executors[EXPORT_SQL_REPORT_RESULTS_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('clone executor mentions UI-only in error', async () => {
+    const executors = createSqlReportActionExecutors();
+    await expect(executors[CLONE_SQL_REPORT_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('archive executor mentions UI-only in error', async () => {
+    const executors = createSqlReportActionExecutors();
+    await expect(executors[ARCHIVE_SQL_REPORT_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('accepts optional apiConfig parameter', () => {
+    const executors = createSqlReportActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(5);
+  });
+
+  it('executors still throw not-yet-implemented with apiConfig', async () => {
+    const executors = createSqlReportActionExecutors(TEST_API_CONFIG);
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+    }
+  });
+
+  it('returns identical action keys with or without apiConfig', () => {
+    const withoutConfig = Object.keys(createSqlReportActionExecutors()).sort();
+    const withConfig = Object.keys(createSqlReportActionExecutors(TEST_API_CONFIG)).sort();
+    expect(withConfig).toEqual(withoutConfig);
+  });
+
+  it('preserves actionType mapping with apiConfig', () => {
+    const executors = createSqlReportActionExecutors(TEST_API_CONFIG);
+    for (const [key, executor] of Object.entries(executors)) {
+      expect(executor.actionType).toBe(key);
+    }
+  });
+
+  it('returns expected action keys', () => {
+    const keys = Object.keys(createSqlReportActionExecutors()).sort();
+    expect(keys).toEqual(
+      [
+        ARCHIVE_SQL_REPORT_ACTION_TYPE,
+        CLONE_SQL_REPORT_ACTION_TYPE,
+        CREATE_SQL_REPORT_ACTION_TYPE,
+        EXECUTE_SQL_REPORT_ACTION_TYPE,
+        EXPORT_SQL_REPORT_RESULTS_ACTION_TYPE,
+      ].sort(),
+    );
+  });
+
+  it('returns new executor instances on each call', () => {
+    const first = createSqlReportActionExecutors(TEST_API_CONFIG);
+    const second = createSqlReportActionExecutors(TEST_API_CONFIG);
+    expect(first[CREATE_SQL_REPORT_ACTION_TYPE]).not.toBe(second[CREATE_SQL_REPORT_ACTION_TYPE]);
+    expect(first[EXECUTE_SQL_REPORT_ACTION_TYPE]).not.toBe(second[EXECUTE_SQL_REPORT_ACTION_TYPE]);
+    expect(first[EXPORT_SQL_REPORT_RESULTS_ACTION_TYPE]).not.toBe(
+      second[EXPORT_SQL_REPORT_RESULTS_ACTION_TYPE],
+    );
+    expect(first[CLONE_SQL_REPORT_ACTION_TYPE]).not.toBe(second[CLONE_SQL_REPORT_ACTION_TYPE]);
+    expect(first[ARCHIVE_SQL_REPORT_ACTION_TYPE]).not.toBe(second[ARCHIVE_SQL_REPORT_ACTION_TYPE]);
+  });
+
+  it('all executors mention UI-only guidance with apiConfig', async () => {
+    const executors = createSqlReportActionExecutors(TEST_API_CONFIG);
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow(
+        'only available through the Bloomreach Engagement UI',
+      );
+    }
+  });
+
+  it('uses independent executor maps for configured and unconfigured calls', () => {
+    const withoutConfig = createSqlReportActionExecutors();
+    const withConfig = createSqlReportActionExecutors(TEST_API_CONFIG);
+    expect(withoutConfig).not.toBe(withConfig);
+  });
+
+  it('supports custom apiConfig values without changing key set', () => {
+    const executors = createSqlReportActionExecutors({
+      ...TEST_API_CONFIG,
+      baseUrl: 'https://api-alt.test.com',
+      projectToken: 'another-token',
+    });
+    expect(Object.keys(executors).sort()).toEqual(
+      [
+        CREATE_SQL_REPORT_ACTION_TYPE,
+        EXECUTE_SQL_REPORT_ACTION_TYPE,
+        EXPORT_SQL_REPORT_RESULTS_ACTION_TYPE,
+        CLONE_SQL_REPORT_ACTION_TYPE,
+        ARCHIVE_SQL_REPORT_ACTION_TYPE,
+      ].sort(),
+    );
+  });
 });
 
 describe('BloomreachSqlReportsService', () => {
@@ -263,12 +450,74 @@ describe('BloomreachSqlReportsService', () => {
     it('throws for empty project', () => {
       expect(() => new BloomreachSqlReportsService('')).toThrow('must not be empty');
     });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachSqlReportsService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachSqlReportsService);
+    });
+
+    it('exposes sql reports URL when constructed with apiConfig', () => {
+      const service = new BloomreachSqlReportsService('test', TEST_API_CONFIG);
+      expect(service.sqlReportsUrl).toBe('/p/test/analytics/sqlreports');
+    });
+
+    it('encodes unicode project name in constructor URL', () => {
+      const service = new BloomreachSqlReportsService('projekt åäö');
+      expect(service.sqlReportsUrl).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/analytics/sqlreports');
+    });
+
+    it('encodes hash in constructor URL', () => {
+      const service = new BloomreachSqlReportsService('my#project');
+      expect(service.sqlReportsUrl).toBe('/p/my%23project/analytics/sqlreports');
+    });
+
+    it('trims and encodes unicode project in constructor URL', () => {
+      const service = new BloomreachSqlReportsService('  projekt åäö  ');
+      expect(service.sqlReportsUrl).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/analytics/sqlreports');
+    });
+
+    it('encodes plus sign in constructor URL', () => {
+      const service = new BloomreachSqlReportsService('project+beta');
+      expect(service.sqlReportsUrl).toBe('/p/project%2Bbeta/analytics/sqlreports');
+    });
+
+    it('returns stable sqlReportsUrl with apiConfig across reads', () => {
+      const service = new BloomreachSqlReportsService('alpha', TEST_API_CONFIG);
+      expect(service.sqlReportsUrl).toBe('/p/alpha/analytics/sqlreports');
+      expect(service.sqlReportsUrl).toBe('/p/alpha/analytics/sqlreports');
+    });
   });
 
   describe('listSqlReports', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachSqlReportsService('test');
-      await expect(service.listSqlReports()).rejects.toThrow('not yet implemented');
+      await expect(service.listSqlReports()).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachSqlReportsService('test', TEST_API_CONFIG);
+      await expect(service.listSqlReports()).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error for unicode project override', async () => {
+      const service = new BloomreachSqlReportsService('test');
+      await expect(service.listSqlReports({ project: 'projekt åäö' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error for valid project override', async () => {
+      const service = new BloomreachSqlReportsService('test');
+      await expect(service.listSqlReports({ project: 'kingdom-of-joakim' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error for trimmed project override', async () => {
+      const service = new BloomreachSqlReportsService('test');
+      await expect(service.listSqlReports({ project: '  kingdom-of-joakim  ' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
     });
 
     it('validates status when provided', async () => {
@@ -287,11 +536,39 @@ describe('BloomreachSqlReportsService', () => {
   });
 
   describe('viewSqlReport', () => {
-    it('throws not-yet-implemented error with valid input', async () => {
+    it('throws no-API-endpoint error with valid input', async () => {
       const service = new BloomreachSqlReportsService('test');
       await expect(
         service.viewSqlReport({ project: 'test', reportId: 'report-1' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachSqlReportsService('test', TEST_API_CONFIG);
+      await expect(
+        service.viewSqlReport({ project: 'test', reportId: 'report-1' }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error with trimmed project and reportId', async () => {
+      const service = new BloomreachSqlReportsService('test');
+      await expect(
+        service.viewSqlReport({ project: '  test  ', reportId: '  report-1  ' }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error for encoded-looking reportId', async () => {
+      const service = new BloomreachSqlReportsService('test');
+      await expect(
+        service.viewSqlReport({ project: 'test', reportId: 'report%2Fencoded' }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('accepts trimmed reportId and reaches no-API-endpoint error', async () => {
+      const service = new BloomreachSqlReportsService('test');
+      await expect(
+        service.viewSqlReport({ project: 'test', reportId: '  report-99  ' }),
+      ).rejects.toThrow('does not provide an endpoint');
     });
 
     it('validates project input', async () => {
