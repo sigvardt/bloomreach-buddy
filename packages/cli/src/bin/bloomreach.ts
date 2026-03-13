@@ -6,6 +6,7 @@ import {
   BloomreachClient,
   BloomreachCampaignCalendarService,
   BloomreachCustomersService,
+  BloomreachDataManagerService,
   BloomreachDashboardsService,
   BloomreachEmailCampaignsService,
   BloomreachFlowsService,
@@ -34,6 +35,7 @@ import type {
   RetentionFilter,
   TrendFilter,
   RedemptionRules,
+  EventPropertyDefinition,
 } from '@bloomreach-buddy/core';
 
 function printJson(value: unknown): void {
@@ -4000,6 +4002,611 @@ tagManager
       } else {
         console.log('Tag deletion prepared.');
         console.log(`  Tag:     ${options.tagId}`);
+        console.log(`  Token:   ${result.confirmToken}`);
+        console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+        console.log('');
+        console.log('To confirm, run:');
+        console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+const dataManager = program
+  .command('data-manager')
+  .description(
+    'Manage Bloomreach data schema (customer properties, events, definitions, mapping, content sources)',
+  );
+
+dataManager
+  .command('list-properties')
+  .description('List all customer property definitions')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachDataManagerService(options.project);
+      const result = await service.listCustomerProperties({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No customer properties found.');
+          return;
+        }
+        for (const prop of result) {
+          console.log(`  ${prop.name}`);
+          console.log(`    Type:  ${prop.type}`);
+          if (prop.group) console.log(`    Group: ${prop.group}`);
+          if (prop.description) console.log(`    Desc:  ${prop.description}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+dataManager
+  .command('add-property')
+  .description('Prepare addition of a new customer property (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Property name')
+  .requiredOption('--type <type>', 'Property type (string, number, boolean, date, list, json)')
+  .option('--description <desc>', 'Property description')
+  .option('--group <group>', 'Property group assignment')
+  .option('--required', 'Mark property as required')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      type: string;
+      description?: string;
+      group?: string;
+      required?: boolean;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachDataManagerService(options.project);
+        const result = service.prepareAddCustomerProperty({
+          project: options.project,
+          name: options.name,
+          type: options.type,
+          description: options.description,
+          group: options.group,
+          isRequired: options.required,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Customer property addition prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+dataManager
+  .command('edit-property')
+  .description('Prepare editing an existing customer property (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--property-name <name>', 'Property name to edit')
+  .option('--description <desc>', 'New property description')
+  .option('--type <type>', 'New property type')
+  .option('--group <group>', 'New property group assignment')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      propertyName: string;
+      description?: string;
+      type?: string;
+      group?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachDataManagerService(options.project);
+        const result = service.prepareEditCustomerProperty({
+          project: options.project,
+          propertyName: options.propertyName,
+          description: options.description,
+          type: options.type,
+          group: options.group,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Customer property edit prepared.');
+          console.log(`  Name:    ${options.propertyName}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+dataManager
+  .command('list-events')
+  .description('List all event definitions')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachDataManagerService(options.project);
+      const result = await service.listEvents({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No event definitions found.');
+          return;
+        }
+        for (const event of result) {
+          console.log(`  ${event.name}`);
+          console.log(`    Type:       ${event.type}`);
+          console.log(`    Properties: ${event.properties?.length ?? 0}`);
+          if (event.description) console.log(`    Desc:       ${event.description}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+dataManager
+  .command('add-event')
+  .description('Prepare addition of a new event definition (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Event name')
+  .requiredOption('--type <type>', 'Event type (string, number, boolean, date, list, json)')
+  .option('--description <desc>', 'Event description')
+  .option(
+    '--properties <json>',
+    'JSON array of event properties [{name, type, description?, isRequired?}]',
+  )
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      type: string;
+      description?: string;
+      properties?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const properties = options.properties
+          ? (JSON.parse(options.properties) as EventPropertyDefinition[])
+          : undefined;
+
+        const service = new BloomreachDataManagerService(options.project);
+        const result = service.prepareAddEventDefinition({
+          project: options.project,
+          name: options.name,
+          type: options.type,
+          description: options.description,
+          properties,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Event addition prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+dataManager
+  .command('list-definitions')
+  .description('List all data definitions')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachDataManagerService(options.project);
+      const result = await service.listFieldDefinitions({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No definitions found.');
+          return;
+        }
+        for (const definition of result) {
+          console.log(`  ${definition.name}`);
+          console.log(`    Type:     ${definition.type}`);
+          if (definition.category) console.log(`    Category: ${definition.category}`);
+          if (definition.description) console.log(`    Desc:     ${definition.description}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+dataManager
+  .command('add-definition')
+  .description('Prepare addition of a new definition (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Definition name')
+  .requiredOption('--type <type>', 'Definition type')
+  .option('--description <desc>', 'Definition description')
+  .option('--category <category>', 'Definition category')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      type: string;
+      description?: string;
+      category?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachDataManagerService(options.project);
+        const result = service.prepareAddFieldDefinition({
+          project: options.project,
+          name: options.name,
+          type: options.type,
+          description: options.description,
+          category: options.category,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Definition addition prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+dataManager
+  .command('edit-definition')
+  .description('Prepare editing an existing definition (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--definition-id <id>', 'Definition ID')
+  .option('--name <name>', 'New definition name')
+  .option('--type <type>', 'New definition type')
+  .option('--description <desc>', 'New definition description')
+  .option('--category <category>', 'New definition category')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      definitionId: string;
+      name?: string;
+      type?: string;
+      description?: string;
+      category?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachDataManagerService(options.project);
+        const result = service.prepareEditFieldDefinition({
+          project: options.project,
+          definitionId: options.definitionId,
+          name: options.name,
+          type: options.type,
+          description: options.description,
+          category: options.category,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Definition edit prepared.');
+          console.log(`  Definition: ${options.definitionId}`);
+          console.log(`  Token:      ${result.confirmToken}`);
+          console.log(`  Expires:    ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+dataManager
+  .command('list-mappings')
+  .description('List all source-to-target mappings')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachDataManagerService(options.project);
+      const result = await service.listMappings({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No mappings found.');
+          return;
+        }
+        for (const mapping of result) {
+          console.log(`  ${mapping.sourceField} -> ${mapping.targetField}`);
+          if (mapping.transformationType) {
+            console.log(`    Transform: ${mapping.transformationType}`);
+          }
+          if (mapping.isActive !== undefined) {
+            console.log(`    Active:    ${mapping.isActive}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+dataManager
+  .command('configure-mapping')
+  .description('Prepare mapping configuration between source and target fields (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--source-field <field>', 'Source field name')
+  .requiredOption('--target-field <field>', 'Target field name')
+  .option(
+    '--transformation-type <type>',
+    'Transformation type (direct, concatenate, split, format, lookup)',
+  )
+  .option('--active', 'Set mapping as active')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      sourceField: string;
+      targetField: string;
+      transformationType?: string;
+      active?: boolean;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachDataManagerService(options.project);
+        const result = service.prepareConfigureMapping({
+          project: options.project,
+          sourceField: options.sourceField,
+          targetField: options.targetField,
+          transformationType: options.transformationType,
+          isActive: options.active,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Mapping configuration prepared.');
+          console.log(`  Mapping: ${options.sourceField} -> ${options.targetField}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+dataManager
+  .command('list-content-sources')
+  .description('List all content sources')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachDataManagerService(options.project);
+      const result = await service.listContentSources({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No content sources found.');
+          return;
+        }
+        for (const source of result) {
+          console.log(`  ${source.name}`);
+          console.log(`    Type: ${source.sourceType}`);
+          console.log(`    URL:  ${source.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+dataManager
+  .command('add-content-source')
+  .description('Prepare addition of a content source (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Content source name')
+  .requiredOption('--source-type <type>', 'Source type (api, csv, webhook, database, sftp)')
+  .requiredOption('--url <url>', 'Content source URL')
+  .option('--configuration <json>', 'JSON object with source-specific configuration')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      sourceType: string;
+      url: string;
+      configuration?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const configuration = options.configuration
+          ? (JSON.parse(options.configuration) as Record<string, unknown>)
+          : undefined;
+
+        const service = new BloomreachDataManagerService(options.project);
+        const result = service.prepareAddContentSource({
+          project: options.project,
+          name: options.name,
+          sourceType: options.sourceType,
+          url: options.url,
+          configuration,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Content source addition prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+dataManager
+  .command('edit-content-source')
+  .description('Prepare editing of an existing content source (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--source-id <id>', 'Content source ID')
+  .option('--name <name>', 'New content source name')
+  .option('--url <url>', 'New content source URL')
+  .option('--configuration <json>', 'JSON object with source-specific configuration')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      sourceId: string;
+      name?: string;
+      url?: string;
+      configuration?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const configuration = options.configuration
+          ? (JSON.parse(options.configuration) as Record<string, unknown>)
+          : undefined;
+
+        const service = new BloomreachDataManagerService(options.project);
+        const result = service.prepareEditContentSource({
+          project: options.project,
+          sourceId: options.sourceId,
+          name: options.name,
+          url: options.url,
+          configuration,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Content source edit prepared.');
+          console.log(`  Source:  ${options.sourceId}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+dataManager
+  .command('save-changes')
+  .description('Prepare saving pending Data Manager changes (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; note?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachDataManagerService(options.project);
+      const result = service.prepareSaveChanges({
+        project: options.project,
+        operatorNote: options.note,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log('Data Manager save prepared.');
+        console.log(`  Project: ${options.project}`);
         console.log(`  Token:   ${result.confirmToken}`);
         console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
         console.log('');
