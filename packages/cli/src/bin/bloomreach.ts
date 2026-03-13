@@ -8793,8 +8793,10 @@ const reports = program
 
 reports
   .command('list')
-  .description('List all reports in the project')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description(
+    'List all reports in the project (note: requires browser automation — not yet available via API)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -8833,12 +8835,16 @@ reports
   .command('view-results')
   .description('View results of a specific report')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--report-id <id>', 'Report ID')
+  .requiredOption(
+    '--report-id <id>',
+    'Report analysis ID (hex string from Bloomreach UI URL, e.g. "606488856f8cf6f848b20af8")',
+  )
   .option('--start-date <date>', 'Start date (ISO-8601)')
   .option('--end-date <date>', 'End date (ISO-8601)')
   .option('--sort-column <column>', 'Column to sort by')
   .option('--sort-order <order>', 'Sort order (asc or desc)')
   .option('--limit <n>', 'Maximum rows to return')
+  .option('--format <format>', 'Output format: table (default) or csv', 'table')
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -8849,10 +8855,12 @@ reports
       sortColumn?: string;
       sortOrder?: string;
       limit?: string;
+      format: string;
       json?: boolean;
     }) => {
       try {
-        const service = new BloomreachReportsService(options.project);
+        const apiConfig = tryResolveApiConfig(options.project);
+        const service = new BloomreachReportsService(options.project, apiConfig);
         const input: {
           project: string;
           reportId: string;
@@ -8886,10 +8894,18 @@ reports
 
         if (options.json) {
           printJson(result);
+        } else if (options.format === 'csv') {
+          console.log(result.columns.join(','));
+          for (const row of result.rows) {
+            console.log(row.join(','));
+          }
         } else {
           console.log(`Report: ${result.reportName}`);
           console.log(`  Columns: ${result.columns.join(', ')}`);
           console.log(`  Rows:    ${result.rows.length} (total: ${result.totalRows})`);
+          if (result.dateRange) {
+            console.log(`  Date range: ${result.dateRange.startDate ?? '?'} – ${result.dateRange.endDate ?? '?'}`);
+          }
         }
       } catch (error) {
         console.error(
@@ -9004,7 +9020,10 @@ reports
   .command('export')
   .description('Prepare export of a report (two-phase commit)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--report-id <id>', 'Report ID')
+  .requiredOption(
+    '--report-id <id>',
+    'Report analysis ID (hex string from Bloomreach UI URL)',
+  )
   .requiredOption('--format <format>', 'Export format (csv or xlsx)')
   .option('--start-date <date>', 'Start date (ISO-8601)')
   .option('--end-date <date>', 'End date (ISO-8601)')
@@ -9078,7 +9097,10 @@ reports
   .command('clone')
   .description('Prepare cloning of a report (two-phase commit)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--report-id <id>', 'Report ID')
+  .requiredOption(
+    '--report-id <id>',
+    'Report analysis ID (hex string from Bloomreach UI URL)',
+  )
   .option('--new-name <name>', 'Name for the cloned report')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
@@ -9124,7 +9146,10 @@ reports
   .command('archive')
   .description('Prepare archiving of a report (two-phase commit)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--report-id <id>', 'Report ID')
+  .requiredOption(
+    '--report-id <id>',
+    'Report analysis ID (hex string from Bloomreach UI URL)',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   CREATE_REPORT_ACTION_TYPE,
   CLONE_REPORT_ACTION_TYPE,
@@ -20,6 +20,18 @@ import {
   createReportActionExecutors,
   BloomreachReportsService,
 } from '../index.js';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_REPORT_ACTION_TYPE', () => {
@@ -230,6 +242,18 @@ describe('createReportActionExecutors', () => {
       await expect(executor.execute({})).rejects.toThrow('not yet implemented');
     }
   });
+
+  it('accepts optional apiConfig parameter', () => {
+    const executors = createReportActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(4);
+  });
+
+  it('executors still throw not-yet-implemented with apiConfig', async () => {
+    const executors = createReportActionExecutors(TEST_API_CONFIG);
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+    }
+  });
 });
 
 describe('BloomreachReportsService', () => {
@@ -252,12 +276,22 @@ describe('BloomreachReportsService', () => {
     it('throws for empty project', () => {
       expect(() => new BloomreachReportsService('')).toThrow('must not be empty');
     });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachReportsService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachReportsService);
+    });
+
+    it('exposes reports URL when constructed with apiConfig', () => {
+      const service = new BloomreachReportsService('test', TEST_API_CONFIG);
+      expect(service.reportsUrl).toBe('/p/test/analytics/reports');
+    });
   });
 
   describe('listReports', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachReportsService('test');
-      await expect(service.listReports()).rejects.toThrow('not yet implemented');
+      await expect(service.listReports()).rejects.toThrow('does not provide a list endpoint');
     });
 
     it('validates project when input is provided', async () => {
@@ -269,36 +303,36 @@ describe('BloomreachReportsService', () => {
   });
 
   describe('viewReportResults', () => {
-    it('throws not-yet-implemented error with valid input', async () => {
+    it('throws API credential error when apiConfig is not provided', async () => {
       const service = new BloomreachReportsService('test');
       await expect(
         service.viewReportResults({ project: 'test', reportId: 'report-1' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('requires API credentials');
     });
 
     it('validates project input', async () => {
-      const service = new BloomreachReportsService('test');
+      const service = new BloomreachReportsService('test', TEST_API_CONFIG);
       await expect(
         service.viewReportResults({ project: '', reportId: 'report-1' }),
       ).rejects.toThrow('must not be empty');
     });
 
     it('validates reportId input', async () => {
-      const service = new BloomreachReportsService('test');
+      const service = new BloomreachReportsService('test', TEST_API_CONFIG);
       await expect(
         service.viewReportResults({ project: 'test', reportId: '   ' }),
       ).rejects.toThrow('Report ID must not be empty');
     });
 
     it('validates limit when provided', async () => {
-      const service = new BloomreachReportsService('test');
+      const service = new BloomreachReportsService('test', TEST_API_CONFIG);
       await expect(
         service.viewReportResults({ project: 'test', reportId: 'report-1', limit: 0 }),
       ).rejects.toThrow('Limit must be an integer between 1 and 10000');
     });
 
     it('validates sort order when provided', async () => {
-      const service = new BloomreachReportsService('test');
+      const service = new BloomreachReportsService('test', TEST_API_CONFIG);
       await expect(
         service.viewReportResults({
           project: 'test',
@@ -306,6 +340,148 @@ describe('BloomreachReportsService', () => {
           sort: { column: 'count', order: 'invalid' as unknown as 'asc' },
         }),
       ).rejects.toThrow('Sort order must be one of');
+    });
+
+    it('returns report results from API response', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            header: ['event_type', 'count'],
+            rows: [
+              ['purchase', 42],
+              ['session_start', 100],
+            ],
+            success: true,
+            name: 'Revenue Report',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachReportsService('test', TEST_API_CONFIG);
+      const result = await service.viewReportResults({
+        project: 'test',
+        reportId: 'report-1',
+      });
+
+      expect(result.reportId).toBe('report-1');
+      expect(result.reportName).toBe('Revenue Report');
+      expect(result.columns).toEqual(['event_type', 'count']);
+      expect(result.rows).toEqual([
+        ['purchase', '42'],
+        ['session_start', '100'],
+      ]);
+      expect(result.totalRows).toBe(2);
+    });
+
+    it('handles empty rows in API response', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            header: ['event_type', 'count'],
+            rows: [],
+            success: true,
+            name: 'Empty Report',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachReportsService('test', TEST_API_CONFIG);
+      const result = await service.viewReportResults({
+        project: 'test',
+        reportId: 'report-1',
+      });
+
+      expect(result.rows).toEqual([]);
+      expect(result.totalRows).toBe(0);
+    });
+
+    it('throws on unsuccessful API response', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify({ success: false }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+
+      const service = new BloomreachReportsService('test', TEST_API_CONFIG);
+      await expect(
+        service.viewReportResults({ project: 'test', reportId: 'report-1' }),
+      ).rejects.toThrow('unexpected API response format');
+    });
+
+    it('handles null cell values in rows', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            header: ['name', 'value'],
+            rows: [
+              [null, 'test'],
+              ['foo', null],
+            ],
+            success: true,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachReportsService('test', TEST_API_CONFIG);
+      const result = await service.viewReportResults({
+        project: 'test',
+        reportId: 'report-1',
+      });
+
+      expect(result.rows).toEqual([
+        ['', 'test'],
+        ['foo', ''],
+      ]);
+    });
+
+    it('uses reportId as reportName when name is missing', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            header: ['col1'],
+            rows: [['val1']],
+            success: true,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachReportsService('test', TEST_API_CONFIG);
+      const result = await service.viewReportResults({
+        project: 'test',
+        reportId: 'report-xyz',
+      });
+
+      expect(result.reportName).toBe('report-xyz');
+    });
+
+    it('includes dateRange from input in results', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            header: ['col1'],
+            rows: [['val1']],
+            success: true,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachReportsService('test', TEST_API_CONFIG);
+      const result = await service.viewReportResults({
+        project: 'test',
+        reportId: 'report-1',
+        dateRange: { startDate: '2024-01-01', endDate: '2024-01-31' },
+      });
+
+      expect(result.dateRange).toEqual({
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+      });
     });
   });
 
