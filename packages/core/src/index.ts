@@ -6,6 +6,7 @@ export * from './bloomreachPerformance.js';
 export * from './bloomreachRecommendations.js';
 export * from './bloomreachScenarios.js';
 export * from './bloomreachSurveys.js';
+export * from './bloomreachRetentions.js';
 export * from './bloomreachTrends.js';
 
 export interface BloomreachClientConfig {
