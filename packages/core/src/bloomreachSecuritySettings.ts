@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 // ---------------------------------------------------------------------------
 // Action type constants
@@ -185,6 +186,21 @@ export function buildTwoStepVerificationUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/project-settings/project-two-step`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 // ---------------------------------------------------------------------------
 // Action executor interface + implementations
 // ---------------------------------------------------------------------------
@@ -196,75 +212,117 @@ export interface SecuritySettingsActionExecutor {
 
 class CreateSshTunnelExecutor implements SecuritySettingsActionExecutor {
   readonly actionType = CREATE_SSH_TUNNEL_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateSshTunnelExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateSshTunnelExecutor: not yet implemented. ' +
+        'SSH tunnel creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class UpdateSshTunnelExecutor implements SecuritySettingsActionExecutor {
   readonly actionType = UPDATE_SSH_TUNNEL_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'UpdateSshTunnelExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'UpdateSshTunnelExecutor: not yet implemented. ' +
+        'SSH tunnel updates are only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class DeleteSshTunnelExecutor implements SecuritySettingsActionExecutor {
   readonly actionType = DELETE_SSH_TUNNEL_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'DeleteSshTunnelExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DeleteSshTunnelExecutor: not yet implemented. ' +
+        'SSH tunnel deletion is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class EnableTwoStepExecutor implements SecuritySettingsActionExecutor {
   readonly actionType = ENABLE_TWO_STEP_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'EnableTwoStepExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'EnableTwoStepExecutor: not yet implemented. ' +
+        'Two-step verification enabling is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class DisableTwoStepExecutor implements SecuritySettingsActionExecutor {
   readonly actionType = DISABLE_TWO_STEP_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'DisableTwoStepExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DisableTwoStepExecutor: not yet implemented. ' +
+        'Two-step verification disabling is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class UpdateTwoStepExecutor implements SecuritySettingsActionExecutor {
   readonly actionType = UPDATE_TWO_STEP_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'UpdateTwoStepExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'UpdateTwoStepExecutor: not yet implemented. ' +
+        'Two-step verification updates are only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createSecuritySettingsActionExecutors(): Record<
+export function createSecuritySettingsActionExecutors(apiConfig?: BloomreachApiConfig): Record<
   string,
   SecuritySettingsActionExecutor
 > {
   return {
-    [CREATE_SSH_TUNNEL_ACTION_TYPE]: new CreateSshTunnelExecutor(),
-    [UPDATE_SSH_TUNNEL_ACTION_TYPE]: new UpdateSshTunnelExecutor(),
-    [DELETE_SSH_TUNNEL_ACTION_TYPE]: new DeleteSshTunnelExecutor(),
-    [ENABLE_TWO_STEP_ACTION_TYPE]: new EnableTwoStepExecutor(),
-    [DISABLE_TWO_STEP_ACTION_TYPE]: new DisableTwoStepExecutor(),
-    [UPDATE_TWO_STEP_ACTION_TYPE]: new UpdateTwoStepExecutor(),
+    [CREATE_SSH_TUNNEL_ACTION_TYPE]: new CreateSshTunnelExecutor(apiConfig),
+    [UPDATE_SSH_TUNNEL_ACTION_TYPE]: new UpdateSshTunnelExecutor(apiConfig),
+    [DELETE_SSH_TUNNEL_ACTION_TYPE]: new DeleteSshTunnelExecutor(apiConfig),
+    [ENABLE_TWO_STEP_ACTION_TYPE]: new EnableTwoStepExecutor(apiConfig),
+    [DISABLE_TWO_STEP_ACTION_TYPE]: new DisableTwoStepExecutor(apiConfig),
+    [UPDATE_TWO_STEP_ACTION_TYPE]: new UpdateTwoStepExecutor(apiConfig),
   };
 }
 
@@ -273,11 +331,13 @@ export function createSecuritySettingsActionExecutors(): Record<
 // ---------------------------------------------------------------------------
 
 export class BloomreachSecuritySettingsService {
+  private readonly apiConfig?: BloomreachApiConfig;
   private readonly sshTunnelsSettingsUrl: string;
   private readonly twoStepVerificationSettingsUrl: string;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     const validated = validateProject(project);
+    this.apiConfig = apiConfig;
     this.sshTunnelsSettingsUrl = buildSshTunnelsUrl(validated);
     this.twoStepVerificationSettingsUrl = buildTwoStepVerificationUrl(validated);
   }
@@ -290,23 +350,38 @@ export class BloomreachSecuritySettingsService {
     return this.twoStepVerificationSettingsUrl;
   }
 
-  async listSshTunnels(_input?: ListSshTunnelsInput): Promise<BloomreachSshTunnel[]> {
+  async listSshTunnels(input?: ListSshTunnelsInput): Promise<BloomreachSshTunnel[]> {
+    void this.apiConfig;
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'listSshTunnels: not yet implemented. Requires browser automation infrastructure.',
+      'listSshTunnels: not yet implemented. the Bloomreach API does not provide an endpoint for SSH tunnels. ' +
+        'SSH tunnels must be managed through the Bloomreach Engagement UI (navigate to Project Settings > SSH Tunnels).',
     );
   }
 
-  async viewSshTunnel(_input?: ViewSshTunnelInput): Promise<BloomreachSshTunnel> {
+  async viewSshTunnel(input?: ViewSshTunnelInput): Promise<BloomreachSshTunnel> {
+    void this.apiConfig;
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'viewSshTunnel: not yet implemented. Requires browser automation infrastructure.',
+      'viewSshTunnel: not yet implemented. the Bloomreach API does not provide an endpoint for SSH tunnels. ' +
+        'SSH tunnels must be managed through the Bloomreach Engagement UI (navigate to Project Settings > SSH Tunnels).',
     );
   }
 
   async viewTwoStepVerification(
-    _input?: ViewTwoStepVerificationInput,
+    input?: ViewTwoStepVerificationInput,
   ): Promise<BloomreachTwoStepVerificationSettings> {
+    void this.apiConfig;
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'viewTwoStepVerification: not yet implemented. Requires browser automation infrastructure.',
+      'viewTwoStepVerification: not yet implemented. the Bloomreach API does not provide an endpoint for two-step verification. ' +
+        'Two-step verification must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Two-Step Verification).',
     );
   }
 
