@@ -4,6 +4,9 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import * as core from '@bloomreach-buddy/core';
 import * as toolNames from '../index.js';
+import { toToolResult, toErrorResult } from '../toolResults.js';
+import { isPlainObject, validateToolArgValueAgainstSchema } from '../toolSchema.js';
+import type { BloomreachMcpInputSchema } from '../toolSchema.js';
 
 const projectId = process.env.BLOOMREACH_PROJECT ?? '';
 
@@ -46,24 +49,6 @@ type ServiceConstructor = new (
   project: string,
   apiConfig?: core.BloomreachApiConfig,
 ) => ServiceInstance;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function toToolResult(payload: unknown) {
-  return {
-    content: [{ type: 'text' as const, text: JSON.stringify(payload, null, 2) }],
-  };
-}
-
-function toErrorResult(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error);
-  return {
-    isError: true,
-    content: [{ type: 'text' as const, text: JSON.stringify({ error: message }, null, 2) }],
-  };
-}
 
 function getProject(args: Record<string, unknown>): string {
   const projectFromArgs = typeof args.project === 'string' ? args.project.trim() : '';
@@ -5574,7 +5559,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools }));
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name } = request.params;
-  const args = isRecord(request.params.arguments) ? request.params.arguments : {};
+  const args = isPlainObject(request.params.arguments) ? request.params.arguments : {};
 
   try {
     if (name === toolNames.BLOOMREACH_STATUS_TOOL) {
@@ -5587,7 +5572,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     const route = toolByName.get(name);
     if (!route || !route.serviceClass || !route.methodName) {
-      return toErrorResult(`Unknown tool: ${name}`);
+      return toErrorResult(new Error(`Unknown tool: ${name}`));
+    }
+
+    // Validate input arguments against the tool's schema
+    try {
+      validateToolArgValueAgainstSchema(
+        route.inputSchema as BloomreachMcpInputSchema,
+        args,
+        '',
+      );
+    } catch (validationError) {
+      return toErrorResult(validationError);
     }
 
     const project = getProject(args);
