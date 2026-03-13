@@ -1,3 +1,8 @@
+// Re-export utility modules for consumers
+export * from './toolSchema.js';
+export * from './toolArgs.js';
+export * from './toolResults.js';
+
 export const BLOOMREACH_STATUS_TOOL = 'bloomreach.session.status';
 export const BLOOMREACH_DASHBOARDS_LIST_TOOL = 'bloomreach.dashboards.list';
 export const BLOOMREACH_DASHBOARDS_PREPARE_CREATE_TOOL = 'bloomreach.dashboards.prepare_create';
