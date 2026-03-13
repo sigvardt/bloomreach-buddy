@@ -5,6 +5,7 @@ import {
   BloomreachAssetManagerService,
   BloomreachCampaignCalendarService,
   BloomreachCampaignSettingsService,
+  BloomreachCatalogsService,
   BloomreachClient,
   BloomreachCustomersService,
   BloomreachDataManagerService,
@@ -63,6 +64,9 @@ import type {
   TrendFilter,
   WeblayerDisplayConditions,
   WeblayerABTestConfig,
+  CreateCatalogInput,
+  AddCatalogItemsInput,
+  UpdateCatalogItemsInput,
 } from '@bloomreach-buddy/core';
 
 function printJson(value: unknown): void {
@@ -9632,5 +9636,256 @@ sqlReports
       process.exit(1);
     }
   });
+
+const catalogs = program.command('catalogs').description('Manage Bloomreach Engagement catalogs');
+
+catalogs
+  .command('list')
+  .description('List all catalogs in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachCatalogsService(options.project);
+      const result = await service.listCatalogs({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No catalogs found.');
+          return;
+        }
+        for (const catalog of result) {
+          console.log(`  ${catalog.name} (${catalog.itemCount} items)`);
+          console.log(`    ID:  ${catalog.id}`);
+          console.log(`    URL: ${catalog.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+catalogs
+  .command('view-items')
+  .description('View items in a specific catalog')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--catalog-id <id>', 'Catalog ID')
+  .option('--page <n>', 'Page number')
+  .option('--page-size <n>', 'Page size')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      catalogId: string;
+      page?: string;
+      pageSize?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachCatalogsService(options.project);
+        const result = await service.viewCatalogItems({
+          project: options.project,
+          catalogId: options.catalogId,
+          page: options.page !== undefined ? parseInt(options.page, 10) : undefined,
+          pageSize: options.pageSize !== undefined ? parseInt(options.pageSize, 10) : undefined,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log(`Catalog Items: ${options.catalogId}`);
+          console.log(`  Total: ${result.totalCount}`);
+          console.log(`  Page:  ${result.page}`);
+          console.log(`  Size:  ${result.pageSize}`);
+          if (result.items.length === 0) {
+            console.log('  Items: none');
+          } else {
+            console.log('  Items:');
+            for (const item of result.items) {
+              console.log(`    ${item.id}: ${JSON.stringify(item.properties)}`);
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+catalogs
+  .command('create')
+  .description('Prepare creation of a new catalog (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Catalog name')
+  .requiredOption('--schema <json>', 'JSON object of catalog schema fields')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      schema: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const schema = JSON.parse(options.schema) as CreateCatalogInput['schema'];
+
+        const service = new BloomreachCatalogsService(options.project);
+        const result = service.prepareCreateCatalog({
+          project: options.project,
+          name: options.name,
+          schema,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Catalog creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+catalogs
+  .command('add-items')
+  .description('Prepare adding items to a catalog (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--catalog-id <id>', 'Catalog ID')
+  .requiredOption('--items <json>', 'JSON array of catalog item property objects')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      catalogId: string;
+      items: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const items = JSON.parse(options.items) as AddCatalogItemsInput['items'];
+
+        const service = new BloomreachCatalogsService(options.project);
+        const result = service.prepareAddCatalogItems({
+          project: options.project,
+          catalogId: options.catalogId,
+          items,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Catalog add-items prepared.');
+          console.log(`  Catalog: ${options.catalogId}`);
+          console.log(`  Items:   ${items.length}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+catalogs
+  .command('update-items')
+  .description('Prepare updating catalog items (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--catalog-id <id>', 'Catalog ID')
+  .requiredOption('--items <json>', 'JSON array of item updates [{id, properties}]')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      catalogId: string;
+      items: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const items = JSON.parse(options.items) as UpdateCatalogItemsInput['items'];
+
+        const service = new BloomreachCatalogsService(options.project);
+        const result = service.prepareUpdateCatalogItems({
+          project: options.project,
+          catalogId: options.catalogId,
+          items,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Catalog update-items prepared.');
+          console.log(`  Catalog: ${options.catalogId}`);
+          console.log(`  Items:   ${items.length}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+catalogs
+  .command('delete')
+  .description('Prepare deletion of a catalog (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--catalog-id <id>', 'Catalog ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; catalogId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachCatalogsService(options.project);
+        const result = service.prepareDeleteCatalog({
+          project: options.project,
+          catalogId: options.catalogId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Catalog deletion prepared.');
+          console.log(`  Catalog: ${options.catalogId}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
 
 program.parse();
