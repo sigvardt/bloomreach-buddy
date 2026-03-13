@@ -1,6 +1,8 @@
 import { validateProject } from './bloomreachDashboards.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
+import { bloomreachApiFetch, buildDataPath } from './bloomreachApiClient.js';
 
 export const CREATE_FUNNEL_ACTION_TYPE = 'funnels.create_funnel';
 export const CLONE_FUNNEL_ACTION_TYPE = 'funnels.clone_funnel';
@@ -158,6 +160,19 @@ export function buildFunnelsUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/analytics/funnels`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
 export interface FunnelActionExecutor {
   readonly actionType: string;
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -165,47 +180,78 @@ export interface FunnelActionExecutor {
 
 class CreateFunnelExecutor implements FunnelActionExecutor {
   readonly actionType = CREATE_FUNNEL_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(
+    _payload: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateFunnelExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateFunnelExecutor: not yet implemented. ' +
+        'Funnel creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CloneFunnelExecutor implements FunnelActionExecutor {
   readonly actionType = CLONE_FUNNEL_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(
+    _payload: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CloneFunnelExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CloneFunnelExecutor: not yet implemented. ' +
+        'Funnel cloning is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ArchiveFunnelExecutor implements FunnelActionExecutor {
   readonly actionType = ARCHIVE_FUNNEL_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(
+    _payload: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ArchiveFunnelExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ArchiveFunnelExecutor: not yet implemented. ' +
+        'Funnel archiving is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createFunnelActionExecutors(): Record<string, FunnelActionExecutor> {
+export function createFunnelActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, FunnelActionExecutor> {
   return {
-    [CREATE_FUNNEL_ACTION_TYPE]: new CreateFunnelExecutor(),
-    [CLONE_FUNNEL_ACTION_TYPE]: new CloneFunnelExecutor(),
-    [ARCHIVE_FUNNEL_ACTION_TYPE]: new ArchiveFunnelExecutor(),
+    [CREATE_FUNNEL_ACTION_TYPE]: new CreateFunnelExecutor(apiConfig),
+    [CLONE_FUNNEL_ACTION_TYPE]: new CloneFunnelExecutor(apiConfig),
+    [ARCHIVE_FUNNEL_ACTION_TYPE]: new ArchiveFunnelExecutor(apiConfig),
   };
 }
 
 export class BloomreachFunnelsService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildFunnelsUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get funnelsUrl(): string {
@@ -218,13 +264,15 @@ export class BloomreachFunnelsService {
     }
 
     throw new Error(
-      'listFunnelAnalyses: not yet implemented. Requires browser automation infrastructure.',
+      'listFunnelAnalyses: the Bloomreach API does not provide a list endpoint for funnels. ' +
+        'Funnel analysis IDs must be obtained from the Bloomreach Engagement UI ' +
+        '(found in the URL when viewing a funnel, e.g. "606488856f8cf6f848b20af8").',
     );
   }
 
   async viewFunnelResults(input: ViewFunnelResultsInput): Promise<FunnelResults> {
     validateProject(input.project);
-    validateFunnelAnalysisId(input.analysisId);
+    const analysisId = validateFunnelAnalysisId(input.analysisId);
 
     if (input.startDate !== undefined || input.endDate !== undefined) {
       const dateRange: DateRangeFilter = {
@@ -234,9 +282,69 @@ export class BloomreachFunnelsService {
       validateDateRange(dateRange);
     }
 
-    throw new Error(
-      'viewFunnelResults: not yet implemented. Requires browser automation infrastructure.',
-    );
+    const config = requireApiConfig(this.apiConfig, 'viewFunnelResults');
+    const path = buildDataPath(config, '/analyses/funnels');
+
+    const response = await bloomreachApiFetch(config, path, {
+      body: {
+        analysis_id: analysisId,
+        format: 'table_json',
+      },
+    });
+
+    const data = response as {
+      header?: string[];
+      rows?: unknown[][];
+      success?: boolean;
+      name?: string;
+    };
+    if (!data.success || !Array.isArray(data.rows)) {
+      throw new Error('viewFunnelResults: unexpected API response format.');
+    }
+
+    const header = Array.isArray(data.header) ? data.header : [];
+    const stepIdx = header.indexOf('step');
+    const eventIdx = header.indexOf('event_name');
+    const enteredIdx = header.indexOf('entered');
+    const completedIdx = header.indexOf('completed');
+    const conversionIdx = header.indexOf('conversion_rate');
+    const dropOffIdx = header.indexOf('drop_off_rate');
+
+    const steps: FunnelStepResult[] = data.rows.map((row, index) => {
+      const toNum = (idx: number): number => {
+        if (idx < 0 || idx >= row.length) return 0;
+        const val = row[idx];
+        return typeof val === 'number' ? val : 0;
+      };
+      const toStr = (idx: number): string => {
+        if (idx < 0 || idx >= row.length) return '';
+        const val = row[idx];
+        return val === null || val === undefined ? '' : String(val);
+      };
+
+      return {
+        step: stepIdx >= 0 ? toNum(stepIdx) : index + 1,
+        eventName: toStr(eventIdx),
+        entered: toNum(enteredIdx),
+        completed: toNum(completedIdx),
+        conversionRate: toNum(conversionIdx),
+        dropOffRate: toNum(dropOffIdx),
+      };
+    });
+
+    const overallConversionRate =
+      steps.length > 0 && steps[0].entered > 0
+        ? steps[steps.length - 1].completed / steps[0].entered
+        : 0;
+
+    return {
+      analysisId,
+      analysisName: data.name ?? analysisId,
+      startDate: input.startDate ?? '',
+      endDate: input.endDate ?? '',
+      steps,
+      overallConversionRate,
+    };
   }
 
   prepareCreateFunnelAnalysis(input: CreateFunnelAnalysisInput): PreparedFunnelAction {

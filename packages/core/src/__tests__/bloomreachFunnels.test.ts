@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   CREATE_FUNNEL_ACTION_TYPE,
   CLONE_FUNNEL_ACTION_TYPE,
@@ -14,6 +14,18 @@ import {
   createFunnelActionExecutors,
   BloomreachFunnelsService,
 } from '../index.js';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_FUNNEL_ACTION_TYPE', () => {
@@ -368,6 +380,18 @@ describe('createFunnelActionExecutors', () => {
       'not yet implemented',
     );
   });
+
+  it('accepts optional apiConfig parameter', () => {
+    const executors = createFunnelActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(3);
+  });
+
+  it('executors still throw not-yet-implemented with apiConfig', async () => {
+    const executors = createFunnelActionExecutors(TEST_API_CONFIG);
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+    }
+  });
 });
 
 describe('BloomreachFunnelsService', () => {
@@ -399,12 +423,24 @@ describe('BloomreachFunnelsService', () => {
       const service = new BloomreachFunnelsService('org/project');
       expect(service.funnelsUrl).toBe('/p/org%2Fproject/analytics/funnels');
     });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachFunnelsService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachFunnelsService);
+    });
+
+    it('exposes funnels URL when constructed with apiConfig', () => {
+      const service = new BloomreachFunnelsService('test', TEST_API_CONFIG);
+      expect(service.funnelsUrl).toBe('/p/test/analytics/funnels');
+    });
   });
 
   describe('listFunnelAnalyses', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachFunnelsService('test');
-      await expect(service.listFunnelAnalyses()).rejects.toThrow('not yet implemented');
+      await expect(service.listFunnelAnalyses()).rejects.toThrow(
+        'does not provide a list endpoint',
+      );
     });
 
     it('validates project when input is provided', async () => {
@@ -421,72 +457,221 @@ describe('BloomreachFunnelsService', () => {
       );
     });
 
-    it('throws not-yet-implemented error for valid project override', async () => {
+    it('throws no-API-endpoint error for valid project override', async () => {
       const service = new BloomreachFunnelsService('test');
-      await expect(service.listFunnelAnalyses({ project: 'kingdom-of-joakim' })).rejects.toThrow(
-        'not yet implemented',
-      );
+      await expect(
+        service.listFunnelAnalyses({ project: 'kingdom-of-joakim' }),
+      ).rejects.toThrow('does not provide a list endpoint');
     });
 
-    it('throws not-yet-implemented error for trimmed project override', async () => {
+    it('throws no-API-endpoint error for trimmed project override', async () => {
       const service = new BloomreachFunnelsService('test');
       await expect(
         service.listFunnelAnalyses({ project: '  kingdom-of-joakim  ' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide a list endpoint');
     });
   });
 
   describe('viewFunnelResults', () => {
-    it('throws not-yet-implemented error with valid minimal input', async () => {
+    it('throws API credential error when apiConfig is not provided', async () => {
       const service = new BloomreachFunnelsService('test');
       await expect(
         service.viewFunnelResults({ project: 'test', analysisId: 'funnel-1' }),
-      ).rejects.toThrow('not yet implemented');
-    });
-
-    it('throws not-yet-implemented error with valid full input', async () => {
-      const service = new BloomreachFunnelsService('test');
-      await expect(
-        service.viewFunnelResults({
-          project: '  test  ',
-          analysisId: '  funnel-1  ',
-        }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('requires API credentials');
     });
 
     it('validates project input', async () => {
-      const service = new BloomreachFunnelsService('test');
+      const service = new BloomreachFunnelsService('test', TEST_API_CONFIG);
       await expect(
         service.viewFunnelResults({ project: '', analysisId: 'funnel-1' }),
       ).rejects.toThrow('must not be empty');
     });
 
     it('validates whitespace-only project input', async () => {
-      const service = new BloomreachFunnelsService('test');
+      const service = new BloomreachFunnelsService('test', TEST_API_CONFIG);
       await expect(
         service.viewFunnelResults({ project: '   ', analysisId: 'funnel-1' }),
       ).rejects.toThrow('must not be empty');
     });
 
     it('validates analysisId input', async () => {
-      const service = new BloomreachFunnelsService('test');
+      const service = new BloomreachFunnelsService('test', TEST_API_CONFIG);
       await expect(
         service.viewFunnelResults({ project: 'test', analysisId: '   ' }),
       ).rejects.toThrow('Funnel analysis ID must not be empty');
     });
 
     it('validates empty analysisId input', async () => {
-      const service = new BloomreachFunnelsService('test');
-      await expect(service.viewFunnelResults({ project: 'test', analysisId: '' })).rejects.toThrow(
-        'Funnel analysis ID must not be empty',
-      );
+      const service = new BloomreachFunnelsService('test', TEST_API_CONFIG);
+      await expect(
+        service.viewFunnelResults({ project: 'test', analysisId: '' }),
+      ).rejects.toThrow('Funnel analysis ID must not be empty');
     });
 
-    it('accepts trimmed analysisId and reaches not-yet-implemented', async () => {
-      const service = new BloomreachFunnelsService('test');
+    it('returns funnel results from API response', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            header: ['step', 'event_name', 'entered', 'completed', 'conversion_rate', 'drop_off_rate'],
+            rows: [
+              [1, 'view_product', 1000, 800, 0.8, 0.2],
+              [2, 'add_to_cart', 800, 400, 0.5, 0.5],
+              [3, 'purchase', 400, 200, 0.5, 0.5],
+            ],
+            success: true,
+            name: 'Checkout Funnel',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachFunnelsService('test', TEST_API_CONFIG);
+      const result = await service.viewFunnelResults({
+        project: 'test',
+        analysisId: 'funnel-1',
+      });
+
+      expect(result.analysisId).toBe('funnel-1');
+      expect(result.analysisName).toBe('Checkout Funnel');
+      expect(result.steps).toHaveLength(3);
+      expect(result.steps[0]).toEqual({
+        step: 1,
+        eventName: 'view_product',
+        entered: 1000,
+        completed: 800,
+        conversionRate: 0.8,
+        dropOffRate: 0.2,
+      });
+      expect(result.steps[2]).toEqual({
+        step: 3,
+        eventName: 'purchase',
+        entered: 400,
+        completed: 200,
+        conversionRate: 0.5,
+        dropOffRate: 0.5,
+      });
+      expect(result.overallConversionRate).toBe(0.2);
+    });
+
+    it('handles empty rows in API response', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            header: ['step', 'event_name', 'entered', 'completed', 'conversion_rate', 'drop_off_rate'],
+            rows: [],
+            success: true,
+            name: 'Empty Funnel',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachFunnelsService('test', TEST_API_CONFIG);
+      const result = await service.viewFunnelResults({
+        project: 'test',
+        analysisId: 'funnel-1',
+      });
+
+      expect(result.steps).toEqual([]);
+      expect(result.overallConversionRate).toBe(0);
+    });
+
+    it('throws on unsuccessful API response', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify({ success: false }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+
+      const service = new BloomreachFunnelsService('test', TEST_API_CONFIG);
       await expect(
-        service.viewFunnelResults({ project: 'test', analysisId: '  funnel-99  ' }),
-      ).rejects.toThrow('not yet implemented');
+        service.viewFunnelResults({ project: 'test', analysisId: 'funnel-1' }),
+      ).rejects.toThrow('unexpected API response format');
+    });
+
+    it('handles null cell values in rows', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            header: ['step', 'event_name', 'entered', 'completed', 'conversion_rate', 'drop_off_rate'],
+            rows: [
+              [null, null, null, null, null, null],
+              [2, 'purchase', 500, 300, 0.6, 0.4],
+            ],
+            success: true,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachFunnelsService('test', TEST_API_CONFIG);
+      const result = await service.viewFunnelResults({
+        project: 'test',
+        analysisId: 'funnel-1',
+      });
+
+      expect(result.steps[0]).toEqual({
+        step: 0,
+        eventName: '',
+        entered: 0,
+        completed: 0,
+        conversionRate: 0,
+        dropOffRate: 0,
+      });
+      expect(result.steps[1]).toEqual({
+        step: 2,
+        eventName: 'purchase',
+        entered: 500,
+        completed: 300,
+        conversionRate: 0.6,
+        dropOffRate: 0.4,
+      });
+    });
+
+    it('uses analysisId as analysisName when name is missing', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            header: ['step', 'event_name', 'entered', 'completed', 'conversion_rate', 'drop_off_rate'],
+            rows: [[1, 'visit', 100, 50, 0.5, 0.5], [2, 'purchase', 50, 25, 0.5, 0.5]],
+            success: true,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachFunnelsService('test', TEST_API_CONFIG);
+      const result = await service.viewFunnelResults({
+        project: 'test',
+        analysisId: 'funnel-xyz',
+      });
+
+      expect(result.analysisName).toBe('funnel-xyz');
+    });
+
+    it('includes date range from input in results', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            header: ['step', 'event_name', 'entered', 'completed', 'conversion_rate', 'drop_off_rate'],
+            rows: [[1, 'visit', 100, 50, 0.5, 0.5], [2, 'purchase', 50, 25, 0.5, 0.5]],
+            success: true,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachFunnelsService('test', TEST_API_CONFIG);
+      const result = await service.viewFunnelResults({
+        project: 'test',
+        analysisId: 'funnel-1',
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+      });
+
+      expect(result.startDate).toBe('2024-01-01');
+      expect(result.endDate).toBe('2024-01-31');
     });
   });
 
