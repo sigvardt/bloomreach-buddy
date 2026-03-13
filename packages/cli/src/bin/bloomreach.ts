@@ -1001,7 +1001,7 @@ surveys
   .command('list')
   .description('List all surveys in the project')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .option('--status <status>', 'Filter by status (active, inactive, draft, archived)')
+  .option('--status <status>', 'Filter by status: active, inactive, draft, or archived')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; status?: string; json?: boolean }) => {
     try {
@@ -1036,9 +1036,9 @@ surveys
 
 surveys
   .command('view-results')
-  .description('View responses and analytics for a survey')
+  .description('View response counts, completion rates, and answer distribution for a survey')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--survey-id <id>', 'Survey ID')
+  .requiredOption('--survey-id <id>', 'Survey ID to retrieve results for')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; surveyId: string; json?: boolean }) => {
     try {
@@ -1071,17 +1071,20 @@ surveys
   .command('create')
   .description('Prepare creation of a new on-site survey (two-phase commit)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--name <name>', 'Survey name')
+  .requiredOption('--name <name>', 'Survey name (max 200 characters)')
   .requiredOption(
     '--questions <json>',
-    'JSON array of questions [{id, type, text, options?, required?}]',
+    'JSON array of questions: [{id, type, text, options?, required?}]. Types: multiple_choice, text, rating, nps. Max 50 questions, max 20 options per question.',
   )
-  .option('--audience <audience>', 'Target audience segment')
-  .option('--page-url <url>', 'Page URL where survey appears')
-  .option('--trigger-event <event>', 'Trigger event name')
-  .option('--delay-ms <ms>', 'Delay before showing survey (ms)')
-  .option('--frequency <frequency>', 'Display frequency (once, always, once_per_session)')
-  .option('--template-id <id>', 'Survey template ID')
+  .option('--audience <audience>', 'Audience segment identifier for respondent targeting')
+  .option('--page-url <url>', 'Page URL pattern where survey appears (e.g. /checkout)')
+  .option('--trigger-event <event>', 'Trigger event name (e.g. cart_abandon)')
+  .option('--delay-ms <ms>', 'Delay in milliseconds before showing the survey')
+  .option(
+    '--frequency <frequency>',
+    'Display frequency: once, always, or once_per_session',
+  )
+  .option('--template-id <id>', 'Survey template ID for pre-built layouts')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -1149,9 +1152,9 @@ surveys
 
 surveys
   .command('start')
-  .description('Prepare starting a survey (two-phase commit)')
+  .description('Prepare starting a survey to begin collecting responses (two-phase commit)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--survey-id <id>', 'Survey ID')
+  .requiredOption('--survey-id <id>', 'Survey ID to start')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; surveyId: string; note?: string; json?: boolean }) => {
@@ -1182,9 +1185,9 @@ surveys
 
 surveys
   .command('stop')
-  .description('Prepare stopping a survey (two-phase commit)')
+  .description('Prepare stopping a survey to pause response collection (two-phase commit)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--survey-id <id>', 'Survey ID')
+  .requiredOption('--survey-id <id>', 'Survey ID to stop')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; surveyId: string; note?: string; json?: boolean }) => {
@@ -1215,9 +1218,9 @@ surveys
 
 surveys
   .command('archive')
-  .description('Prepare archiving a survey (two-phase commit)')
+  .description('Prepare archiving a survey for safe removal from active list (two-phase commit)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--survey-id <id>', 'Survey ID')
+  .requiredOption('--survey-id <id>', 'Survey ID to archive')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; surveyId: string; note?: string; json?: boolean }) => {

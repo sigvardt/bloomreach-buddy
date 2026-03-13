@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   CREATE_SURVEY_ACTION_TYPE,
   START_SURVEY_ACTION_TYPE,
@@ -19,6 +19,18 @@ import {
   createSurveyActionExecutors,
   BloomreachSurveysService,
 } from '../index.js';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_SURVEY_ACTION_TYPE', () => {
@@ -77,13 +89,29 @@ describe('validateSurveyName', () => {
     expect(validateSurveyName('  Product Feedback  ')).toBe('Product Feedback');
   });
 
+  it('returns trimmed name with tabs and newlines', () => {
+    expect(validateSurveyName('\n\tProduct Feedback\t\n')).toBe('Product Feedback');
+  });
+
   it('accepts single-character name', () => {
     expect(validateSurveyName('A')).toBe('A');
+  });
+
+  it('accepts numeric name', () => {
+    expect(validateSurveyName('123')).toBe('123');
+  });
+
+  it('accepts name with punctuation', () => {
+    expect(validateSurveyName('Survey: NPS v2')).toBe('Survey: NPS v2');
   });
 
   it('accepts name at maximum length', () => {
     const name = 'x'.repeat(200);
     expect(validateSurveyName(name)).toBe(name);
+  });
+
+  it('accepts mixed whitespace around valid name', () => {
+    expect(validateSurveyName(' \t  Welcome Survey \n ')).toBe('Welcome Survey');
   });
 
   it('throws for empty string', () => {
@@ -92,6 +120,14 @@ describe('validateSurveyName', () => {
 
   it('throws for whitespace-only string', () => {
     expect(() => validateSurveyName('   ')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateSurveyName('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateSurveyName('\n\n')).toThrow('must not be empty');
   });
 
   it('throws for name exceeding maximum length', () => {
@@ -124,11 +160,31 @@ describe('validateSurveyStatus', () => {
   it('throws for empty status', () => {
     expect(() => validateSurveyStatus('')).toThrow('status must be one of');
   });
+
+  it('throws for incorrect casing', () => {
+    expect(() => validateSurveyStatus('Active')).toThrow('status must be one of');
+  });
+
+  it('throws for value with trailing space', () => {
+    expect(() => validateSurveyStatus('active ')).toThrow('status must be one of');
+  });
 });
 
 describe('validateSurveyId', () => {
   it('returns trimmed survey ID for valid input', () => {
     expect(validateSurveyId('  survey-123  ')).toBe('survey-123');
+  });
+
+  it('returns same value when already trimmed', () => {
+    expect(validateSurveyId('survey-456')).toBe('survey-456');
+  });
+
+  it('returns ID containing slashes', () => {
+    expect(validateSurveyId('survey/group/a')).toBe('survey/group/a');
+  });
+
+  it('returns ID containing dots and dashes', () => {
+    expect(validateSurveyId('survey.v2-alpha')).toBe('survey.v2-alpha');
   });
 
   it('throws for empty string', () => {
@@ -137,6 +193,14 @@ describe('validateSurveyId', () => {
 
   it('throws for whitespace-only string', () => {
     expect(() => validateSurveyId('   ')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateSurveyId('\n')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateSurveyId('\t')).toThrow('must not be empty');
   });
 });
 
@@ -164,6 +228,14 @@ describe('validateQuestionType', () => {
   it('throws for empty type', () => {
     expect(() => validateQuestionType('')).toThrow('question type must be one of');
   });
+
+  it('throws for incorrect casing', () => {
+    expect(() => validateQuestionType('Multiple_Choice')).toThrow('question type must be one of');
+  });
+
+  it('throws for value with trailing space', () => {
+    expect(() => validateQuestionType('text ')).toThrow('question type must be one of');
+  });
 });
 
 describe('validateQuestionText', () => {
@@ -173,12 +245,29 @@ describe('validateQuestionText', () => {
     );
   });
 
+  it('returns trimmed question text with tabs', () => {
+    expect(validateQuestionText('\t How likely? \t')).toBe('How likely?');
+  });
+
+  it('accepts single-character text', () => {
+    expect(validateQuestionText('?')).toBe('?');
+  });
+
+  it('accepts text at maximum length', () => {
+    const questionText = 'x'.repeat(500);
+    expect(validateQuestionText(questionText)).toBe(questionText);
+  });
+
   it('throws for empty text', () => {
     expect(() => validateQuestionText('')).toThrow('must not be empty');
   });
 
   it('throws for too-long question text', () => {
     expect(() => validateQuestionText('x'.repeat(501))).toThrow('must not exceed 500 characters');
+  });
+
+  it('throws for tab-only text', () => {
+    expect(() => validateQuestionText('\t\t')).toThrow('must not be empty');
   });
 });
 
@@ -265,6 +354,70 @@ describe('validateQuestions', () => {
       ]),
     ).toThrow('must not exceed 20 entries');
   });
+
+  it('validates required field preservation', () => {
+    const result = validateQuestions([
+      {
+        id: 'q1',
+        type: 'text',
+        text: 'How was your experience?',
+        required: false,
+      },
+    ]);
+
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        required: false,
+      }),
+    );
+  });
+
+  it('validates question without options', () => {
+    expect(
+      validateQuestions([
+        {
+          id: 'q1',
+          type: 'text',
+          text: 'Any follow-up comments?',
+        },
+      ]),
+    ).toEqual([
+      {
+        id: 'q1',
+        type: 'text',
+        text: 'Any follow-up comments?',
+      },
+    ]);
+  });
+
+  it('accepts maximum number of options (20)', () => {
+    const options = Array.from({ length: 20 }, (_, index) => `Option ${index + 1}`);
+    const result = validateQuestions([
+      {
+        id: 'q1',
+        type: 'multiple_choice',
+        text: 'Pick one',
+        options,
+      },
+    ]);
+
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        options,
+      }),
+    );
+  });
+
+  it('accepts maximum number of questions (50)', () => {
+    const questions = Array.from({ length: 50 }, (_, index) => ({
+      id: `q${index + 1}`,
+      type: 'text' as const,
+      text: `Question ${index + 1}`,
+    }));
+
+    const result = validateQuestions(questions);
+    expect(result).toHaveLength(50);
+  });
 });
 
 describe('buildSurveysUrl', () => {
@@ -278,6 +431,18 @@ describe('buildSurveysUrl', () => {
 
   it('encodes slashes in project name', () => {
     expect(buildSurveysUrl('org/project')).toBe('/p/org%2Fproject/campaigns/surveys');
+  });
+
+  it('encodes unicode characters in project name', () => {
+    expect(buildSurveysUrl('projekt åäö')).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/campaigns/surveys');
+  });
+
+  it('encodes hash character in project name', () => {
+    expect(buildSurveysUrl('my#project')).toBe('/p/my%23project/campaigns/surveys');
+  });
+
+  it('keeps dashes unencoded in project name', () => {
+    expect(buildSurveysUrl('team-alpha')).toBe('/p/team-alpha/campaigns/surveys');
   });
 });
 
@@ -298,8 +463,41 @@ describe('createSurveyActionExecutors', () => {
     }
   });
 
-  it('executors throw "not yet implemented" on execute', async () => {
+  it('create executor throws "not yet implemented" on execute', async () => {
     const executors = createSurveyActionExecutors();
+    await expect(executors[CREATE_SURVEY_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('start executor throws "not yet implemented" on execute', async () => {
+    const executors = createSurveyActionExecutors();
+    await expect(executors[START_SURVEY_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('stop executor throws "not yet implemented" on execute', async () => {
+    const executors = createSurveyActionExecutors();
+    await expect(executors[STOP_SURVEY_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('archive executor throws "not yet implemented" on execute', async () => {
+    const executors = createSurveyActionExecutors();
+    await expect(executors[ARCHIVE_SURVEY_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('accepts optional apiConfig parameter', () => {
+    const executors = createSurveyActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(4);
+  });
+
+  it('executors still throw not-yet-implemented with apiConfig', async () => {
+    const executors = createSurveyActionExecutors(TEST_API_CONFIG);
     for (const executor of Object.values(executors)) {
       await expect(executor.execute({})).rejects.toThrow('not yet implemented');
     }
@@ -326,12 +524,31 @@ describe('BloomreachSurveysService', () => {
     it('throws for empty project', () => {
       expect(() => new BloomreachSurveysService('')).toThrow('must not be empty');
     });
+
+    it('throws for whitespace-only project', () => {
+      expect(() => new BloomreachSurveysService('   ')).toThrow('must not be empty');
+    });
+
+    it('encodes slashes in constructor project URL', () => {
+      const service = new BloomreachSurveysService('org/project');
+      expect(service.surveysUrl).toBe('/p/org%2Fproject/campaigns/surveys');
+    });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachSurveysService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachSurveysService);
+    });
+
+    it('exposes surveys URL when constructed with apiConfig', () => {
+      const service = new BloomreachSurveysService('test', TEST_API_CONFIG);
+      expect(service.surveysUrl).toBe('/p/test/campaigns/surveys');
+    });
   });
 
   describe('listSurveys', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachSurveysService('test');
-      await expect(service.listSurveys()).rejects.toThrow('not yet implemented');
+      await expect(service.listSurveys()).rejects.toThrow('does not provide');
     });
 
     it('validates status when provided', async () => {
@@ -347,14 +564,28 @@ describe('BloomreachSurveysService', () => {
         'must not be empty',
       );
     });
+
+    it('throws no-API-endpoint error for valid project override', async () => {
+      const service = new BloomreachSurveysService('test');
+      await expect(service.listSurveys({ project: 'kingdom-of-joakim' })).rejects.toThrow(
+        'does not provide',
+      );
+    });
+
+    it('throws no-API-endpoint error for trimmed project override', async () => {
+      const service = new BloomreachSurveysService('test');
+      await expect(service.listSurveys({ project: '  kingdom-of-joakim  ' })).rejects.toThrow(
+        'does not provide',
+      );
+    });
   });
 
   describe('viewSurveyResults', () => {
-    it('throws not-yet-implemented error with valid input', async () => {
+    it('throws no-survey-results-endpoint error with valid input', async () => {
       const service = new BloomreachSurveysService('test');
       await expect(
         service.viewSurveyResults({ project: 'test', surveyId: 'survey-1' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide');
     });
 
     it('validates project input', async () => {
@@ -369,6 +600,13 @@ describe('BloomreachSurveysService', () => {
       await expect(service.viewSurveyResults({ project: 'test', surveyId: '   ' })).rejects.toThrow(
         'Survey ID must not be empty',
       );
+    });
+
+    it('throws no-API-endpoint error with trimmed inputs', async () => {
+      const service = new BloomreachSurveysService('test');
+      await expect(
+        service.viewSurveyResults({ project: '  test  ', surveyId: '  survey-1  ' }),
+      ).rejects.toThrow('does not provide');
     });
   });
 
@@ -447,12 +685,51 @@ describe('BloomreachSurveysService', () => {
       );
     });
 
+    it('includes templateId in preview', () => {
+      const service = new BloomreachSurveysService('test');
+      const result = service.prepareCreateSurvey({
+        project: 'test',
+        name: 'Templated Survey',
+        questions: [{ id: 'q1', type: 'text', text: 'Share your thoughts' }],
+        templateId: 'template-123',
+      });
+
+      expect(result.preview).toEqual(expect.objectContaining({ templateId: 'template-123' }));
+    });
+
+    it('trims project and name in preview', () => {
+      const service = new BloomreachSurveysService('test');
+      const result = service.prepareCreateSurvey({
+        project: '  my-project  ',
+        name: '  Product Satisfaction Survey  ',
+        questions: [{ id: 'q1', type: 'text', text: 'How can we improve?' }],
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          project: 'my-project',
+          name: 'Product Satisfaction Survey',
+        }),
+      );
+    });
+
     it('throws for empty name', () => {
       const service = new BloomreachSurveysService('test');
       expect(() =>
         service.prepareCreateSurvey({
           project: 'test',
           name: '',
+          questions: [{ id: 'q1', type: 'text', text: 'Question' }],
+        }),
+      ).toThrow('must not be empty');
+    });
+
+    it('throws for whitespace-only name', () => {
+      const service = new BloomreachSurveysService('test');
+      expect(() =>
+        service.prepareCreateSurvey({
+          project: 'test',
+          name: '   ',
           questions: [{ id: 'q1', type: 'text', text: 'Question' }],
         }),
       ).toThrow('must not be empty');
@@ -469,6 +746,17 @@ describe('BloomreachSurveysService', () => {
       ).toThrow('must not be empty');
     });
 
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachSurveysService('test');
+      expect(() =>
+        service.prepareCreateSurvey({
+          project: '   ',
+          name: 'Survey',
+          questions: [{ id: 'q1', type: 'text', text: 'Question' }],
+        }),
+      ).toThrow('must not be empty');
+    });
+
     it('throws for empty questions array', () => {
       const service = new BloomreachSurveysService('test');
       expect(() =>
@@ -478,6 +766,22 @@ describe('BloomreachSurveysService', () => {
           questions: [],
         }),
       ).toThrow('at least 1 question');
+    });
+
+    it('accepts max-length name and still prepares action', () => {
+      const service = new BloomreachSurveysService('test');
+      const maxName = 'x'.repeat(200);
+      const result = service.prepareCreateSurvey({
+        project: 'test',
+        name: maxName,
+        questions: [{ id: 'q1', type: 'text', text: 'Question' }],
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          name: maxName,
+        }),
+      );
     });
   });
 
@@ -520,10 +824,38 @@ describe('BloomreachSurveysService', () => {
       );
     });
 
+    it('throws for whitespace-only surveyId', () => {
+      const service = new BloomreachSurveysService('test');
+      expect(() => service.prepareStartSurvey({ project: 'test', surveyId: '   ' })).toThrow(
+        'must not be empty',
+      );
+    });
+
     it('throws for empty project', () => {
       const service = new BloomreachSurveysService('test');
       expect(() => service.prepareStartSurvey({ project: '', surveyId: 'survey-123' })).toThrow(
         'must not be empty',
+      );
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachSurveysService('test');
+      expect(() => service.prepareStartSurvey({ project: '   ', surveyId: 'survey-123' })).toThrow(
+        'must not be empty',
+      );
+    });
+
+    it('trims surveyId in preview', () => {
+      const service = new BloomreachSurveysService('test');
+      const result = service.prepareStartSurvey({
+        project: 'test',
+        surveyId: '  survey-123  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          surveyId: 'survey-123',
+        }),
       );
     });
   });
@@ -567,10 +899,38 @@ describe('BloomreachSurveysService', () => {
       );
     });
 
+    it('throws for whitespace-only surveyId', () => {
+      const service = new BloomreachSurveysService('test');
+      expect(() => service.prepareStopSurvey({ project: 'test', surveyId: '   ' })).toThrow(
+        'must not be empty',
+      );
+    });
+
     it('throws for empty project', () => {
       const service = new BloomreachSurveysService('test');
       expect(() => service.prepareStopSurvey({ project: '', surveyId: 'survey-456' })).toThrow(
         'must not be empty',
+      );
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachSurveysService('test');
+      expect(() => service.prepareStopSurvey({ project: '   ', surveyId: 'survey-456' })).toThrow(
+        'must not be empty',
+      );
+    });
+
+    it('trims surveyId in preview', () => {
+      const service = new BloomreachSurveysService('test');
+      const result = service.prepareStopSurvey({
+        project: 'test',
+        surveyId: '  survey-456  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          surveyId: 'survey-456',
+        }),
       );
     });
   });
@@ -614,11 +974,79 @@ describe('BloomreachSurveysService', () => {
       );
     });
 
+    it('throws for whitespace-only surveyId', () => {
+      const service = new BloomreachSurveysService('test');
+      expect(() => service.prepareArchiveSurvey({ project: 'test', surveyId: '   ' })).toThrow(
+        'must not be empty',
+      );
+    });
+
     it('throws for empty project', () => {
       const service = new BloomreachSurveysService('test');
       expect(() => service.prepareArchiveSurvey({ project: '', surveyId: 'survey-900' })).toThrow(
         'must not be empty',
       );
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachSurveysService('test');
+      expect(() => service.prepareArchiveSurvey({ project: '   ', surveyId: 'survey-900' })).toThrow(
+        'must not be empty',
+      );
+    });
+
+    it('accepts trimmed surveyId and reaches prepared state', () => {
+      const service = new BloomreachSurveysService('test');
+      const result = service.prepareArchiveSurvey({
+        project: 'test',
+        surveyId: '  survey-900  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          surveyId: 'survey-900',
+        }),
+      );
+    });
+
+    it('trims project in preview', () => {
+      const service = new BloomreachSurveysService('test');
+      const result = service.prepareArchiveSurvey({
+        project: '  my-project  ',
+        surveyId: 'survey-900',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          project: 'my-project',
+        }),
+      );
+    });
+
+    it('keeps slash-containing surveyId after trim', () => {
+      const service = new BloomreachSurveysService('test');
+      const result = service.prepareArchiveSurvey({
+        project: 'test',
+        surveyId: '  survey/group/a  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          surveyId: 'survey/group/a',
+        }),
+      );
+    });
+
+    it('produces token fields with expected prefixes', () => {
+      const service = new BloomreachSurveysService('test');
+      const result = service.prepareArchiveSurvey({
+        project: 'test',
+        surveyId: 'survey-900',
+      });
+
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.confirmToken).toMatch(/^ct_stub_/);
+      expect(result.expiresAtMs).toBeGreaterThan(Date.now());
     });
   });
 });
