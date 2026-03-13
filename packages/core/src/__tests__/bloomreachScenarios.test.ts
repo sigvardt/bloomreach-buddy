@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   CREATE_SCENARIO_ACTION_TYPE,
   START_SCENARIO_ACTION_TYPE,
@@ -16,6 +16,18 @@ import {
   createScenarioActionExecutors,
   BloomreachScenariosService,
 } from '../index.js';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_SCENARIO_ACTION_TYPE', () => {
@@ -68,13 +80,29 @@ describe('validateScenarioName', () => {
     expect(validateScenarioName('  My Scenario  ')).toBe('My Scenario');
   });
 
+  it('returns trimmed name with tabs and newlines', () => {
+    expect(validateScenarioName('\n\tMy Scenario\t\n')).toBe('My Scenario');
+  });
+
   it('accepts single-character name', () => {
     expect(validateScenarioName('A')).toBe('A');
+  });
+
+  it('accepts numeric name', () => {
+    expect(validateScenarioName('123')).toBe('123');
+  });
+
+  it('accepts name with punctuation', () => {
+    expect(validateScenarioName('Scenario: Welcome v2')).toBe('Scenario: Welcome v2');
   });
 
   it('accepts name at maximum length', () => {
     const name = 'x'.repeat(200);
     expect(validateScenarioName(name)).toBe(name);
+  });
+
+  it('accepts mixed whitespace around valid name', () => {
+    expect(validateScenarioName(' \t  Welcome Flow \n ')).toBe('Welcome Flow');
   });
 
   it('throws for empty string', () => {
@@ -83,6 +111,14 @@ describe('validateScenarioName', () => {
 
   it('throws for whitespace-only string', () => {
     expect(() => validateScenarioName('   ')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateScenarioName('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateScenarioName('\n\n')).toThrow('must not be empty');
   });
 
   it('throws for name exceeding maximum length', () => {
@@ -115,6 +151,14 @@ describe('validateScenarioStatus', () => {
   it('throws for empty status', () => {
     expect(() => validateScenarioStatus('')).toThrow('status must be one of');
   });
+
+  it('throws for incorrect casing', () => {
+    expect(() => validateScenarioStatus('Active')).toThrow('status must be one of');
+  });
+
+  it('throws for value with trailing space', () => {
+    expect(() => validateScenarioStatus('active ')).toThrow('status must be one of');
+  });
 });
 
 describe('validateScenarioId', () => {
@@ -133,6 +177,22 @@ describe('validateScenarioId', () => {
   it('returns same value when already trimmed', () => {
     expect(validateScenarioId('scenario-456')).toBe('scenario-456');
   });
+
+  it('returns ID containing slashes', () => {
+    expect(validateScenarioId('scenario/group/a')).toBe('scenario/group/a');
+  });
+
+  it('returns ID containing dots and dashes', () => {
+    expect(validateScenarioId('scenario.v2-alpha')).toBe('scenario.v2-alpha');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateScenarioId('\n')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateScenarioId('\t')).toThrow('must not be empty');
+  });
 });
 
 describe('buildScenariosUrl', () => {
@@ -148,6 +208,20 @@ describe('buildScenariosUrl', () => {
 
   it('encodes slashes in project name', () => {
     expect(buildScenariosUrl('org/project')).toBe('/p/org%2Fproject/campaigns/campaign-designs');
+  });
+
+  it('encodes unicode characters in project name', () => {
+    expect(buildScenariosUrl('projekt åäö')).toBe(
+      '/p/projekt%20%C3%A5%C3%A4%C3%B6/campaigns/campaign-designs',
+    );
+  });
+
+  it('encodes hash character in project name', () => {
+    expect(buildScenariosUrl('my#project')).toBe('/p/my%23project/campaigns/campaign-designs');
+  });
+
+  it('keeps dashes unencoded in project name', () => {
+    expect(buildScenariosUrl('team-alpha')).toBe('/p/team-alpha/campaigns/campaign-designs');
   });
 });
 
@@ -169,8 +243,48 @@ describe('createScenarioActionExecutors', () => {
     }
   });
 
-  it('executors throw "not yet implemented" on execute', async () => {
+  it('create executor throws "not yet implemented" on execute', async () => {
     const executors = createScenarioActionExecutors();
+    await expect(executors[CREATE_SCENARIO_ACTION_TYPE].execute({})).rejects.toThrow(
+      'not yet implemented',
+    );
+  });
+
+  it('start executor throws "not yet implemented" on execute', async () => {
+    const executors = createScenarioActionExecutors();
+    await expect(executors[START_SCENARIO_ACTION_TYPE].execute({})).rejects.toThrow(
+      'not yet implemented',
+    );
+  });
+
+  it('stop executor throws "not yet implemented" on execute', async () => {
+    const executors = createScenarioActionExecutors();
+    await expect(executors[STOP_SCENARIO_ACTION_TYPE].execute({})).rejects.toThrow(
+      'not yet implemented',
+    );
+  });
+
+  it('clone executor throws "not yet implemented" on execute', async () => {
+    const executors = createScenarioActionExecutors();
+    await expect(executors[CLONE_SCENARIO_ACTION_TYPE].execute({})).rejects.toThrow(
+      'not yet implemented',
+    );
+  });
+
+  it('archive executor throws "not yet implemented" on execute', async () => {
+    const executors = createScenarioActionExecutors();
+    await expect(executors[ARCHIVE_SCENARIO_ACTION_TYPE].execute({})).rejects.toThrow(
+      'not yet implemented',
+    );
+  });
+
+  it('accepts optional apiConfig parameter', () => {
+    const executors = createScenarioActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(5);
+  });
+
+  it('executors still throw not-yet-implemented with apiConfig', async () => {
+    const executors = createScenarioActionExecutors(TEST_API_CONFIG);
     for (const executor of Object.values(executors)) {
       await expect(executor.execute({})).rejects.toThrow('not yet implemented');
     }
@@ -197,12 +311,31 @@ describe('BloomreachScenariosService', () => {
     it('throws for empty project', () => {
       expect(() => new BloomreachScenariosService('')).toThrow('must not be empty');
     });
+
+    it('throws for whitespace-only project', () => {
+      expect(() => new BloomreachScenariosService('   ')).toThrow('must not be empty');
+    });
+
+    it('encodes slashes in constructor project URL', () => {
+      const service = new BloomreachScenariosService('org/project');
+      expect(service.scenariosUrl).toBe('/p/org%2Fproject/campaigns/campaign-designs');
+    });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachScenariosService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachScenariosService);
+    });
+
+    it('exposes scenarios URL when constructed with apiConfig', () => {
+      const service = new BloomreachScenariosService('test', TEST_API_CONFIG);
+      expect(service.scenariosUrl).toBe('/p/test/campaigns/campaign-designs');
+    });
   });
 
   describe('listScenarios', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachScenariosService('test');
-      await expect(service.listScenarios()).rejects.toThrow('not yet implemented');
+      await expect(service.listScenarios()).rejects.toThrow('does not provide an endpoint');
     });
 
     it('validates status when provided', async () => {
@@ -218,14 +351,28 @@ describe('BloomreachScenariosService', () => {
         'must not be empty',
       );
     });
+
+    it('throws no-API-endpoint error for valid project override', async () => {
+      const service = new BloomreachScenariosService('test');
+      await expect(service.listScenarios({ project: 'kingdom-of-joakim' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error for trimmed project override', async () => {
+      const service = new BloomreachScenariosService('test');
+      await expect(service.listScenarios({ project: '  kingdom-of-joakim  ' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
   });
 
   describe('viewScenario', () => {
-    it('throws not-yet-implemented error with valid input', async () => {
+    it('throws no-API-endpoint error with valid input', async () => {
       const service = new BloomreachScenariosService('test');
       await expect(
         service.viewScenario({ project: 'test', scenarioId: 'scenario-1' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide an endpoint');
     });
 
     it('validates project input', async () => {
@@ -240,6 +387,13 @@ describe('BloomreachScenariosService', () => {
       await expect(service.viewScenario({ project: 'test', scenarioId: '   ' })).rejects.toThrow(
         'Scenario ID must not be empty',
       );
+    });
+
+    it('throws no-API-endpoint error with trimmed inputs', async () => {
+      const service = new BloomreachScenariosService('test');
+      await expect(
+        service.viewScenario({ project: '  test  ', scenarioId: '  scenario-1  ' }),
+      ).rejects.toThrow('does not provide an endpoint');
     });
   });
 
@@ -305,10 +459,39 @@ describe('BloomreachScenariosService', () => {
       );
     });
 
+    it('throws for whitespace-only name', () => {
+      const service = new BloomreachScenariosService('test');
+      expect(() => service.prepareCreateScenario({ project: 'test', name: '   ' })).toThrow(
+        'must not be empty',
+      );
+    });
+
     it('throws for empty project', () => {
       const service = new BloomreachScenariosService('test');
       expect(() => service.prepareCreateScenario({ project: '', name: 'Scenario' })).toThrow(
         'must not be empty',
+      );
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachScenariosService('test');
+      expect(() => service.prepareCreateScenario({ project: '   ', name: 'Scenario' })).toThrow(
+        'must not be empty',
+      );
+    });
+
+    it('trims project and name in preview', () => {
+      const service = new BloomreachScenariosService('test');
+      const result = service.prepareCreateScenario({
+        project: '  my-project  ',
+        name: '  My Scenario  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          project: 'my-project',
+          name: 'My Scenario',
+        }),
       );
     });
 
@@ -320,6 +503,21 @@ describe('BloomreachScenariosService', () => {
           name: 'x'.repeat(201),
         }),
       ).toThrow('must not exceed 200 characters');
+    });
+
+    it('accepts max-length name and still prepares action', () => {
+      const service = new BloomreachScenariosService('test');
+      const maxName = 'x'.repeat(200);
+      const result = service.prepareCreateScenario({
+        project: 'test',
+        name: maxName,
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          name: maxName,
+        }),
+      );
     });
   });
 
@@ -362,11 +560,39 @@ describe('BloomreachScenariosService', () => {
       );
     });
 
+    it('throws for whitespace-only scenarioId', () => {
+      const service = new BloomreachScenariosService('test');
+      expect(() => service.prepareStartScenario({ project: 'test', scenarioId: '   ' })).toThrow(
+        'must not be empty',
+      );
+    });
+
     it('throws for empty project', () => {
       const service = new BloomreachScenariosService('test');
       expect(() =>
         service.prepareStartScenario({ project: '', scenarioId: 'scenario-123' }),
       ).toThrow('must not be empty');
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachScenariosService('test');
+      expect(() =>
+        service.prepareStartScenario({ project: '   ', scenarioId: 'scenario-123' }),
+      ).toThrow('must not be empty');
+    });
+
+    it('trims scenarioId in preview', () => {
+      const service = new BloomreachScenariosService('test');
+      const result = service.prepareStartScenario({
+        project: 'test',
+        scenarioId: '  scenario-123  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          scenarioId: 'scenario-123',
+        }),
+      );
     });
   });
 
@@ -409,11 +635,39 @@ describe('BloomreachScenariosService', () => {
       );
     });
 
+    it('throws for whitespace-only scenarioId', () => {
+      const service = new BloomreachScenariosService('test');
+      expect(() => service.prepareStopScenario({ project: 'test', scenarioId: '   ' })).toThrow(
+        'must not be empty',
+      );
+    });
+
     it('throws for empty project', () => {
       const service = new BloomreachScenariosService('test');
       expect(() =>
         service.prepareStopScenario({ project: '', scenarioId: 'scenario-456' }),
       ).toThrow('must not be empty');
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachScenariosService('test');
+      expect(() =>
+        service.prepareStopScenario({ project: '   ', scenarioId: 'scenario-456' }),
+      ).toThrow('must not be empty');
+    });
+
+    it('trims scenarioId in preview', () => {
+      const service = new BloomreachScenariosService('test');
+      const result = service.prepareStopScenario({
+        project: 'test',
+        scenarioId: '  scenario-456  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          scenarioId: 'scenario-456',
+        }),
+      );
     });
   });
 
@@ -447,9 +701,29 @@ describe('BloomreachScenariosService', () => {
       expect(result.preview).toEqual(expect.objectContaining({ newName: 'Cloned Scenario' }));
     });
 
+    it('includes operatorNote in preview', () => {
+      const service = new BloomreachScenariosService('test');
+      const result = service.prepareCloneScenario({
+        project: 'test',
+        scenarioId: 'scenario-789',
+        operatorNote: 'Clone for campaign variant',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({ operatorNote: 'Clone for campaign variant' }),
+      );
+    });
+
     it('throws for empty scenarioId', () => {
       const service = new BloomreachScenariosService('test');
       expect(() => service.prepareCloneScenario({ project: 'test', scenarioId: '' })).toThrow(
+        'must not be empty',
+      );
+    });
+
+    it('throws for whitespace-only scenarioId', () => {
+      const service = new BloomreachScenariosService('test');
+      expect(() => service.prepareCloneScenario({ project: 'test', scenarioId: '   ' })).toThrow(
         'must not be empty',
       );
     });
@@ -458,6 +732,13 @@ describe('BloomreachScenariosService', () => {
       const service = new BloomreachScenariosService('test');
       expect(() =>
         service.prepareCloneScenario({ project: '', scenarioId: 'scenario-789' }),
+      ).toThrow('must not be empty');
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachScenariosService('test');
+      expect(() =>
+        service.prepareCloneScenario({ project: '   ', scenarioId: 'scenario-789' }),
       ).toThrow('must not be empty');
     });
 
@@ -470,6 +751,61 @@ describe('BloomreachScenariosService', () => {
           newName: '   ',
         }),
       ).toThrow('must not be empty');
+    });
+
+    it('throws when newName exceeds maximum length', () => {
+      const service = new BloomreachScenariosService('test');
+      expect(() =>
+        service.prepareCloneScenario({
+          project: 'test',
+          scenarioId: 'scenario-789',
+          newName: 'x'.repeat(201),
+        }),
+      ).toThrow('must not exceed 200 characters');
+    });
+
+    it('accepts max-length newName', () => {
+      const service = new BloomreachScenariosService('test');
+      const newName = 'x'.repeat(200);
+      const result = service.prepareCloneScenario({
+        project: 'test',
+        scenarioId: 'scenario-789',
+        newName,
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          newName,
+        }),
+      );
+    });
+
+    it('trims scenarioId in preview', () => {
+      const service = new BloomreachScenariosService('test');
+      const result = service.prepareCloneScenario({
+        project: 'test',
+        scenarioId: '  scenario-789  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          scenarioId: 'scenario-789',
+        }),
+      );
+    });
+
+    it('trims project in preview', () => {
+      const service = new BloomreachScenariosService('test');
+      const result = service.prepareCloneScenario({
+        project: '  my-project  ',
+        scenarioId: 'scenario-789',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          project: 'my-project',
+        }),
+      );
     });
   });
 
@@ -512,11 +848,79 @@ describe('BloomreachScenariosService', () => {
       );
     });
 
+    it('throws for whitespace-only scenarioId', () => {
+      const service = new BloomreachScenariosService('test');
+      expect(() => service.prepareArchiveScenario({ project: 'test', scenarioId: '   ' })).toThrow(
+        'must not be empty',
+      );
+    });
+
     it('throws for empty project', () => {
       const service = new BloomreachScenariosService('test');
       expect(() =>
         service.prepareArchiveScenario({ project: '', scenarioId: 'scenario-900' }),
       ).toThrow('must not be empty');
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachScenariosService('test');
+      expect(() =>
+        service.prepareArchiveScenario({ project: '   ', scenarioId: 'scenario-900' }),
+      ).toThrow('must not be empty');
+    });
+
+    it('accepts trimmed scenarioId and reaches prepared state', () => {
+      const service = new BloomreachScenariosService('test');
+      const result = service.prepareArchiveScenario({
+        project: 'test',
+        scenarioId: '  scenario-900  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          scenarioId: 'scenario-900',
+        }),
+      );
+    });
+
+    it('trims project in preview', () => {
+      const service = new BloomreachScenariosService('test');
+      const result = service.prepareArchiveScenario({
+        project: '  my-project  ',
+        scenarioId: 'scenario-900',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          project: 'my-project',
+        }),
+      );
+    });
+
+    it('keeps slash-containing scenarioId after trim', () => {
+      const service = new BloomreachScenariosService('test');
+      const result = service.prepareArchiveScenario({
+        project: 'test',
+        scenarioId: '  scenario/group/a  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          scenarioId: 'scenario/group/a',
+        }),
+      );
+    });
+
+    it('produces token fields with expected prefixes', () => {
+      const service = new BloomreachScenariosService('test');
+      const result = service.prepareArchiveScenario({
+        project: 'test',
+        scenarioId: 'scenario-900',
+      });
+
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.confirmToken).toMatch(/^ct_stub_/);
+      expect(result.expiresAtMs).toBeGreaterThan(Date.now());
     });
   });
 });

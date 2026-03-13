@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const CREATE_SCENARIO_ACTION_TYPE = 'scenarios.create_scenario';
 export const START_SCENARIO_ACTION_TYPE = 'scenarios.start_scenario';
@@ -129,6 +130,21 @@ export function buildScenariosUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/campaigns/campaign-designs`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 export interface ScenarioActionExecutor {
   readonly actionType: string;
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -136,69 +152,108 @@ export interface ScenarioActionExecutor {
 
 class CreateScenarioExecutor implements ScenarioActionExecutor {
   readonly actionType = CREATE_SCENARIO_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateScenarioExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateScenarioExecutor: not yet implemented. ' +
+        'Scenario creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class StartScenarioExecutor implements ScenarioActionExecutor {
   readonly actionType = START_SCENARIO_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'StartScenarioExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'StartScenarioExecutor: not yet implemented. ' +
+        'Starting scenarios is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class StopScenarioExecutor implements ScenarioActionExecutor {
   readonly actionType = STOP_SCENARIO_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'StopScenarioExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'StopScenarioExecutor: not yet implemented. ' +
+        'Stopping scenarios is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CloneScenarioExecutor implements ScenarioActionExecutor {
   readonly actionType = CLONE_SCENARIO_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CloneScenarioExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CloneScenarioExecutor: not yet implemented. ' +
+        'Scenario cloning is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ArchiveScenarioExecutor implements ScenarioActionExecutor {
   readonly actionType = ARCHIVE_SCENARIO_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ArchiveScenarioExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ArchiveScenarioExecutor: not yet implemented. ' +
+        'Scenario archiving is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createScenarioActionExecutors(): Record<string, ScenarioActionExecutor> {
+export function createScenarioActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, ScenarioActionExecutor> {
   return {
-    [CREATE_SCENARIO_ACTION_TYPE]: new CreateScenarioExecutor(),
-    [START_SCENARIO_ACTION_TYPE]: new StartScenarioExecutor(),
-    [STOP_SCENARIO_ACTION_TYPE]: new StopScenarioExecutor(),
-    [CLONE_SCENARIO_ACTION_TYPE]: new CloneScenarioExecutor(),
-    [ARCHIVE_SCENARIO_ACTION_TYPE]: new ArchiveScenarioExecutor(),
+    [CREATE_SCENARIO_ACTION_TYPE]: new CreateScenarioExecutor(apiConfig),
+    [START_SCENARIO_ACTION_TYPE]: new StartScenarioExecutor(apiConfig),
+    [STOP_SCENARIO_ACTION_TYPE]: new StopScenarioExecutor(apiConfig),
+    [CLONE_SCENARIO_ACTION_TYPE]: new CloneScenarioExecutor(apiConfig),
+    [ARCHIVE_SCENARIO_ACTION_TYPE]: new ArchiveScenarioExecutor(apiConfig),
   };
 }
 
 export class BloomreachScenariosService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildScenariosUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get scenariosUrl(): string {
@@ -206,6 +261,7 @@ export class BloomreachScenariosService {
   }
 
   async listScenarios(input?: ListScenariosInput): Promise<BloomreachScenario[]> {
+    void this.apiConfig;
     if (input !== undefined) {
       validateProject(input.project);
       if (input.status !== undefined) {
@@ -214,16 +270,21 @@ export class BloomreachScenariosService {
     }
 
     throw new Error(
-      'listScenarios: not yet implemented. Requires browser automation infrastructure.',
+      'listScenarios: the Bloomreach API does not provide an endpoint for scenarios. ' +
+        'Scenario data must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Campaigns > Scenarios in your project).',
     );
   }
 
   async viewScenario(input: ViewScenarioInput): Promise<ScenarioDetails> {
+    void this.apiConfig;
     validateProject(input.project);
     validateScenarioId(input.scenarioId);
 
     throw new Error(
-      'viewScenario: not yet implemented. Requires browser automation infrastructure.',
+      'viewScenario: the Bloomreach API does not provide an endpoint for scenario details. ' +
+        'Scenario details must be viewed in the Bloomreach Engagement UI ' +
+        '(navigate to Campaigns > Scenarios and open the scenario).',
     );
   }
 
