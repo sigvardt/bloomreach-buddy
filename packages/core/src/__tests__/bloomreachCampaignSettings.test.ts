@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
 import {
   UPDATE_CAMPAIGN_DEFAULTS_ACTION_TYPE,
   CREATE_TIMEZONE_ACTION_TYPE,
@@ -61,6 +62,17 @@ import {
   createCampaignSettingsActionExecutors,
   BloomreachCampaignSettingsService,
 } from '../index.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports UPDATE_CAMPAIGN_DEFAULTS_ACTION_TYPE', () => {
@@ -203,12 +215,32 @@ describe('rate limit constants', () => {
 });
 
 describe('validateTimezoneName', () => {
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateTimezoneName('\n\tEurope/Prague\t\n')).toBe('Europe/Prague');
+  });
+
+  it('accepts single-character name', () => {
+    expect(validateTimezoneName('Z')).toBe('Z');
+  });
+
+  it('accepts unicode timezone name', () => {
+    expect(validateTimezoneName('Časové pásmo')).toBe('Časové pásmo');
+  });
+
   it('throws for empty string', () => {
     expect(() => validateTimezoneName('')).toThrow('must not be empty');
   });
 
   it('throws for whitespace-only string', () => {
     expect(() => validateTimezoneName('   ')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateTimezoneName('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateTimezoneName('\n\n')).toThrow('must not be empty');
   });
 
   it('returns trimmed name for valid input', () => {
@@ -227,6 +259,14 @@ describe('validateTimezoneName', () => {
 });
 
 describe('validateTimezoneId', () => {
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateTimezoneId('\n\ttz-123\t\n')).toBe('tz-123');
+  });
+
+  it('accepts unicode timezone ID', () => {
+    expect(validateTimezoneId('tz-ö')).toBe('tz-ö');
+  });
+
   it('throws for empty string', () => {
     expect(() => validateTimezoneId('')).toThrow('must not be empty');
   });
@@ -235,18 +275,42 @@ describe('validateTimezoneId', () => {
     expect(() => validateTimezoneId('   ')).toThrow('must not be empty');
   });
 
+  it('throws for tab-only string', () => {
+    expect(() => validateTimezoneId('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateTimezoneId('\n\n')).toThrow('must not be empty');
+  });
+
   it('returns trimmed ID for valid input', () => {
     expect(validateTimezoneId('  tz-123  ')).toBe('tz-123');
   });
 });
 
 describe('validateLanguageCode', () => {
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateLanguageCode('\n\ten\t\n')).toBe('en');
+  });
+
+  it('accepts unicode language code', () => {
+    expect(validateLanguageCode('če')).toBe('če');
+  });
+
   it('throws for empty string', () => {
     expect(() => validateLanguageCode('')).toThrow('must not be empty');
   });
 
   it('throws for whitespace-only string', () => {
     expect(() => validateLanguageCode('   ')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateLanguageCode('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateLanguageCode('\n\n')).toThrow('must not be empty');
   });
 
   it('returns trimmed language code for valid input', () => {
@@ -265,12 +329,32 @@ describe('validateLanguageCode', () => {
 });
 
 describe('validateLanguageName', () => {
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateLanguageName('\n\tEnglish\t\n')).toBe('English');
+  });
+
+  it('accepts single-character name', () => {
+    expect(validateLanguageName('E')).toBe('E');
+  });
+
+  it('accepts unicode language name', () => {
+    expect(validateLanguageName('Čeština')).toBe('Čeština');
+  });
+
   it('throws for empty string', () => {
     expect(() => validateLanguageName('')).toThrow('must not be empty');
   });
 
   it('throws for whitespace-only string', () => {
     expect(() => validateLanguageName('   ')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateLanguageName('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateLanguageName('\n\n')).toThrow('must not be empty');
   });
 
   it('returns trimmed language name for valid input', () => {
@@ -289,12 +373,32 @@ describe('validateLanguageName', () => {
 });
 
 describe('validateFontName', () => {
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateFontName('\n\tInter\t\n')).toBe('Inter');
+  });
+
+  it('accepts single-character name', () => {
+    expect(validateFontName('I')).toBe('I');
+  });
+
+  it('accepts unicode font name', () => {
+    expect(validateFontName('Žižka Sans')).toBe('Žižka Sans');
+  });
+
   it('throws for empty string', () => {
     expect(() => validateFontName('')).toThrow('must not be empty');
   });
 
   it('throws for whitespace-only string', () => {
     expect(() => validateFontName('   ')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateFontName('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateFontName('\n\n')).toThrow('must not be empty');
   });
 
   it('returns trimmed font name for valid input', () => {
@@ -313,6 +417,14 @@ describe('validateFontName', () => {
 });
 
 describe('validateFontId', () => {
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateFontId('\n\tfont-123\t\n')).toBe('font-123');
+  });
+
+  it('accepts unicode font ID', () => {
+    expect(validateFontId('font-ž')).toBe('font-ž');
+  });
+
   it('throws for empty string', () => {
     expect(() => validateFontId('')).toThrow('must not be empty');
   });
@@ -321,18 +433,46 @@ describe('validateFontId', () => {
     expect(() => validateFontId('   ')).toThrow('must not be empty');
   });
 
+  it('throws for tab-only string', () => {
+    expect(() => validateFontId('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateFontId('\n\n')).toThrow('must not be empty');
+  });
+
   it('returns trimmed ID for valid input', () => {
     expect(validateFontId('  font-123  ')).toBe('font-123');
   });
 });
 
 describe('validatePolicyName', () => {
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validatePolicyName('\n\tSlow And Steady\t\n')).toBe('Slow And Steady');
+  });
+
+  it('accepts single-character name', () => {
+    expect(validatePolicyName('P')).toBe('P');
+  });
+
+  it('accepts unicode policy name', () => {
+    expect(validatePolicyName('Politika Ž')).toBe('Politika Ž');
+  });
+
   it('throws for empty string', () => {
     expect(() => validatePolicyName('')).toThrow('must not be empty');
   });
 
   it('throws for whitespace-only string', () => {
     expect(() => validatePolicyName('   ')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validatePolicyName('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validatePolicyName('\n\n')).toThrow('must not be empty');
   });
 
   it('returns trimmed policy name for valid input', () => {
@@ -351,6 +491,14 @@ describe('validatePolicyName', () => {
 });
 
 describe('validatePolicyId', () => {
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validatePolicyId('\n\tpolicy-123\t\n')).toBe('policy-123');
+  });
+
+  it('accepts unicode policy ID', () => {
+    expect(validatePolicyId('policy-ř')).toBe('policy-ř');
+  });
+
   it('throws for empty string', () => {
     expect(() => validatePolicyId('')).toThrow('must not be empty');
   });
@@ -359,18 +507,46 @@ describe('validatePolicyId', () => {
     expect(() => validatePolicyId('   ')).toThrow('must not be empty');
   });
 
+  it('throws for tab-only string', () => {
+    expect(() => validatePolicyId('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validatePolicyId('\n\n')).toThrow('must not be empty');
+  });
+
   it('returns trimmed ID for valid input', () => {
     expect(validatePolicyId('  policy-123  ')).toBe('policy-123');
   });
 });
 
 describe('validateConsentCategory', () => {
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateConsentCategory('\n\tMarketing\t\n')).toBe('Marketing');
+  });
+
+  it('accepts single-character name', () => {
+    expect(validateConsentCategory('M')).toBe('M');
+  });
+
+  it('accepts unicode consent category', () => {
+    expect(validateConsentCategory('Účely')).toBe('Účely');
+  });
+
   it('throws for empty string', () => {
     expect(() => validateConsentCategory('')).toThrow('must not be empty');
   });
 
   it('throws for whitespace-only string', () => {
     expect(() => validateConsentCategory('   ')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateConsentCategory('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateConsentCategory('\n\n')).toThrow('must not be empty');
   });
 
   it('returns trimmed category for valid input', () => {
@@ -389,6 +565,14 @@ describe('validateConsentCategory', () => {
 });
 
 describe('validateConsentId', () => {
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateConsentId('\n\tconsent-123\t\n')).toBe('consent-123');
+  });
+
+  it('accepts unicode consent ID', () => {
+    expect(validateConsentId('consent-ž')).toBe('consent-ž');
+  });
+
   it('throws for empty string', () => {
     expect(() => validateConsentId('')).toThrow('must not be empty');
   });
@@ -397,18 +581,46 @@ describe('validateConsentId', () => {
     expect(() => validateConsentId('   ')).toThrow('must not be empty');
   });
 
+  it('throws for tab-only string', () => {
+    expect(() => validateConsentId('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateConsentId('\n\n')).toThrow('must not be empty');
+  });
+
   it('returns trimmed ID for valid input', () => {
     expect(validateConsentId('  consent-123  ')).toBe('consent-123');
   });
 });
 
 describe('validateUrlListName', () => {
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateUrlListName('\n\tInternal Domains\t\n')).toBe('Internal Domains');
+  });
+
+  it('accepts single-character name', () => {
+    expect(validateUrlListName('U')).toBe('U');
+  });
+
+  it('accepts unicode URL list name', () => {
+    expect(validateUrlListName('Domény')).toBe('Domény');
+  });
+
   it('throws for empty string', () => {
     expect(() => validateUrlListName('')).toThrow('must not be empty');
   });
 
   it('throws for whitespace-only string', () => {
     expect(() => validateUrlListName('   ')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateUrlListName('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateUrlListName('\n\n')).toThrow('must not be empty');
   });
 
   it('returns trimmed URL list name for valid input', () => {
@@ -427,6 +639,14 @@ describe('validateUrlListName', () => {
 });
 
 describe('validateUrlListId', () => {
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateUrlListId('\n\tlist-123\t\n')).toBe('list-123');
+  });
+
+  it('accepts unicode URL list ID', () => {
+    expect(validateUrlListId('list-ú')).toBe('list-ú');
+  });
+
   it('throws for empty string', () => {
     expect(() => validateUrlListId('')).toThrow('must not be empty');
   });
@@ -435,18 +655,46 @@ describe('validateUrlListId', () => {
     expect(() => validateUrlListId('   ')).toThrow('must not be empty');
   });
 
+  it('throws for tab-only string', () => {
+    expect(() => validateUrlListId('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateUrlListId('\n\n')).toThrow('must not be empty');
+  });
+
   it('returns trimmed ID for valid input', () => {
     expect(validateUrlListId('  list-123  ')).toBe('list-123');
   });
 });
 
 describe('validatePageVariableName', () => {
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validatePageVariableName('\n\tbanner_text\t\n')).toBe('banner_text');
+  });
+
+  it('accepts single-character name', () => {
+    expect(validatePageVariableName('v')).toBe('v');
+  });
+
+  it('accepts unicode page variable name', () => {
+    expect(validatePageVariableName('název_proměnné')).toBe('název_proměnné');
+  });
+
   it('throws for empty string', () => {
     expect(() => validatePageVariableName('')).toThrow('must not be empty');
   });
 
   it('throws for whitespace-only string', () => {
     expect(() => validatePageVariableName('   ')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validatePageVariableName('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validatePageVariableName('\n\n')).toThrow('must not be empty');
   });
 
   it('returns trimmed page variable name for valid input', () => {
@@ -465,6 +713,14 @@ describe('validatePageVariableName', () => {
 });
 
 describe('validatePageVariableId', () => {
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validatePageVariableId('\n\tpv-123\t\n')).toBe('pv-123');
+  });
+
+  it('accepts unicode page variable ID', () => {
+    expect(validatePageVariableId('pv-č')).toBe('pv-č');
+  });
+
   it('throws for empty string', () => {
     expect(() => validatePageVariableId('')).toThrow('must not be empty');
   });
@@ -473,12 +729,28 @@ describe('validatePageVariableId', () => {
     expect(() => validatePageVariableId('   ')).toThrow('must not be empty');
   });
 
+  it('throws for tab-only string', () => {
+    expect(() => validatePageVariableId('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validatePageVariableId('\n\n')).toThrow('must not be empty');
+  });
+
   it('returns trimmed ID for valid input', () => {
     expect(validatePageVariableId('  pv-123  ')).toBe('pv-123');
   });
 });
 
 describe('validatePageVariableValue', () => {
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validatePageVariableValue('\n\thello world\t\n')).toBe('hello world');
+  });
+
+  it('accepts unicode value', () => {
+    expect(validatePageVariableValue('Vítejte zpět')).toBe('Vítejte zpět');
+  });
+
   it('returns trimmed value for empty string', () => {
     expect(validatePageVariableValue('')).toBe('');
   });
@@ -574,6 +846,56 @@ describe('URL builders', () => {
       '/p/org%2Fproject/project-settings/page-variables',
     );
   });
+
+  it('encodes unicode project names in all URLs', () => {
+    expect(buildCampaignSettingsUrl('projekt åäö')).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/project-settings/campaigns');
+    expect(buildTimezonesUrl('projekt åäö')).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/project-settings/timezones');
+    expect(buildLanguagesUrl('projekt åäö')).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/project-settings/languages');
+    expect(buildFontsUrl('projekt åäö')).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/project-settings/fonts');
+    expect(buildThroughputPolicyUrl('projekt åäö')).toBe(
+      '/p/projekt%20%C3%A5%C3%A4%C3%B6/project-settings/throughput-policy',
+    );
+    expect(buildFrequencyPoliciesUrl('projekt åäö')).toBe(
+      '/p/projekt%20%C3%A5%C3%A4%C3%B6/project-settings/campaign-frequency-policies',
+    );
+    expect(buildConsentsUrl('projekt åäö')).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/project-settings/consents');
+    expect(buildGlobalUrlListsUrl('projekt åäö')).toBe(
+      '/p/projekt%20%C3%A5%C3%A4%C3%B6/project-settings/global-url-lists',
+    );
+    expect(buildPageVariablesUrl('projekt åäö')).toBe(
+      '/p/projekt%20%C3%A5%C3%A4%C3%B6/project-settings/page-variables',
+    );
+  });
+
+  it('encodes hash in project names for all URLs', () => {
+    expect(buildCampaignSettingsUrl('my#project')).toBe('/p/my%23project/project-settings/campaigns');
+    expect(buildTimezonesUrl('my#project')).toBe('/p/my%23project/project-settings/timezones');
+    expect(buildLanguagesUrl('my#project')).toBe('/p/my%23project/project-settings/languages');
+    expect(buildFontsUrl('my#project')).toBe('/p/my%23project/project-settings/fonts');
+    expect(buildThroughputPolicyUrl('my#project')).toBe(
+      '/p/my%23project/project-settings/throughput-policy',
+    );
+    expect(buildFrequencyPoliciesUrl('my#project')).toBe(
+      '/p/my%23project/project-settings/campaign-frequency-policies',
+    );
+    expect(buildConsentsUrl('my#project')).toBe('/p/my%23project/project-settings/consents');
+    expect(buildGlobalUrlListsUrl('my#project')).toBe('/p/my%23project/project-settings/global-url-lists');
+    expect(buildPageVariablesUrl('my#project')).toBe('/p/my%23project/project-settings/page-variables');
+  });
+
+  it('keeps dashes unencoded in project names for all URLs', () => {
+    expect(buildCampaignSettingsUrl('team-alpha')).toBe('/p/team-alpha/project-settings/campaigns');
+    expect(buildTimezonesUrl('team-alpha')).toBe('/p/team-alpha/project-settings/timezones');
+    expect(buildLanguagesUrl('team-alpha')).toBe('/p/team-alpha/project-settings/languages');
+    expect(buildFontsUrl('team-alpha')).toBe('/p/team-alpha/project-settings/fonts');
+    expect(buildThroughputPolicyUrl('team-alpha')).toBe('/p/team-alpha/project-settings/throughput-policy');
+    expect(buildFrequencyPoliciesUrl('team-alpha')).toBe(
+      '/p/team-alpha/project-settings/campaign-frequency-policies',
+    );
+    expect(buildConsentsUrl('team-alpha')).toBe('/p/team-alpha/project-settings/consents');
+    expect(buildGlobalUrlListsUrl('team-alpha')).toBe('/p/team-alpha/project-settings/global-url-lists');
+    expect(buildPageVariablesUrl('team-alpha')).toBe('/p/team-alpha/project-settings/page-variables');
+  });
 });
 
 describe('createCampaignSettingsActionExecutors', () => {
@@ -614,11 +936,210 @@ describe('createCampaignSettingsActionExecutors', () => {
     }
   });
 
-  it('executors throw "not yet implemented" on execute', async () => {
+  it('executors throw UI-only availability message on execute', async () => {
     const executors = createCampaignSettingsActionExecutors();
     for (const executor of Object.values(executors)) {
-      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+      await expect(executor.execute({})).rejects.toThrow(
+        'only available through the Bloomreach Engagement UI',
+      );
     }
+  });
+
+  it('UpdateCampaignDefaultsExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[UPDATE_CAMPAIGN_DEFAULTS_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('CreateTimezoneExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[CREATE_TIMEZONE_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('UpdateTimezoneExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[UPDATE_TIMEZONE_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('DeleteTimezoneExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[DELETE_TIMEZONE_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('CreateLanguageExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[CREATE_LANGUAGE_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('UpdateLanguageExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[UPDATE_LANGUAGE_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('DeleteLanguageExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[DELETE_LANGUAGE_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('CreateFontExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[CREATE_FONT_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('UpdateFontExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[UPDATE_FONT_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('DeleteFontExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[DELETE_FONT_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('CreateThroughputPolicyExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[CREATE_THROUGHPUT_POLICY_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('UpdateThroughputPolicyExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[UPDATE_THROUGHPUT_POLICY_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('DeleteThroughputPolicyExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[DELETE_THROUGHPUT_POLICY_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('CreateFrequencyPolicyExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[CREATE_FREQUENCY_POLICY_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('UpdateFrequencyPolicyExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[UPDATE_FREQUENCY_POLICY_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('DeleteFrequencyPolicyExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[DELETE_FREQUENCY_POLICY_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('CreateConsentExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[CREATE_CONSENT_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('UpdateConsentExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[UPDATE_CONSENT_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('DeleteConsentExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[DELETE_CONSENT_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('CreateUrlListExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[CREATE_URL_LIST_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('UpdateUrlListExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[UPDATE_URL_LIST_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('DeleteUrlListExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[DELETE_URL_LIST_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('CreatePageVariableExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[CREATE_PAGE_VARIABLE_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('UpdatePageVariableExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[UPDATE_PAGE_VARIABLE_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('DeletePageVariableExecutor mentions UI-only availability', async () => {
+    const executors = createCampaignSettingsActionExecutors();
+    await expect(executors[DELETE_PAGE_VARIABLE_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+});
+
+describe('apiConfig acceptance', () => {
+  it('createCampaignSettingsActionExecutors accepts apiConfig', () => {
+    const executors = createCampaignSettingsActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(25);
+  });
+
+  it('createCampaignSettingsActionExecutors works without apiConfig', () => {
+    const executors = createCampaignSettingsActionExecutors();
+    expect(Object.keys(executors)).toHaveLength(25);
+  });
+
+  it('BloomreachCampaignSettingsService accepts apiConfig', () => {
+    const service = new BloomreachCampaignSettingsService('test', TEST_API_CONFIG);
+    expect(service.campaignSettingsUrl).toBe('/p/test/project-settings/campaigns');
+  });
+
+  it('BloomreachCampaignSettingsService works without apiConfig', () => {
+    const service = new BloomreachCampaignSettingsService('test');
+    expect(service.campaignSettingsUrl).toBe('/p/test/project-settings/campaigns');
   });
 });
 
@@ -636,6 +1157,21 @@ describe('BloomreachCampaignSettingsService', () => {
 
     it('throws for empty project', () => {
       expect(() => new BloomreachCampaignSettingsService('')).toThrow('must not be empty');
+    });
+
+    it('encodes spaces in URL', () => {
+      const service = new BloomreachCampaignSettingsService('my project');
+      expect(service.campaignSettingsUrl).toBe('/p/my%20project/project-settings/campaigns');
+    });
+
+    it('encodes unicode in URL', () => {
+      const service = new BloomreachCampaignSettingsService('projekt åäö');
+      expect(service.campaignSettingsUrl).toContain('%C3%A5');
+    });
+
+    it('encodes hash in URL', () => {
+      const service = new BloomreachCampaignSettingsService('my#project');
+      expect(service.campaignSettingsUrl).toBe('/p/my%23project/project-settings/campaigns');
     });
   });
 
@@ -706,6 +1242,137 @@ describe('BloomreachCampaignSettingsService', () => {
     it('listPageVariables throws not-yet-implemented error', async () => {
       const service = new BloomreachCampaignSettingsService('test');
       await expect(service.listPageVariables()).rejects.toThrow('not yet implemented');
+    });
+
+    it('viewCampaignDefaults throws descriptive UI-only error', async () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      await expect(service.viewCampaignDefaults()).rejects.toThrow('Bloomreach Engagement UI');
+    });
+
+    it('listTimezones throws descriptive UI-only error', async () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      await expect(service.listTimezones()).rejects.toThrow('Bloomreach Engagement UI');
+    });
+
+    it('listLanguages throws descriptive UI-only error', async () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      await expect(service.listLanguages()).rejects.toThrow('Bloomreach Engagement UI');
+    });
+
+    it('listFonts throws descriptive UI-only error', async () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      await expect(service.listFonts()).rejects.toThrow('Bloomreach Engagement UI');
+    });
+
+    it('listThroughputPolicies throws descriptive UI-only error', async () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      await expect(service.listThroughputPolicies()).rejects.toThrow('Bloomreach Engagement UI');
+    });
+
+    it('listFrequencyPolicies throws descriptive UI-only error', async () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      await expect(service.listFrequencyPolicies()).rejects.toThrow('Bloomreach Engagement UI');
+    });
+
+    it('listConsents throws descriptive UI-only error', async () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      await expect(service.listConsents()).rejects.toThrow('Bloomreach Engagement UI');
+    });
+
+    it('listUrlLists throws descriptive UI-only error', async () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      await expect(service.listUrlLists()).rejects.toThrow('Bloomreach Engagement UI');
+    });
+
+    it('listPageVariables throws descriptive UI-only error', async () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      await expect(service.listPageVariables()).rejects.toThrow('Bloomreach Engagement UI');
+    });
+
+    it('viewCampaignDefaults validates project when input provided', async () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      await expect(service.viewCampaignDefaults({ project: '' })).rejects.toThrow('must not be empty');
+    });
+
+    it('listTimezones validates project when input provided', async () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      await expect(service.listTimezones({ project: '' })).rejects.toThrow('must not be empty');
+    });
+
+    it('listLanguages validates project when input provided', async () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      await expect(service.listLanguages({ project: '' })).rejects.toThrow('must not be empty');
+    });
+
+    it('listFonts validates project when input provided', async () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      await expect(service.listFonts({ project: '' })).rejects.toThrow('must not be empty');
+    });
+
+    it('listThroughputPolicies validates project when input provided', async () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      await expect(service.listThroughputPolicies({ project: '' })).rejects.toThrow('must not be empty');
+    });
+
+    it('listFrequencyPolicies validates project when input provided', async () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      await expect(service.listFrequencyPolicies({ project: '' })).rejects.toThrow('must not be empty');
+    });
+
+    it('listConsents validates project when input provided', async () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      await expect(service.listConsents({ project: '' })).rejects.toThrow('must not be empty');
+    });
+
+    it('listUrlLists validates project when input provided', async () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      await expect(service.listUrlLists({ project: '' })).rejects.toThrow('must not be empty');
+    });
+
+    it('listPageVariables validates project when input provided', async () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      await expect(service.listPageVariables({ project: '' })).rejects.toThrow('must not be empty');
+    });
+  });
+
+  describe('token expiry consistency', () => {
+    it('all prepare methods set expiry ~30 minutes in the future', () => {
+      const service = new BloomreachCampaignSettingsService('test');
+      const now = Date.now();
+      const thirtyMinMs = 30 * 60 * 1000;
+
+      const results = [
+        service.prepareUpdateCampaignDefaults({ project: 'test', defaultSenderName: 'X' }),
+        service.prepareCreateTimezone({ project: 'test', name: 'UTC' }),
+        service.prepareUpdateTimezone({ project: 'test', timezoneId: 'tz-1', name: 'UTC' }),
+        service.prepareDeleteTimezone({ project: 'test', timezoneId: 'tz-1' }),
+        service.prepareCreateLanguage({ project: 'test', code: 'en', name: 'English' }),
+        service.prepareUpdateLanguage({ project: 'test', languageCode: 'en', name: 'English' }),
+        service.prepareDeleteLanguage({ project: 'test', languageCode: 'en' }),
+        service.prepareCreateFont({ project: 'test', name: 'Inter', type: 'system' }),
+        service.prepareUpdateFont({ project: 'test', fontId: 'f-1', name: 'Inter' }),
+        service.prepareDeleteFont({ project: 'test', fontId: 'f-1' }),
+        service.prepareCreateThroughputPolicy({ project: 'test', name: 'Policy' }),
+        service.prepareUpdateThroughputPolicy({ project: 'test', policyId: 'tp-1', name: 'Policy' }),
+        service.prepareDeleteThroughputPolicy({ project: 'test', policyId: 'tp-1' }),
+        service.prepareCreateFrequencyPolicy({ project: 'test', name: 'Policy' }),
+        service.prepareUpdateFrequencyPolicy({ project: 'test', policyId: 'fp-1', name: 'Policy' }),
+        service.prepareDeleteFrequencyPolicy({ project: 'test', policyId: 'fp-1' }),
+        service.prepareCreateConsent({ project: 'test', category: 'Marketing' }),
+        service.prepareUpdateConsent({ project: 'test', consentId: 'c-1', category: 'Marketing' }),
+        service.prepareDeleteConsent({ project: 'test', consentId: 'c-1' }),
+        service.prepareCreateUrlList({ project: 'test', name: 'URLs', listType: 'allowlist' }),
+        service.prepareUpdateUrlList({ project: 'test', urlListId: 'u-1', name: 'URLs' }),
+        service.prepareDeleteUrlList({ project: 'test', urlListId: 'u-1' }),
+        service.prepareCreatePageVariable({ project: 'test', name: 'var', value: 'val' }),
+        service.prepareUpdatePageVariable({ project: 'test', pageVariableId: 'pv-1', name: 'var' }),
+        service.prepareDeletePageVariable({ project: 'test', pageVariableId: 'pv-1' }),
+      ];
+
+      for (const result of results) {
+        expect(result.expiresAtMs).toBeGreaterThanOrEqual(now + thirtyMinMs - 1000);
+        expect(result.expiresAtMs).toBeLessThanOrEqual(now + thirtyMinMs + 5000);
+      }
     });
   });
 
