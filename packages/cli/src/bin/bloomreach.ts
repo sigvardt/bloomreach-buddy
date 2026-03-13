@@ -2,6 +2,7 @@
 
 import { Command } from 'commander';
 import {
+  BloomreachAccessManagementService,
   BloomreachAssetManagerService,
   BloomreachCampaignCalendarService,
   BloomreachCampaignSettingsService,
@@ -10413,6 +10414,264 @@ useCases
           console.log(`  Use Case: ${options.useCaseId}`);
           console.log(`  Token:    ${result.confirmToken}`);
           console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const access = program
+  .command('access')
+  .description('Manage project access, team members, and API keys');
+
+access
+  .command('list-members')
+  .description('List all team members in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachAccessManagementService(options.project);
+      const result = await service.listTeamMembers({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No team members found.');
+          return;
+        }
+        for (const member of result) {
+          console.log(`  ${member.email}`);
+          if (member.name) {
+            console.log(`    Name:   ${member.name}`);
+          }
+          console.log(`    Role:   ${member.role}`);
+          console.log(`    Status: ${member.status}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+access
+  .command('invite')
+  .description('Prepare inviting a team member (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--email <email>', 'Team member email address')
+  .requiredOption('--role <role>', 'Team member role')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      email: string;
+      role: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachAccessManagementService(options.project);
+        const result = service.prepareInviteTeamMember({
+          project: options.project,
+          email: options.email,
+          role: options.role,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Team member invitation prepared.');
+          console.log(`  Email:   ${options.email}`);
+          console.log(`  Role:    ${options.role}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+access
+  .command('update-role')
+  .description('Prepare updating a team member role (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--member-id <id>', 'Team member ID')
+  .requiredOption('--role <role>', 'Updated team member role')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      memberId: string;
+      role: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachAccessManagementService(options.project);
+        const result = service.prepareUpdateMemberRole({
+          project: options.project,
+          memberId: options.memberId,
+          role: options.role,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Team member role update prepared.');
+          console.log(`  Member ID: ${options.memberId}`);
+          console.log(`  Role:      ${options.role}`);
+          console.log(`  Token:     ${result.confirmToken}`);
+          console.log(`  Expires:   ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+access
+  .command('remove-member')
+  .description('Prepare removing a team member (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--member-id <id>', 'Team member ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; memberId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachAccessManagementService(options.project);
+        const result = service.prepareRemoveTeamMember({
+          project: options.project,
+          memberId: options.memberId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Team member removal prepared.');
+          console.log(`  Member ID: ${options.memberId}`);
+          console.log(`  Token:     ${result.confirmToken}`);
+          console.log(`  Expires:   ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+access
+  .command('list-api-keys')
+  .description('List all API keys in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachAccessManagementService(options.project);
+      const result = await service.listApiKeys({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No API keys found.');
+          return;
+        }
+        for (const apiKey of result) {
+          console.log(`  ${apiKey.name}`);
+          console.log(`    Public Key: ${apiKey.publicKey}`);
+          console.log(`    Status:     ${apiKey.status}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+access
+  .command('create-api-key')
+  .description('Prepare creating an API key (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'API key name')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; name: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachAccessManagementService(options.project);
+        const result = service.prepareCreateApiKey({
+          project: options.project,
+          name: options.name,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('API key creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+access
+  .command('delete-api-key')
+  .description('Prepare deleting an API key (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--api-key-id <id>', 'API key ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; apiKeyId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachAccessManagementService(options.project);
+        const result = service.prepareDeleteApiKey({
+          project: options.project,
+          apiKeyId: options.apiKeyId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('API key deletion prepared.');
+          console.log(`  API key ID: ${options.apiKeyId}`);
+          console.log(`  Token:      ${result.confirmToken}`);
+          console.log(`  Expires:    ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');
           console.log('To confirm, run:');
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
