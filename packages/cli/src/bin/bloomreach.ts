@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import {
   BloomreachClient,
   BloomreachCampaignCalendarService,
+  BloomreachCustomersService,
   BloomreachDashboardsService,
   BloomreachEmailCampaignsService,
   BloomreachFlowsService,
@@ -16,6 +17,7 @@ import {
   BloomreachTrendsService,
 } from '@bloomreach-buddy/core';
 import type {
+  CustomerIds,
   EmailCampaignSchedule,
   EmailCampaignABTestConfig,
   FlowEvent,
@@ -2502,6 +2504,276 @@ geoAnalyses
         } else {
           console.log('Geo analysis archive prepared.');
           console.log(`  Analysis: ${options.analysisId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const customers = program
+  .command('customers')
+  .description('Manage Bloomreach customer profiles');
+
+customers
+  .command('list')
+  .description('List customer profiles in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--limit <limit>', 'Maximum number of customers to return', '50')
+  .option('--offset <offset>', 'Offset for pagination', '0')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; limit: string; offset: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachCustomersService(options.project);
+        const result = await service.listCustomers({
+          project: options.project,
+          limit: parseInt(options.limit, 10),
+          offset: parseInt(options.offset, 10),
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          if (result.length === 0) {
+            console.log('No customers found.');
+            return;
+          }
+
+          for (const customer of result) {
+            const identifiers = Object.entries(customer.customerIds)
+              .map(([key, value]) => `${key}=${value}`)
+              .join(', ');
+            console.log(`  ${identifiers || '(no customer IDs)'}`);
+            console.log(`    Properties: ${Object.keys(customer.properties).length}`);
+          }
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+customers
+  .command('search')
+  .description('Search customer profiles by query')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--query <query>', 'Search query')
+  .option('--limit <limit>', 'Maximum number of customers to return', '50')
+  .option('--offset <offset>', 'Offset for pagination', '0')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      query: string;
+      limit: string;
+      offset: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachCustomersService(options.project);
+        const result = await service.searchCustomers({
+          project: options.project,
+          query: options.query,
+          limit: parseInt(options.limit, 10),
+          offset: parseInt(options.offset, 10),
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          if (result.length === 0) {
+            console.log('No matching customers found.');
+            return;
+          }
+
+          for (const customer of result) {
+            const identifiers = Object.entries(customer.customerIds)
+              .map(([key, value]) => `${key}=${value}`)
+              .join(', ');
+            console.log(`  ${identifiers || '(no customer IDs)'}`);
+            console.log(`    Properties: ${Object.keys(customer.properties).length}`);
+          }
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+customers
+  .command('view')
+  .description('View details for a customer profile')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--customer-id <customerId>', 'Customer identifier value')
+  .option('--id-type <idType>', 'Identifier type', 'registered')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      customerId: string;
+      idType: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachCustomersService(options.project);
+        const result = await service.viewCustomer({
+          project: options.project,
+          customerId: options.customerId,
+          idType: options.idType,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Customer Profile');
+          console.log('----------------');
+          console.log('  Customer IDs:');
+          for (const [idType, value] of Object.entries(result.customerIds)) {
+            console.log(`    ${idType}: ${value}`);
+          }
+          console.log(`  Properties: ${Object.keys(result.properties).length}`);
+          console.log(`  Events: ${result.events.length}`);
+          console.log(`  Segments: ${result.segments.length}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+customers
+  .command('create')
+  .description('Prepare creation of a customer profile (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--customer-ids <json>', 'JSON object of customer identifiers')
+  .requiredOption('--properties <json>', 'JSON object of customer properties')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      customerIds: string;
+      properties: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const customerIds = JSON.parse(options.customerIds) as CustomerIds;
+        const properties = JSON.parse(options.properties) as Record<string, unknown>;
+
+        const service = new BloomreachCustomersService(options.project);
+        const result = service.prepareCreateCustomer({
+          project: options.project,
+          customerIds,
+          properties,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Customer creation prepared.');
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+customers
+  .command('update')
+  .description('Prepare update of a customer profile (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--customer-id <customerId>', 'Customer identifier value')
+  .requiredOption('--properties <json>', 'JSON object of customer properties')
+  .option('--id-type <idType>', 'Identifier type', 'registered')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      customerId: string;
+      properties: string;
+      idType: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const properties = JSON.parse(options.properties) as Record<string, unknown>;
+
+        const service = new BloomreachCustomersService(options.project);
+        const result = service.prepareUpdateCustomer({
+          project: options.project,
+          customerId: options.customerId,
+          idType: options.idType,
+          properties,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Customer update prepared.');
+          console.log(`  Customer: ${options.customerId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+customers
+  .command('delete')
+  .description('Prepare deletion of a customer profile (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--customer-id <customerId>', 'Customer identifier value')
+  .option('--id-type <idType>', 'Identifier type', 'registered')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      customerId: string;
+      idType: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachCustomersService(options.project);
+        const result = service.prepareDeleteCustomer({
+          project: options.project,
+          customerId: options.customerId,
+          idType: options.idType,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Customer deletion prepared.');
+          console.log(`  Customer: ${options.customerId}`);
           console.log(`  Token:    ${result.confirmToken}`);
           console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');
