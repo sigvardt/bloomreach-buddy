@@ -1,3 +1,5 @@
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
+
 export const CREATE_DASHBOARD_ACTION_TYPE = 'dashboards.create_dashboard';
 export const SET_HOME_DASHBOARD_ACTION_TYPE = 'dashboards.set_home_dashboard';
 export const DELETE_DASHBOARD_ACTION_TYPE = 'dashboards.delete_dashboard';
@@ -35,6 +37,7 @@ export interface ListDashboardsInput {
 export interface CreateDashboardInput {
   project: string;
   name: string;
+  description?: string;
   analyses?: DashboardAnalysis[];
   layout?: DashboardLayoutConfig;
   operatorNote?: string;
@@ -110,6 +113,21 @@ export function buildDashboardsUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/dashboards`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 /**
  * Executor for a confirmed dashboard mutation.
  * Execute methods require browser automation infrastructure (not yet built).
@@ -121,39 +139,62 @@ export interface DashboardActionExecutor {
 
 class CreateDashboardExecutor implements DashboardActionExecutor {
   readonly actionType = CREATE_DASHBOARD_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateDashboardExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateDashboardExecutor: not yet implemented. ' +
+        'Dashboard creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class SetHomeDashboardExecutor implements DashboardActionExecutor {
   readonly actionType = SET_HOME_DASHBOARD_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'SetHomeDashboardExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'SetHomeDashboardExecutor: not yet implemented. ' +
+        'Setting the home dashboard is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class DeleteDashboardExecutor implements DashboardActionExecutor {
   readonly actionType = DELETE_DASHBOARD_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'DeleteDashboardExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DeleteDashboardExecutor: not yet implemented. ' +
+        'Dashboard deletion is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createDashboardActionExecutors(): Record<string, DashboardActionExecutor> {
+export function createDashboardActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, DashboardActionExecutor> {
   return {
-    [CREATE_DASHBOARD_ACTION_TYPE]: new CreateDashboardExecutor(),
-    [SET_HOME_DASHBOARD_ACTION_TYPE]: new SetHomeDashboardExecutor(),
-    [DELETE_DASHBOARD_ACTION_TYPE]: new DeleteDashboardExecutor(),
+    [CREATE_DASHBOARD_ACTION_TYPE]: new CreateDashboardExecutor(apiConfig),
+    [SET_HOME_DASHBOARD_ACTION_TYPE]: new SetHomeDashboardExecutor(apiConfig),
+    [DELETE_DASHBOARD_ACTION_TYPE]: new DeleteDashboardExecutor(apiConfig),
   };
 }
 
@@ -164,9 +205,11 @@ export function createDashboardActionExecutors(): Record<string, DashboardAction
  */
 export class BloomreachDashboardsService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildDashboardsUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get dashboardsUrl(): string {
@@ -175,8 +218,11 @@ export class BloomreachDashboardsService {
 
   /** @throws {Error} Browser automation not yet available. */
   async listDashboards(_input?: ListDashboardsInput): Promise<BloomreachDashboard[]> {
+    void this.apiConfig;
     throw new Error(
-      'listDashboards: not yet implemented. Requires browser automation infrastructure.',
+      'listDashboards: the Bloomreach API does not provide an endpoint for dashboards. ' +
+        'Dashboard data must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Dashboards in your project).',
     );
   }
 
@@ -193,6 +239,7 @@ export class BloomreachDashboardsService {
       action: CREATE_DASHBOARD_ACTION_TYPE,
       project,
       name,
+      description: input.description,
       analysisCount: input.analyses?.length ?? 0,
       layout: input.layout ?? { columns: 2 },
       operatorNote: input.operatorNote,

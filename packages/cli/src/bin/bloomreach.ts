@@ -119,7 +119,10 @@ const dashboards = program
 
 dashboards
   .command('list')
-  .description('List all dashboards in the project')
+  .description(
+    'List all dashboards in the project ' +
+      '(note: the Bloomreach API does not provide a dashboards endpoint — requires browser automation)',
+  )
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
@@ -149,17 +152,22 @@ dashboards
 
 dashboards
   .command('create')
-  .description('Prepare creation of a new dashboard (two-phase commit)')
+  .description(
+    'Prepare creation of a new dashboard (two-phase commit). ' +
+      'Dashboard name max 200 characters. Layout grid supports 1–6 columns (default: 2).',
+  )
   .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--name <name>', 'Dashboard name')
+  .requiredOption('--name <name>', 'Dashboard name (1–200 characters)')
+  .option('--description <desc>', 'Dashboard description')
   .option('--analyses <json>', 'JSON array of analyses [{id, name}]')
-  .option('--layout-columns <n>', 'Number of grid columns (1-6)', '2')
+  .option('--layout-columns <n>', 'Number of grid columns (1–6, default: 2)', '2')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
       project: string;
       name: string;
+      description?: string;
       analyses?: string;
       layoutColumns: string;
       note?: string;
@@ -174,6 +182,7 @@ dashboards
         const result = service.prepareCreateDashboard({
           project: options.project,
           name: options.name,
+          description: options.description,
           analyses,
           layout: { columns: parseInt(options.layoutColumns, 10) },
           operatorNote: options.note,
@@ -199,7 +208,10 @@ dashboards
 
 dashboards
   .command('set-home')
-  .description('Prepare setting a dashboard as the project home (two-phase commit)')
+  .description(
+    'Prepare setting a dashboard as the project home (two-phase commit). ' +
+      'Requires the dashboard ID.',
+  )
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--dashboard-id <id>', 'Dashboard ID to set as home')
   .option('--note <note>', 'Operator note for audit trail')
@@ -234,7 +246,10 @@ dashboards
 
 dashboards
   .command('delete')
-  .description('Prepare deletion of a dashboard (two-phase commit)')
+  .description(
+    'Prepare deletion of a dashboard (two-phase commit). ' +
+      'This action is irreversible once confirmed.',
+  )
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--dashboard-id <id>', 'Dashboard ID to delete')
   .option('--note <note>', 'Operator note for audit trail')

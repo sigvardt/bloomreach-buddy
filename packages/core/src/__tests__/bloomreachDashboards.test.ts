@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   CREATE_DASHBOARD_ACTION_TYPE,
   SET_HOME_DASHBOARD_ACTION_TYPE,
@@ -13,6 +13,18 @@ import {
   createDashboardActionExecutors,
   BloomreachDashboardsService,
 } from '../index.js';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_DASHBOARD_ACTION_TYPE', () => {
@@ -68,6 +80,18 @@ describe('validateDashboardName', () => {
     const name = 'x'.repeat(201);
     expect(() => validateDashboardName(name)).toThrow('must not exceed 200 characters');
   });
+
+  it('accepts mixed whitespace around valid name', () => {
+    expect(validateDashboardName(' \t  My Dashboard \n ')).toBe('My Dashboard');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateDashboardName('\n\n')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateDashboardName('\t\t')).toThrow('must not be empty');
+  });
 });
 
 describe('validateProject', () => {
@@ -81,6 +105,14 @@ describe('validateProject', () => {
 
   it('throws for whitespace-only string', () => {
     expect(() => validateProject('   ')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateProject('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateProject('\n\n')).toThrow('must not be empty');
   });
 });
 
@@ -112,6 +144,10 @@ describe('validateLayoutConfig', () => {
   it('throws for non-integer column count', () => {
     expect(() => validateLayoutConfig({ columns: 2.5 })).toThrow('between 1 and 6');
   });
+
+  it('throws for negative column count', () => {
+    expect(() => validateLayoutConfig({ columns: -1 })).toThrow('between 1 and 6');
+  });
 });
 
 describe('buildDashboardsUrl', () => {
@@ -125,6 +161,14 @@ describe('buildDashboardsUrl', () => {
 
   it('handles project name with slashes', () => {
     expect(buildDashboardsUrl('org/project')).toBe('/p/org%2Fproject/dashboards');
+  });
+
+  it('encodes unicode characters in project name', () => {
+    expect(buildDashboardsUrl('projekt åäö')).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/dashboards');
+  });
+
+  it('encodes hash in project name', () => {
+    expect(buildDashboardsUrl('my#project')).toBe('/p/my%23project/dashboards');
   });
 });
 
@@ -150,6 +194,31 @@ describe('createDashboardActionExecutors', () => {
       await expect(executor.execute({})).rejects.toThrow('not yet implemented');
     }
   });
+
+  it('accepts optional apiConfig parameter', () => {
+    const executors = createDashboardActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(3);
+  });
+
+  it('executors still throw not-yet-implemented with apiConfig', async () => {
+    const executors = createDashboardActionExecutors(TEST_API_CONFIG);
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+    }
+  });
+
+  it('returns identical action keys with or without apiConfig', () => {
+    const withoutConfig = Object.keys(createDashboardActionExecutors()).sort();
+    const withConfig = Object.keys(createDashboardActionExecutors(TEST_API_CONFIG)).sort();
+    expect(withConfig).toEqual(withoutConfig);
+  });
+
+  it('preserves actionType mapping with apiConfig', () => {
+    const executors = createDashboardActionExecutors(TEST_API_CONFIG);
+    for (const [key, executor] of Object.entries(executors)) {
+      expect(executor.actionType).toBe(key);
+    }
+  });
 });
 
 describe('BloomreachDashboardsService', () => {
@@ -172,12 +241,41 @@ describe('BloomreachDashboardsService', () => {
     it('throws for empty project', () => {
       expect(() => new BloomreachDashboardsService('')).toThrow('must not be empty');
     });
+
+    it('throws for whitespace-only project', () => {
+      expect(() => new BloomreachDashboardsService('   ')).toThrow('must not be empty');
+    });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachDashboardsService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachDashboardsService);
+    });
+
+    it('exposes dashboards URL when constructed with apiConfig', () => {
+      const service = new BloomreachDashboardsService('test', TEST_API_CONFIG);
+      expect(service.dashboardsUrl).toBe('/p/test/dashboards');
+    });
+
+    it('encodes unicode project name in constructor URL', () => {
+      const service = new BloomreachDashboardsService('projekt åäö');
+      expect(service.dashboardsUrl).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/dashboards');
+    });
+
+    it('encodes hash in constructor URL', () => {
+      const service = new BloomreachDashboardsService('my#project');
+      expect(service.dashboardsUrl).toBe('/p/my%23project/dashboards');
+    });
   });
 
   describe('listDashboards', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachDashboardsService('test');
-      await expect(service.listDashboards()).rejects.toThrow('not yet implemented');
+      await expect(service.listDashboards()).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachDashboardsService('test', TEST_API_CONFIG);
+      await expect(service.listDashboards()).rejects.toThrow('does not provide an endpoint');
     });
   });
 
@@ -274,6 +372,51 @@ describe('BloomreachDashboardsService', () => {
         }),
       ).toThrow('between 1 and 6');
     });
+
+    it('includes description in preview when provided', () => {
+      const service = new BloomreachDashboardsService('test');
+      const result = service.prepareCreateDashboard({
+        project: 'test',
+        name: 'Dashboard',
+        description: 'Weekly performance overview',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({ description: 'Weekly performance overview' }),
+      );
+    });
+
+    it('preview has undefined description when not provided', () => {
+      const service = new BloomreachDashboardsService('test');
+      const result = service.prepareCreateDashboard({
+        project: 'test',
+        name: 'Dashboard',
+      });
+
+      expect(result.preview).toEqual(expect.objectContaining({ description: undefined }));
+    });
+
+    it('trims project in preview', () => {
+      const service = new BloomreachDashboardsService('test');
+      const result = service.prepareCreateDashboard({
+        project: '  my-project  ',
+        name: 'Dashboard',
+      });
+
+      expect(result.preview).toEqual(expect.objectContaining({ project: 'my-project' }));
+    });
+
+    it('produces token fields with expected prefixes', () => {
+      const service = new BloomreachDashboardsService('test');
+      const result = service.prepareCreateDashboard({
+        project: 'test',
+        name: 'Dashboard',
+      });
+
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.confirmToken).toMatch(/^ct_stub_/);
+      expect(result.expiresAtMs).toBeGreaterThan(Date.now());
+    });
   });
 
   describe('prepareSetHomeDashboard', () => {
@@ -321,6 +464,50 @@ describe('BloomreachDashboardsService', () => {
         service.prepareSetHomeDashboard({ project: '', dashboardId: 'dash-123' }),
       ).toThrow('must not be empty');
     });
+
+    it('trims dashboardId in preview', () => {
+      const service = new BloomreachDashboardsService('test');
+      const result = service.prepareSetHomeDashboard({
+        project: 'test',
+        dashboardId: '  dash-123  ',
+      });
+
+      expect(result.preview).toEqual(expect.objectContaining({ dashboardId: 'dash-123' }));
+    });
+
+    it('trims project in preview', () => {
+      const service = new BloomreachDashboardsService('test');
+      const result = service.prepareSetHomeDashboard({
+        project: '  my-project  ',
+        dashboardId: 'dash-123',
+      });
+
+      expect(result.preview).toEqual(expect.objectContaining({ project: 'my-project' }));
+    });
+
+    it('produces token fields with expected prefixes', () => {
+      const service = new BloomreachDashboardsService('test');
+      const result = service.prepareSetHomeDashboard({
+        project: 'test',
+        dashboardId: 'dash-123',
+      });
+
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.confirmToken).toMatch(/^ct_stub_/);
+      expect(result.expiresAtMs).toBeGreaterThan(Date.now());
+    });
+
+    it('accepts dots and dashes in dashboardId', () => {
+      const service = new BloomreachDashboardsService('test');
+      const result = service.prepareSetHomeDashboard({
+        project: 'test',
+        dashboardId: 'dash.v2-alpha',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({ dashboardId: 'dash.v2-alpha' }),
+      );
+    });
   });
 
   describe('prepareDeleteDashboard', () => {
@@ -361,6 +548,50 @@ describe('BloomreachDashboardsService', () => {
       expect(() =>
         service.prepareDeleteDashboard({ project: '', dashboardId: 'dash-456' }),
       ).toThrow('must not be empty');
+    });
+
+    it('trims dashboardId in preview', () => {
+      const service = new BloomreachDashboardsService('test');
+      const result = service.prepareDeleteDashboard({
+        project: 'test',
+        dashboardId: '  dash-456  ',
+      });
+
+      expect(result.preview).toEqual(expect.objectContaining({ dashboardId: 'dash-456' }));
+    });
+
+    it('trims project in preview', () => {
+      const service = new BloomreachDashboardsService('test');
+      const result = service.prepareDeleteDashboard({
+        project: '  my-project  ',
+        dashboardId: 'dash-456',
+      });
+
+      expect(result.preview).toEqual(expect.objectContaining({ project: 'my-project' }));
+    });
+
+    it('produces token fields with expected prefixes', () => {
+      const service = new BloomreachDashboardsService('test');
+      const result = service.prepareDeleteDashboard({
+        project: 'test',
+        dashboardId: 'dash-456',
+      });
+
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.confirmToken).toMatch(/^ct_stub_/);
+      expect(result.expiresAtMs).toBeGreaterThan(Date.now());
+    });
+
+    it('accepts dots and dashes in dashboardId', () => {
+      const service = new BloomreachDashboardsService('test');
+      const result = service.prepareDeleteDashboard({
+        project: 'test',
+        dashboardId: 'dash.v2-alpha',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({ dashboardId: 'dash.v2-alpha' }),
+      );
     });
   });
 });
