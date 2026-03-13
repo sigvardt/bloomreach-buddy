@@ -5001,7 +5001,8 @@ exportsCmd
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
-      const service = new BloomreachExportsService(options.project);
+      const apiConfig = tryResolveApiConfig(options.project);
+      const service = new BloomreachExportsService(options.project, apiConfig);
       const result = await service.listExports({ project: options.project });
 
       if (options.json) {
@@ -5032,7 +5033,8 @@ exportsCmd
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; exportId: string; json?: boolean }) => {
     try {
-      const service = new BloomreachExportsService(options.project);
+      const apiConfig = tryResolveApiConfig(options.project);
+      const service = new BloomreachExportsService(options.project, apiConfig);
       const result = await service.viewExportStatus({
         project: options.project,
         exportId: options.exportId,
@@ -5062,7 +5064,8 @@ exportsCmd
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; exportId: string; json?: boolean }) => {
     try {
-      const service = new BloomreachExportsService(options.project);
+      const apiConfig = tryResolveApiConfig(options.project);
+      const service = new BloomreachExportsService(options.project, apiConfig);
       const result = await service.viewExportHistory({
         project: options.project,
         exportId: options.exportId,
@@ -5123,7 +5126,8 @@ exportsCmd
           ? (JSON.parse(options.schedule) as ExportSchedule)
           : undefined;
 
-        const service = new BloomreachExportsService(options.project);
+        const apiConfig = tryResolveApiConfig(options.project);
+        const service = new BloomreachExportsService(options.project, apiConfig);
         const result = service.prepareCreateExport({
           project: options.project,
           name: options.name,
@@ -5161,7 +5165,8 @@ exportsCmd
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; exportId: string; note?: string; json?: boolean }) => {
     try {
-      const service = new BloomreachExportsService(options.project);
+      const apiConfig = tryResolveApiConfig(options.project);
+      const service = new BloomreachExportsService(options.project, apiConfig);
       const result = service.prepareRunExport({
         project: options.project,
         exportId: options.exportId,
@@ -5207,7 +5212,8 @@ exportsCmd
       try {
         const schedule = JSON.parse(options.schedule) as ExportSchedule;
 
-        const service = new BloomreachExportsService(options.project);
+        const apiConfig = tryResolveApiConfig(options.project);
+        const service = new BloomreachExportsService(options.project, apiConfig);
         const result = service.prepareScheduleExport({
           project: options.project,
           exportId: options.exportId,
@@ -5242,7 +5248,8 @@ exportsCmd
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; exportId: string; note?: string; json?: boolean }) => {
     try {
-      const service = new BloomreachExportsService(options.project);
+      const apiConfig = tryResolveApiConfig(options.project);
+      const service = new BloomreachExportsService(options.project, apiConfig);
       const result = service.prepareDeleteExport({
         project: options.project,
         exportId: options.exportId,

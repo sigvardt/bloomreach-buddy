@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
 import {
   CREATE_EXPORT_ACTION_TYPE,
   RUN_EXPORT_ACTION_TYPE,
@@ -15,6 +16,17 @@ import {
   BloomreachExportsService,
   type CreateExportInput,
 } from '../index.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 function createValidCreateExportInput(overrides: Partial<CreateExportInput> = {}): CreateExportInput {
   return {
@@ -498,11 +510,42 @@ describe('createExportActionExecutors', () => {
     }
   });
 
-  it('each executor throws not yet implemented on execute', async () => {
+  it('executors require API credentials when apiConfig is not provided', async () => {
     const executors = createExportActionExecutors();
     for (const executor of Object.values(executors)) {
-      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+      await expect(executor.execute({})).rejects.toThrow('requires API credentials');
     }
+  });
+
+  it('executors attempt API calls when apiConfig is provided', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ),
+    );
+
+    const executors = createExportActionExecutors(TEST_API_CONFIG);
+    await executors[CREATE_EXPORT_ACTION_TYPE].execute({
+      name: 'Test Export',
+      exportType: 'customers',
+      dataSelection: { attributes: ['email'] },
+      destination: { type: 'sftp', host: 'sftp.example.com', path: '/exports' },
+    });
+    await executors[RUN_EXPORT_ACTION_TYPE].execute({
+      exportId: 'exp-1',
+    });
+    await executors[SCHEDULE_EXPORT_ACTION_TYPE].execute({
+      exportId: 'exp-2',
+      schedule: { frequency: 'daily', time: '09:00', timezone: 'UTC' },
+    });
+    await executors[DELETE_EXPORT_ACTION_TYPE].execute({
+      exportId: 'exp-3',
+    });
+
+    expect(fetchSpy).toHaveBeenCalledTimes(4);
   });
 });
 
@@ -526,12 +569,36 @@ describe('BloomreachExportsService', () => {
     it('throws for empty project', () => {
       expect(() => new BloomreachExportsService('')).toThrow('must not be empty');
     });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachExportsService('my-project', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachExportsService);
+    });
   });
 
   describe('listExports', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws API credential error when apiConfig is not provided', async () => {
       const service = new BloomreachExportsService('test');
-      await expect(service.listExports()).rejects.toThrow('not yet implemented');
+      await expect(service.listExports()).rejects.toThrow('requires API credentials');
+    });
+
+    it('returns mapped exports when apiConfig is provided', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify([
+            { id: 'exp-1', name: 'Daily Export', export_type: 'customers', status: 'active' },
+          ]),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachExportsService('test', TEST_API_CONFIG);
+      const result = await service.listExports({ project: 'test' });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('exp-1');
+      expect(result[0].name).toBe('Daily Export');
+      expect(result[0].exportType).toBe('customers');
     });
 
     it('validates project when input provided', async () => {
@@ -541,9 +608,33 @@ describe('BloomreachExportsService', () => {
   });
 
   describe('viewExportStatus', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws API credential error when apiConfig is not provided', async () => {
       const service = new BloomreachExportsService('test');
-      await expect(service.viewExportStatus({ project: 'test', exportId: 'exp-1' })).rejects.toThrow('not yet implemented');
+      await expect(
+        service.viewExportStatus({ project: 'test', exportId: 'exp-1' }),
+      ).rejects.toThrow('requires API credentials');
+    });
+
+    it('returns export status when apiConfig is provided', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            export_id: 'exp-1',
+            status: 'completed',
+            started_at: '2026-01-01T00:00:00Z',
+            completed_at: '2026-01-01T00:05:00Z',
+            record_count: 1500,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachExportsService('test', TEST_API_CONFIG);
+      const result = await service.viewExportStatus({ project: 'test', exportId: 'exp-1' });
+
+      expect(result.exportId).toBe('exp-1');
+      expect(result.status).toBe('completed');
+      expect(result.recordCount).toBe(1500);
     });
 
     it('validates project', async () => {
@@ -558,9 +649,31 @@ describe('BloomreachExportsService', () => {
   });
 
   describe('viewExportHistory', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws API credential error when apiConfig is not provided', async () => {
       const service = new BloomreachExportsService('test');
-      await expect(service.viewExportHistory({ project: 'test', exportId: 'exp-1' })).rejects.toThrow('not yet implemented');
+      await expect(
+        service.viewExportHistory({ project: 'test', exportId: 'exp-1' }),
+      ).rejects.toThrow('requires API credentials');
+    });
+
+    it('returns export history when apiConfig is provided', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify([
+            { id: 'run-1', export_id: 'exp-1', status: 'completed', record_count: 1000 },
+            { id: 'run-2', export_id: 'exp-1', status: 'failed' },
+          ]),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachExportsService('test', TEST_API_CONFIG);
+      const result = await service.viewExportHistory({ project: 'test', exportId: 'exp-1' });
+
+      expect(result).toHaveLength(2);
+      expect(result[0].id).toBe('run-1');
+      expect(result[0].status).toBe('completed');
+      expect(result[1].status).toBe('failed');
     });
 
     it('validates project', async () => {
