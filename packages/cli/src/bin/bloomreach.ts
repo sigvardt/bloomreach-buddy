@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
+import { readFileSync } from 'node:fs';
 import {
   BloomreachAccessManagementService,
   BloomreachAssetManagerService,
@@ -9702,7 +9703,8 @@ catalogs
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
-      const service = new BloomreachCatalogsService(options.project);
+      const apiConfig = resolveApiConfig();
+      const service = new BloomreachCatalogsService(options.project, apiConfig);
       const result = await service.listCatalogs({ project: options.project });
 
       if (options.json) {
@@ -9712,10 +9714,10 @@ catalogs
           console.log('No catalogs found.');
           return;
         }
+        console.log(`Found ${result.length} catalog(s):\n`);
         for (const catalog of result) {
-          console.log(`  ${catalog.name} (${catalog.itemCount} items)`);
-          console.log(`    ID:  ${catalog.id}`);
-          console.log(`    URL: ${catalog.url}`);
+          console.log(`  ${catalog.name}`);
+          console.log(`    ID: ${catalog.id}`);
         }
       }
     } catch (error) {
@@ -9741,7 +9743,8 @@ catalogs
       json?: boolean;
     }) => {
       try {
-        const service = new BloomreachCatalogsService(options.project);
+        const apiConfig = resolveApiConfig();
+        const service = new BloomreachCatalogsService(options.project, apiConfig);
         const result = await service.viewCatalogItems({
           project: options.project,
           catalogId: options.catalogId,
@@ -9777,7 +9780,10 @@ catalogs
   .description('Prepare creation of a new catalog (two-phase commit)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--name <name>', 'Catalog name')
-  .requiredOption('--schema <json>', 'JSON object of catalog schema fields')
+  .requiredOption(
+    '--schema <json>',
+    'JSON object mapping field names to types, e.g. \'{"sku":"string","price":"number"}\'. Valid types: string, long text, number, boolean, date, datetime, duration, list, url, json',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -9791,7 +9797,8 @@ catalogs
       try {
         const schema = JSON.parse(options.schema) as CreateCatalogInput['schema'];
 
-        const service = new BloomreachCatalogsService(options.project);
+        const apiConfig = resolveApiConfig();
+        const service = new BloomreachCatalogsService(options.project, apiConfig);
         const result = service.prepareCreateCatalog({
           project: options.project,
           name: options.name,
@@ -9822,21 +9829,32 @@ catalogs
   .description('Prepare adding items to a catalog (two-phase commit)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--catalog-id <id>', 'Catalog ID')
-  .requiredOption('--items <json>', 'JSON array of catalog item property objects')
+  .option('--items <json>', 'JSON array of catalog item property objects')
+  .option('--items-file <path>', 'Path to JSON file containing items array (alternative to --items)')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
       project: string;
       catalogId: string;
-      items: string;
+      items?: string;
+      itemsFile?: string;
       note?: string;
       json?: boolean;
     }) => {
       try {
-        const items = JSON.parse(options.items) as AddCatalogItemsInput['items'];
+        let items: AddCatalogItemsInput['items'];
+        if (options.itemsFile) {
+          items = JSON.parse(readFileSync(options.itemsFile, 'utf-8')) as AddCatalogItemsInput['items'];
+        } else if (options.items) {
+          items = JSON.parse(options.items) as AddCatalogItemsInput['items'];
+        } else {
+          console.error('Error: Either --items or --items-file is required.');
+          process.exit(1);
+        }
 
-        const service = new BloomreachCatalogsService(options.project);
+        const apiConfig = resolveApiConfig();
+        const service = new BloomreachCatalogsService(options.project, apiConfig);
         const result = service.prepareAddCatalogItems({
           project: options.project,
           catalogId: options.catalogId,
@@ -9868,21 +9886,32 @@ catalogs
   .description('Prepare updating catalog items (two-phase commit)')
   .requiredOption('--project <project>', 'Bloomreach project identifier')
   .requiredOption('--catalog-id <id>', 'Catalog ID')
-  .requiredOption('--items <json>', 'JSON array of item updates [{id, properties}]')
+  .option('--items <json>', 'JSON array of item updates [{id, properties}]')
+  .option('--items-file <path>', 'Path to JSON file containing items array (alternative to --items)')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
       project: string;
       catalogId: string;
-      items: string;
+      items?: string;
+      itemsFile?: string;
       note?: string;
       json?: boolean;
     }) => {
       try {
-        const items = JSON.parse(options.items) as UpdateCatalogItemsInput['items'];
+        let items: UpdateCatalogItemsInput['items'];
+        if (options.itemsFile) {
+          items = JSON.parse(readFileSync(options.itemsFile, 'utf-8')) as UpdateCatalogItemsInput['items'];
+        } else if (options.items) {
+          items = JSON.parse(options.items) as UpdateCatalogItemsInput['items'];
+        } else {
+          console.error('Error: Either --items or --items-file is required.');
+          process.exit(1);
+        }
 
-        const service = new BloomreachCatalogsService(options.project);
+        const apiConfig = resolveApiConfig();
+        const service = new BloomreachCatalogsService(options.project, apiConfig);
         const result = service.prepareUpdateCatalogItems({
           project: options.project,
           catalogId: options.catalogId,
@@ -9919,7 +9948,8 @@ catalogs
   .action(
     async (options: { project: string; catalogId: string; note?: string; json?: boolean }) => {
       try {
-        const service = new BloomreachCatalogsService(options.project);
+        const apiConfig = resolveApiConfig();
+        const service = new BloomreachCatalogsService(options.project, apiConfig);
         const result = service.prepareDeleteCatalog({
           project: options.project,
           catalogId: options.catalogId,

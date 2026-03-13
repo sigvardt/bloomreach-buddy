@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
 import {
   CREATE_CATALOG_ACTION_TYPE,
   ADD_CATALOG_ITEMS_ACTION_TYPE,
@@ -7,6 +8,7 @@ import {
   CATALOG_RATE_LIMIT_WINDOW_MS,
   CATALOG_CREATE_RATE_LIMIT,
   CATALOG_MODIFY_RATE_LIMIT,
+  VALID_CATALOG_FIELD_TYPES,
   validateCatalogName,
   validateCatalogId,
   validateCatalogSchema,
@@ -16,6 +18,17 @@ import {
   createCatalogActionExecutors,
   BloomreachCatalogsService,
 } from '../index.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_CATALOG_ACTION_TYPE', () => {
@@ -104,6 +117,21 @@ describe('validateCatalogSchema', () => {
   it('throws for empty field name', () => {
     expect(() => validateCatalogSchema({ '   ': 'string' })).toThrow('field names must not be empty');
   });
+
+  it('throws for invalid field type', () => {
+    expect(() => validateCatalogSchema({ sku: 'invalid_type' })).toThrow(
+      'Invalid catalog field type "invalid_type"',
+    );
+  });
+
+  it('accepts all valid field types', () => {
+    const schema: Record<string, string> = {};
+    let i = 0;
+    for (const fieldType of VALID_CATALOG_FIELD_TYPES) {
+      schema[`field_${i++}`] = fieldType;
+    }
+    expect(Object.keys(validateCatalogSchema(schema)).length).toBe(VALID_CATALOG_FIELD_TYPES.size);
+  });
 });
 
 describe('validateCatalogItems', () => {
@@ -171,11 +199,41 @@ describe('createCatalogActionExecutors', () => {
     }
   });
 
-  it('executors throw "not yet implemented" on execute', async () => {
+  it('executors require API credentials when apiConfig is not provided', async () => {
     const executors = createCatalogActionExecutors();
     for (const executor of Object.values(executors)) {
-      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+      await expect(executor.execute({})).rejects.toThrow('requires API credentials');
     }
+  });
+
+  it('executors attempt API calls when apiConfig is provided', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ),
+    );
+
+    const executors = createCatalogActionExecutors(TEST_API_CONFIG);
+    await executors[CREATE_CATALOG_ACTION_TYPE].execute({
+      name: 'Products',
+      schema: { sku: 'string', price: 'number' },
+    });
+    await executors[ADD_CATALOG_ITEMS_ACTION_TYPE].execute({
+      catalogId: 'catalog-1',
+      items: [{ item_id: 'item-1', properties: { sku: 'ABC-1' } }],
+    });
+    await executors[UPDATE_CATALOG_ITEMS_ACTION_TYPE].execute({
+      catalogId: 'catalog-1',
+      items: [{ id: 'item-1', properties: { price: 100 } }],
+    });
+    await executors[DELETE_CATALOG_ACTION_TYPE].execute({
+      catalogId: 'catalog-1',
+    });
+
+    expect(fetchSpy).toHaveBeenCalledTimes(4);
   });
 });
 
@@ -199,12 +257,55 @@ describe('BloomreachCatalogsService', () => {
     it('throws for empty project', () => {
       expect(() => new BloomreachCatalogsService('')).toThrow('must not be empty');
     });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachCatalogsService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachCatalogsService);
+    });
   });
 
   describe('listCatalogs', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws API credential error when apiConfig is not provided', async () => {
       const service = new BloomreachCatalogsService('test');
-      await expect(service.listCatalogs()).rejects.toThrow('not yet implemented');
+      await expect(service.listCatalogs()).rejects.toThrow('requires API credentials');
+    });
+
+    it('returns mapped catalogs when apiConfig is provided', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: [
+              { id: 'catalog-1', name: 'Products' },
+              { id: 'catalog-2', name: 'Accessories' },
+            ],
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        ),
+      );
+
+      const service = new BloomreachCatalogsService('test', TEST_API_CONFIG);
+      const result = await service.listCatalogs({ project: 'test' });
+
+      expect(result).toEqual([
+        {
+          id: 'catalog-1',
+          name: 'Products',
+          itemCount: 0,
+          schema: {},
+          url: '',
+        },
+        {
+          id: 'catalog-2',
+          name: 'Accessories',
+          itemCount: 0,
+          schema: {},
+          url: '',
+        },
+      ]);
     });
 
     it('validates project when input is provided', async () => {
@@ -214,11 +315,57 @@ describe('BloomreachCatalogsService', () => {
   });
 
   describe('viewCatalogItems', () => {
-    it('throws not-yet-implemented error with valid input', async () => {
+    it('throws API credential error with valid input when apiConfig is not provided', async () => {
       const service = new BloomreachCatalogsService('test');
       await expect(
         service.viewCatalogItems({ project: 'test', catalogId: 'catalog-1' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('requires API credentials');
+    });
+
+    it('returns mapped catalog items page when apiConfig is provided', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: [
+              {
+                catalog_id: 'catalog-1',
+                item_id: 'item-1',
+                properties: { sku: 'ABC-1', price: 100 },
+              },
+            ],
+            limit: 20,
+            skip: 0,
+            matched: 1,
+            total: 5,
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        ),
+      );
+
+      const service = new BloomreachCatalogsService('test', TEST_API_CONFIG);
+      const result = await service.viewCatalogItems({
+        project: 'test',
+        catalogId: 'catalog-1',
+        page: 1,
+        pageSize: 20,
+      });
+
+      expect(result).toEqual({
+        items: [
+          {
+            id: 'item-1',
+            catalogId: 'catalog-1',
+            properties: { sku: 'ABC-1', price: 100 },
+          },
+        ],
+        totalCount: 5,
+        page: 1,
+        pageSize: 20,
+      });
     });
 
     it('validates project input', async () => {
