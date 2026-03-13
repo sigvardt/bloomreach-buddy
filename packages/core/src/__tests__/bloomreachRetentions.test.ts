@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   CREATE_RETENTION_ACTION_TYPE,
   CLONE_RETENTION_ACTION_TYPE,
@@ -15,6 +15,18 @@ import {
   createRetentionActionExecutors,
   BloomreachRetentionsService,
 } from '../index.js';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_RETENTION_ACTION_TYPE', () => {
@@ -365,6 +377,18 @@ describe('createRetentionActionExecutors', () => {
       'not yet implemented',
     );
   });
+
+  it('accepts optional apiConfig parameter', () => {
+    const executors = createRetentionActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(3);
+  });
+
+  it('executors still throw not-yet-implemented with apiConfig', async () => {
+    const executors = createRetentionActionExecutors(TEST_API_CONFIG);
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+    }
+  });
 });
 
 describe('BloomreachRetentionsService', () => {
@@ -396,12 +420,24 @@ describe('BloomreachRetentionsService', () => {
       const service = new BloomreachRetentionsService('org/project');
       expect(service.retentionsUrl).toBe('/p/org%2Fproject/analytics/retentions');
     });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachRetentionsService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachRetentionsService);
+    });
+
+    it('exposes retentions URL when constructed with apiConfig', () => {
+      const service = new BloomreachRetentionsService('test', TEST_API_CONFIG);
+      expect(service.retentionsUrl).toBe('/p/test/analytics/retentions');
+    });
   });
 
   describe('listRetentionAnalyses', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachRetentionsService('test');
-      await expect(service.listRetentionAnalyses()).rejects.toThrow('not yet implemented');
+      await expect(service.listRetentionAnalyses()).rejects.toThrow(
+        'does not provide a list endpoint',
+      );
     });
 
     it('validates project when input is provided', async () => {
@@ -418,92 +454,220 @@ describe('BloomreachRetentionsService', () => {
       );
     });
 
-    it('throws not-yet-implemented error for valid project override', async () => {
+    it('throws no-API-endpoint error for valid project override', async () => {
       const service = new BloomreachRetentionsService('test');
       await expect(
         service.listRetentionAnalyses({ project: 'kingdom-of-joakim' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide a list endpoint');
     });
 
-    it('throws not-yet-implemented error for trimmed project override', async () => {
+    it('throws no-API-endpoint error for trimmed project override', async () => {
       const service = new BloomreachRetentionsService('test');
       await expect(
         service.listRetentionAnalyses({ project: '  kingdom-of-joakim  ' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide a list endpoint');
     });
   });
 
   describe('viewRetentionResults', () => {
-    it('throws not-yet-implemented error with valid minimal input', async () => {
+    it('throws API credential error when apiConfig is not provided', async () => {
       const service = new BloomreachRetentionsService('test');
       await expect(
         service.viewRetentionResults({ project: 'test', analysisId: 'retention-1' }),
-      ).rejects.toThrow('not yet implemented');
-    });
-
-    it('throws not-yet-implemented error with valid granularity', async () => {
-      const service = new BloomreachRetentionsService('test');
-      await expect(
-        service.viewRetentionResults({
-          project: 'test',
-          analysisId: 'retention-1',
-          granularity: 'daily',
-        }),
-      ).rejects.toThrow('not yet implemented');
-    });
-
-    it('throws not-yet-implemented error with valid date range', async () => {
-      const service = new BloomreachRetentionsService('test');
-      await expect(
-        service.viewRetentionResults({
-          project: 'test',
-          analysisId: 'retention-1',
-          startDate: '2025-01-01',
-          endDate: '2025-01-31',
-        }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('requires API credentials');
     });
 
     it('validates project input', async () => {
-      const service = new BloomreachRetentionsService('test');
+      const service = new BloomreachRetentionsService('test', TEST_API_CONFIG);
       await expect(
         service.viewRetentionResults({ project: '', analysisId: 'retention-1' }),
       ).rejects.toThrow('must not be empty');
     });
 
     it('validates whitespace-only project input', async () => {
-      const service = new BloomreachRetentionsService('test');
+      const service = new BloomreachRetentionsService('test', TEST_API_CONFIG);
       await expect(
         service.viewRetentionResults({ project: '   ', analysisId: 'retention-1' }),
       ).rejects.toThrow('must not be empty');
     });
 
     it('validates analysisId input', async () => {
-      const service = new BloomreachRetentionsService('test');
+      const service = new BloomreachRetentionsService('test', TEST_API_CONFIG);
       await expect(
         service.viewRetentionResults({ project: 'test', analysisId: '   ' }),
       ).rejects.toThrow('Retention analysis ID must not be empty');
     });
 
     it('validates empty analysisId input', async () => {
-      const service = new BloomreachRetentionsService('test');
+      const service = new BloomreachRetentionsService('test', TEST_API_CONFIG);
       await expect(
         service.viewRetentionResults({ project: 'test', analysisId: '' }),
       ).rejects.toThrow('Retention analysis ID must not be empty');
     });
 
-    it('accepts trimmed analysisId and reaches not-yet-implemented', async () => {
-      const service = new BloomreachRetentionsService('test');
-      await expect(
-        service.viewRetentionResults({
-          project: 'test',
-          analysisId: '  retention-99  ',
+    it('returns retention results from API response', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            header: ['cohort_date', 'cohort_size', 'period_0', 'period_1', 'period_2'],
+            rows: [
+              ['2024-01-01', 500, 1.0, 0.75, 0.6],
+              ['2024-01-08', 300, 1.0, 0.8, 0.65],
+            ],
+            success: true,
+            name: 'Weekly Retention',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachRetentionsService('test', TEST_API_CONFIG);
+      const result = await service.viewRetentionResults({
+        project: 'test',
+        analysisId: 'retention-1',
+      });
+
+      expect(result).toEqual({
+        analysisId: 'retention-1',
+        analysisName: 'Weekly Retention',
+        cohortEvent: '',
+        returnEvent: '',
+        granularity: 'daily',
+        startDate: '',
+        endDate: '',
+        cohorts: [
+          {
+            cohortDate: '2024-01-01',
+            cohortSize: 500,
+            retentionByPeriod: [1.0, 0.75, 0.6],
+          },
+          {
+            cohortDate: '2024-01-08',
+            cohortSize: 300,
+            retentionByPeriod: [1.0, 0.8, 0.65],
+          },
+        ],
+      });
+    });
+
+    it('handles empty rows in API response', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            header: ['cohort_date', 'cohort_size', 'period_0', 'period_1'],
+            rows: [],
+            success: true,
+            name: 'Empty Retention',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachRetentionsService('test', TEST_API_CONFIG);
+      const result = await service.viewRetentionResults({
+        project: 'test',
+        analysisId: 'retention-1',
+      });
+
+      expect(result.cohorts).toEqual([]);
+    });
+
+    it('throws on unsuccessful API response', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify({ success: false }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
         }),
-      ).rejects.toThrow('not yet implemented');
+      );
+
+      const service = new BloomreachRetentionsService('test', TEST_API_CONFIG);
+      await expect(
+        service.viewRetentionResults({ project: 'test', analysisId: 'retention-1' }),
+      ).rejects.toThrow('unexpected API response format');
+    });
+
+    it('handles null cell values in rows', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            header: ['cohort_date', 'cohort_size', 'period_0', 'period_1'],
+            rows: [
+              [null, null, null, null],
+              ['2024-01-08', 300, 1.0, 0.8],
+            ],
+            success: true,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachRetentionsService('test', TEST_API_CONFIG);
+      const result = await service.viewRetentionResults({
+        project: 'test',
+        analysisId: 'retention-1',
+      });
+
+      expect(result.cohorts[0]).toEqual({
+        cohortDate: '',
+        cohortSize: 0,
+        retentionByPeriod: [0, 0],
+      });
+      expect(result.cohorts[1]).toEqual({
+        cohortDate: '2024-01-08',
+        cohortSize: 300,
+        retentionByPeriod: [1.0, 0.8],
+      });
+    });
+
+    it('uses analysisId as analysisName when name is missing', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            header: ['cohort_date', 'cohort_size', 'period_0'],
+            rows: [['2024-01-01', 100, 1.0]],
+            success: true,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachRetentionsService('test', TEST_API_CONFIG);
+      const result = await service.viewRetentionResults({
+        project: 'test',
+        analysisId: 'retention-xyz',
+      });
+
+      expect(result.analysisName).toBe('retention-xyz');
+    });
+
+    it('includes date range from input in results', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            header: ['cohort_date', 'cohort_size', 'period_0'],
+            rows: [['2024-01-01', 100, 1.0]],
+            success: true,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachRetentionsService('test', TEST_API_CONFIG);
+      const result = await service.viewRetentionResults({
+        project: 'test',
+        analysisId: 'retention-1',
+        granularity: 'weekly',
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+      });
+
+      expect(result.granularity).toBe('weekly');
+      expect(result.startDate).toBe('2024-01-01');
+      expect(result.endDate).toBe('2024-01-31');
     });
 
     it('validates granularity when provided', async () => {
-      const service = new BloomreachRetentionsService('test');
+      const service = new BloomreachRetentionsService('test', TEST_API_CONFIG);
       await expect(
         service.viewRetentionResults({
           project: 'test',
@@ -514,7 +678,7 @@ describe('BloomreachRetentionsService', () => {
     });
 
     it('validates startDate format when date range is provided', async () => {
-      const service = new BloomreachRetentionsService('test');
+      const service = new BloomreachRetentionsService('test', TEST_API_CONFIG);
       await expect(
         service.viewRetentionResults({
           project: 'test',
@@ -525,7 +689,7 @@ describe('BloomreachRetentionsService', () => {
     });
 
     it('validates endDate format when date range is provided', async () => {
-      const service = new BloomreachRetentionsService('test');
+      const service = new BloomreachRetentionsService('test', TEST_API_CONFIG);
       await expect(
         service.viewRetentionResults({
           project: 'test',
@@ -536,7 +700,7 @@ describe('BloomreachRetentionsService', () => {
     });
 
     it('validates date ordering when both dates are provided', async () => {
-      const service = new BloomreachRetentionsService('test');
+      const service = new BloomreachRetentionsService('test', TEST_API_CONFIG);
       await expect(
         service.viewRetentionResults({
           project: 'test',
