@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 // ---------------------------------------------------------------------------
 // Action type constants
@@ -201,6 +202,21 @@ export function buildVoucherMappingUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/project-settings/vouchers`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 // ---------------------------------------------------------------------------
 // Action executor interface + implementations
 // ---------------------------------------------------------------------------
@@ -212,53 +228,81 @@ export interface EvaluationSettingsActionExecutor {
 
 class ConfigureRevenueAttributionExecutor implements EvaluationSettingsActionExecutor {
   readonly actionType = CONFIGURE_REVENUE_ATTRIBUTION_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ConfigureRevenueAttributionExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ConfigureRevenueAttributionExecutor: not yet implemented. ' +
+        'Revenue attribution configuration is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class SetCurrencyExecutor implements EvaluationSettingsActionExecutor {
   readonly actionType = SET_CURRENCY_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'SetCurrencyExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'SetCurrencyExecutor: not yet implemented. ' +
+        'Currency configuration is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ConfigureEvaluationDashboardsExecutor implements EvaluationSettingsActionExecutor {
   readonly actionType = CONFIGURE_EVALUATION_DASHBOARDS_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ConfigureEvaluationDashboardsExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ConfigureEvaluationDashboardsExecutor: not yet implemented. ' +
+        'Evaluation dashboard configuration is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ConfigureVoucherMappingExecutor implements EvaluationSettingsActionExecutor {
   readonly actionType = CONFIGURE_VOUCHER_MAPPING_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ConfigureVoucherMappingExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ConfigureVoucherMappingExecutor: not yet implemented. ' +
+        'Voucher mapping configuration is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createEvaluationSettingsActionExecutors(): Record<
+export function createEvaluationSettingsActionExecutors(apiConfig?: BloomreachApiConfig): Record<
   string,
   EvaluationSettingsActionExecutor
 > {
   return {
-    [CONFIGURE_REVENUE_ATTRIBUTION_ACTION_TYPE]: new ConfigureRevenueAttributionExecutor(),
-    [SET_CURRENCY_ACTION_TYPE]: new SetCurrencyExecutor(),
-    [CONFIGURE_EVALUATION_DASHBOARDS_ACTION_TYPE]: new ConfigureEvaluationDashboardsExecutor(),
-    [CONFIGURE_VOUCHER_MAPPING_ACTION_TYPE]: new ConfigureVoucherMappingExecutor(),
+    [CONFIGURE_REVENUE_ATTRIBUTION_ACTION_TYPE]: new ConfigureRevenueAttributionExecutor(apiConfig),
+    [SET_CURRENCY_ACTION_TYPE]: new SetCurrencyExecutor(apiConfig),
+    [CONFIGURE_EVALUATION_DASHBOARDS_ACTION_TYPE]: new ConfigureEvaluationDashboardsExecutor(apiConfig),
+    [CONFIGURE_VOUCHER_MAPPING_ACTION_TYPE]: new ConfigureVoucherMappingExecutor(apiConfig),
   };
 }
 
@@ -267,13 +311,15 @@ export function createEvaluationSettingsActionExecutors(): Record<
 // ---------------------------------------------------------------------------
 
 export class BloomreachEvaluationSettingsService {
+  private readonly apiConfig?: BloomreachApiConfig;
   private readonly revenueAttributionSettingsUrl: string;
   private readonly currencySettingsUrl: string;
   private readonly evaluationDashboardsSettingsUrl: string;
   private readonly voucherMappingSettingsUrl: string;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     const validated = validateProject(project);
+    this.apiConfig = apiConfig;
     this.revenueAttributionSettingsUrl = buildRevenueAttributionUrl(validated);
     this.currencySettingsUrl = buildCurrencyUrl(validated);
     this.evaluationDashboardsSettingsUrl = buildEvaluationDashboardsUrl(validated);
@@ -297,32 +343,52 @@ export class BloomreachEvaluationSettingsService {
   }
 
   async viewRevenueAttribution(
-    _input?: ViewRevenueAttributionInput,
+    input?: ViewRevenueAttributionInput,
   ): Promise<BloomreachRevenueAttributionSettings> {
+    void this.apiConfig;
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'viewRevenueAttribution: not yet implemented. Requires browser automation infrastructure.',
+      'viewRevenueAttribution: not yet implemented. the Bloomreach API does not provide an endpoint for evaluation settings. ' +
+        'Revenue attribution must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Revenue Attribution).',
     );
   }
 
-  async viewCurrency(_input?: ViewCurrencyInput): Promise<BloomreachCurrencySettings> {
+  async viewCurrency(input?: ViewCurrencyInput): Promise<BloomreachCurrencySettings> {
+    void this.apiConfig;
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'viewCurrency: not yet implemented. Requires browser automation infrastructure.',
+      'viewCurrency: not yet implemented. the Bloomreach API does not provide an endpoint for evaluation settings. ' +
+        'Currency must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Currency).',
     );
   }
 
   async viewEvaluationDashboards(
-    _input?: ViewEvaluationDashboardsInput,
+    input?: ViewEvaluationDashboardsInput,
   ): Promise<BloomreachEvaluationDashboardSettings> {
+    void this.apiConfig;
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'viewEvaluationDashboards: not yet implemented. Requires browser automation infrastructure.',
+      'viewEvaluationDashboards: not yet implemented. the Bloomreach API does not provide an endpoint for evaluation settings. ' +
+        'Evaluation dashboards must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Evaluation Dashboards).',
     );
   }
 
   async viewVoucherMapping(
-    _input?: ViewVoucherMappingInput,
+    input?: ViewVoucherMappingInput,
   ): Promise<BloomreachVoucherMappingSettings> {
+    void this.apiConfig;
+    if (input !== undefined) {
+      validateProject(input.project);
+    }
     throw new Error(
-      'viewVoucherMapping: not yet implemented. Requires browser automation infrastructure.',
+      'viewVoucherMapping: not yet implemented. the Bloomreach API does not provide an endpoint for evaluation settings. ' +
+        'Voucher mapping must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Vouchers).',
     );
   }
 
