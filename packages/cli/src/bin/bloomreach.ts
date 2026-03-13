@@ -27,6 +27,7 @@ import {
   BloomreachTagManagerService,
   BloomreachTrendsService,
   BloomreachVouchersService,
+  BloomreachWeblayersService,
 } from '@bloomreach-buddy/core';
 import type {
   CustomerIds,
@@ -52,6 +53,8 @@ import type {
   SurveyQuestion,
   TagTriggerConditions,
   TrendFilter,
+  WeblayerDisplayConditions,
+  WeblayerABTestConfig,
 } from '@bloomreach-buddy/core';
 
 function printJson(value: unknown): void {
@@ -8359,6 +8362,357 @@ evaluationSettingsVoucherMapping
         }
       } catch (error) {
         console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const weblayers = program
+  .command('weblayers')
+  .description('Manage Bloomreach Engagement weblayers');
+
+weblayers
+  .command('list')
+  .description('List all weblayers in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--status <status>', 'Filter by status (active, inactive, draft, archived)')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; status?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachWeblayersService(options.project);
+      const input: { project: string; status?: string } = { project: options.project };
+      if (options.status) input.status = options.status;
+
+      const result = await service.listWeblayers(input);
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No weblayers found.');
+          return;
+        }
+        for (const weblayer of result) {
+          console.log(`  ${weblayer.name}`);
+          console.log(`    Status: ${weblayer.status}`);
+          if (weblayer.displayType) {
+            console.log(`    Type:   ${weblayer.displayType}`);
+          }
+          console.log(`    ID:     ${weblayer.id}`);
+          console.log(`    URL:    ${weblayer.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(
+        `Error: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      process.exit(1);
+    }
+  });
+
+weblayers
+  .command('view-performance')
+  .description('View impressions, clicks and conversions for a weblayer')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--weblayer-id <id>', 'Weblayer ID')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      weblayerId: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachWeblayersService(options.project);
+        const result = await service.viewWeblayerPerformance({
+          project: options.project,
+          weblayerId: options.weblayerId,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log(`Weblayer Performance: ${result.weblayerId}`);
+          console.log(`  Impressions:  ${result.impressions}`);
+          console.log(`  Clicks:       ${result.clicks}`);
+          console.log(`  Conversions:  ${result.conversions}`);
+          console.log(`  CTR:          ${(result.clickThroughRate * 100).toFixed(1)}%`);
+          console.log(`  Conv. Rate:   ${(result.conversionRate * 100).toFixed(1)}%`);
+          console.log(`  Revenue:      ${result.revenue}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+weblayers
+  .command('create')
+  .description('Prepare creation of a new weblayer (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Weblayer name')
+  .option('--display-type <type>', 'Display type (overlay, banner, popup, slide_in)')
+  .option('--template-id <id>', 'Template ID to use')
+  .option('--audience <audience>', 'Audience segment identifier')
+  .option('--page-url-filter <filter>', 'Page URL filter pattern')
+  .option('--delay-ms <ms>', 'Display delay in milliseconds')
+  .option('--scroll-percentage <n>', 'Show after scroll percentage (0-100)')
+  .option('--frequency-cap <n>', 'Max impressions per visitor')
+  .option('--ab-variants <n>', 'Number of A/B test variants')
+  .option('--ab-split <percent>', 'A/B test split percentage')
+  .option('--ab-winner <criteria>', 'A/B test winner criteria')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      displayType?: string;
+      templateId?: string;
+      audience?: string;
+      pageUrlFilter?: string;
+      delayMs?: string;
+      scrollPercentage?: string;
+      frequencyCap?: string;
+      abVariants?: string;
+      abSplit?: string;
+      abWinner?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        let displayConditions: WeblayerDisplayConditions | undefined;
+        if (
+          options.audience ||
+          options.pageUrlFilter ||
+          options.delayMs ||
+          options.scrollPercentage ||
+          options.frequencyCap
+        ) {
+          displayConditions = {
+            audience: options.audience,
+            pageUrlFilter: options.pageUrlFilter,
+            delayMs: options.delayMs ? parseInt(options.delayMs, 10) : undefined,
+            scrollPercentage: options.scrollPercentage
+              ? parseInt(options.scrollPercentage, 10)
+              : undefined,
+            frequencyCap: options.frequencyCap
+              ? parseInt(options.frequencyCap, 10)
+              : undefined,
+          };
+        }
+
+        let abTest: WeblayerABTestConfig | undefined;
+        if (options.abVariants) {
+          abTest = {
+            enabled: true,
+            variants: parseInt(options.abVariants, 10),
+            splitPercentage: options.abSplit ? parseInt(options.abSplit, 10) : undefined,
+            winnerCriteria: options.abWinner,
+          };
+        }
+
+        const service = new BloomreachWeblayersService(options.project);
+        const result = service.prepareCreateWeblayer({
+          project: options.project,
+          name: options.name,
+          displayType: options.displayType,
+          templateId: options.templateId,
+          displayConditions,
+          abTest,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Weblayer creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+weblayers
+  .command('start')
+  .description('Prepare starting a weblayer (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--weblayer-id <id>', 'Weblayer ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      weblayerId: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachWeblayersService(options.project);
+        const result = service.prepareStartWeblayer({
+          project: options.project,
+          weblayerId: options.weblayerId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Weblayer start prepared.');
+          console.log(`  Weblayer: ${options.weblayerId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+weblayers
+  .command('stop')
+  .description('Prepare stopping a weblayer (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--weblayer-id <id>', 'Weblayer ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      weblayerId: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachWeblayersService(options.project);
+        const result = service.prepareStopWeblayer({
+          project: options.project,
+          weblayerId: options.weblayerId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Weblayer stop prepared.');
+          console.log(`  Weblayer: ${options.weblayerId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+weblayers
+  .command('clone')
+  .description('Prepare cloning a weblayer (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--weblayer-id <id>', 'Weblayer ID to clone')
+  .option('--new-name <name>', 'Name for the cloned weblayer')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      weblayerId: string;
+      newName?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachWeblayersService(options.project);
+        const result = service.prepareCloneWeblayer({
+          project: options.project,
+          weblayerId: options.weblayerId,
+          newName: options.newName,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Weblayer clone prepared.');
+          console.log(`  Source:   ${options.weblayerId}`);
+          console.log(`  New name: ${options.newName ?? '(auto-generated)'}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+weblayers
+  .command('archive')
+  .description('Prepare archiving a weblayer (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--weblayer-id <id>', 'Weblayer ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      weblayerId: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachWeblayersService(options.project);
+        const result = service.prepareArchiveWeblayer({
+          project: options.project,
+          weblayerId: options.weblayerId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Weblayer archive prepared.');
+          console.log(`  Weblayer: ${options.weblayerId}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
         process.exit(1);
       }
     },
