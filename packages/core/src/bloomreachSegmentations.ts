@@ -1,6 +1,8 @@
 import { validateProject } from './bloomreachDashboards.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
+import { bloomreachApiFetch, buildDataPath } from './bloomreachApiClient.js';
 
 export const CREATE_SEGMENTATION_ACTION_TYPE = 'segmentations.create_segmentation';
 export const CLONE_SEGMENTATION_ACTION_TYPE = 'segmentations.clone_segmentation';
@@ -229,49 +231,87 @@ export interface SegmentationActionExecutor {
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
 class CreateSegmentationExecutor implements SegmentationActionExecutor {
   readonly actionType = CREATE_SEGMENTATION_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateSegmentationExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateSegmentationExecutor: not yet implemented. ' +
+        'Segmentation creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CloneSegmentationExecutor implements SegmentationActionExecutor {
   readonly actionType = CLONE_SEGMENTATION_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CloneSegmentationExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CloneSegmentationExecutor: not yet implemented. ' +
+        'Segmentation cloning is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ArchiveSegmentationExecutor implements SegmentationActionExecutor {
   readonly actionType = ARCHIVE_SEGMENTATION_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ArchiveSegmentationExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ArchiveSegmentationExecutor: not yet implemented. ' +
+        'Segmentation archiving is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createSegmentationActionExecutors(): Record<string, SegmentationActionExecutor> {
+export function createSegmentationActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, SegmentationActionExecutor> {
   return {
-    [CREATE_SEGMENTATION_ACTION_TYPE]: new CreateSegmentationExecutor(),
-    [CLONE_SEGMENTATION_ACTION_TYPE]: new CloneSegmentationExecutor(),
-    [ARCHIVE_SEGMENTATION_ACTION_TYPE]: new ArchiveSegmentationExecutor(),
+    [CREATE_SEGMENTATION_ACTION_TYPE]: new CreateSegmentationExecutor(apiConfig),
+    [CLONE_SEGMENTATION_ACTION_TYPE]: new CloneSegmentationExecutor(apiConfig),
+    [ARCHIVE_SEGMENTATION_ACTION_TYPE]: new ArchiveSegmentationExecutor(apiConfig),
   };
 }
 
 export class BloomreachSegmentationsService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildSegmentationsUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get segmentationsUrl(): string {
@@ -284,28 +324,97 @@ export class BloomreachSegmentationsService {
     }
 
     throw new Error(
-      'listSegmentations: not yet implemented. Requires browser automation infrastructure.',
+      'listSegmentations: the Bloomreach API does not provide a list endpoint for segmentations. ' +
+        'Segmentation IDs must be obtained from the Bloomreach Engagement UI ' +
+        '(found in the URL when editing a segmentation, e.g. "606488856f8cf6f848b20af8").',
     );
   }
 
   async viewSegmentSize(input: ViewSegmentSizeInput): Promise<SegmentSize> {
     validateProject(input.project);
-    validateSegmentationId(input.segmentationId);
+    const segmentationId = validateSegmentationId(input.segmentationId);
 
-    throw new Error(
-      'viewSegmentSize: not yet implemented. Requires browser automation infrastructure.',
-    );
+    const config = requireApiConfig(this.apiConfig, 'viewSegmentSize');
+    const path = buildDataPath(config, '/analyses/segmentation');
+
+    const response = await bloomreachApiFetch(config, path, {
+      body: {
+        analysis_id: segmentationId,
+        format: 'table_json',
+      },
+    });
+
+    const data = response as { header?: string[]; rows?: unknown[][]; success?: boolean };
+    if (!data.success || !Array.isArray(data.rows)) {
+      throw new Error('viewSegmentSize: unexpected API response format.');
+    }
+
+    const hashIndex = Array.isArray(data.header) ? data.header.indexOf('#') : -1;
+    const countIndex = hashIndex >= 0 ? hashIndex : (data.header?.length ?? 1) - 1;
+
+    let totalCustomers = 0;
+    for (const row of data.rows) {
+      const val = row[countIndex];
+      if (typeof val === 'number') {
+        totalCustomers += val;
+      }
+    }
+
+    return {
+      segmentationId,
+      customerCount: totalCustomers,
+      computedAt: new Date().toISOString(),
+    };
   }
 
   async viewSegmentCustomers(input: ViewSegmentCustomersInput): Promise<SegmentCustomerList> {
     validateProject(input.project);
-    validateSegmentationId(input.segmentationId);
-    validateCustomerListLimit(input.limit);
-    validateCustomerListOffset(input.offset);
+    const segmentationId = validateSegmentationId(input.segmentationId);
+    const limit = validateCustomerListLimit(input.limit);
+    const offset = validateCustomerListOffset(input.offset);
 
-    throw new Error(
-      'viewSegmentCustomers: not yet implemented. Requires browser automation infrastructure.',
-    );
+    const config = requireApiConfig(this.apiConfig, 'viewSegmentCustomers');
+    const path = buildDataPath(config, '/customers/export');
+
+    const response = await bloomreachApiFetch(config, path, {
+      body: {
+        filter: {
+          type: 'segment',
+          segmentation_id: segmentationId,
+          segment_index: 0,
+        },
+        attributes: { type: 'properties_and_ids' },
+        format: 'table_json',
+      },
+    });
+
+    const rows = Array.isArray(response)
+      ? response
+      : response && typeof response === 'object' && Array.isArray((response as { data?: unknown[] }).data)
+        ? ((response as { data: unknown[] }).data as Array<Record<string, unknown>>)
+        : [];
+    const effectiveOffset = offset ?? 0;
+    const effectiveLimit = limit ?? 20;
+    const sliced = rows.slice(effectiveOffset, effectiveOffset + effectiveLimit);
+
+    const customers: SegmentCustomer[] = sliced.map((row: Record<string, unknown>) => {
+      const customerId = String(row.registered ?? row.cookie ?? row.email_id ?? 'unknown');
+      const attributes: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(row)) {
+        if (key !== 'registered' && key !== 'cookie' && key !== 'email_id') {
+          attributes[key] = value;
+        }
+      }
+      return { customerId, attributes };
+    });
+
+    return {
+      segmentationId,
+      customers,
+      total: rows.length,
+      limit: effectiveLimit,
+      offset: effectiveOffset,
+    };
   }
 
   prepareCreateSegmentation(input: CreateSegmentationInput): PreparedSegmentationAction {
