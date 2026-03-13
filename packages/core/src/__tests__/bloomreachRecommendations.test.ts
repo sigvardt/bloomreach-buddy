@@ -189,6 +189,13 @@ describe('validateFilterRules', () => {
     expect(validateFilterRules([])).toEqual([]);
   });
 
+  it('trims field, operator, and value in output', () => {
+    const rules = [{ field: '  category  ', operator: '  equals  ', value: '  shoes  ' }];
+    expect(validateFilterRules(rules)).toEqual([
+      { field: 'category', operator: 'equals', value: 'shoes' },
+    ]);
+  });
+
   it('throws for exceeding 50 rules', () => {
     const rules = Array.from({ length: 51 }, (_, i) => ({
       field: `field-${i}`,
@@ -248,6 +255,11 @@ describe('validateBoostRules', () => {
   it('accepts weight at boundaries', () => {
     expect(validateBoostRules([{ field: 'min-weight', weight: 0 }])).toBeDefined();
     expect(validateBoostRules([{ field: 'max-weight', weight: 100 }])).toBeDefined();
+  });
+
+  it('trims field in output', () => {
+    const rules = [{ field: '  margin  ', weight: 50 }];
+    expect(validateBoostRules(rules)).toEqual([{ field: 'margin', weight: 50 }]);
   });
 
   it('throws for rule with empty field', () => {
@@ -502,6 +514,17 @@ describe('BloomreachRecommendationsService', () => {
           project: 'test',
           name: 'Model',
           modelType: '',
+        }),
+      ).toThrow('must not be empty');
+    });
+
+    it('throws for whitespace-only modelType', () => {
+      const service = new BloomreachRecommendationsService('test');
+      expect(() =>
+        service.prepareCreateRecommendationModel({
+          project: 'test',
+          name: 'Model',
+          modelType: '   ',
         }),
       ).toThrow('must not be empty');
     });

@@ -26,6 +26,7 @@ import {
   BloomreachImportsService,
   BloomreachMetricsService,
   BloomreachPerformanceService,
+  BloomreachRecommendationsService,
   BloomreachReportsService,
   BloomreachRetentionsService,
   BloomreachScenariosService,
@@ -60,6 +61,8 @@ import type {
   ImportScheduleConfig,
   MetricAggregation,
   MetricFilter,
+  RecommendationFilterRule,
+  RecommendationBoostRule,
   RedemptionRules,
   ReportDateRange,
   ReportFilter,
@@ -11694,6 +11697,250 @@ channelSettings
         } else {
           console.log('Facebook Messaging configuration prepared.');
           console.log(`  Page ID: ${options.pageId}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const recommendations = program
+  .command('recommendations')
+  .description('Manage Bloomreach Engagement recommendation models');
+
+recommendations
+  .command('list')
+  .description(
+    'List recommendation models in the project ' +
+      '(note: requires browser automation — recommendation setup is UI-only in Bloomreach)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--status <status>', 'Filter by status: active, inactive, training, or draft')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; status?: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachRecommendationsService(options.project);
+      const result = await service.listRecommendationModels({
+        project: options.project,
+        status: options.status,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No recommendation models found.');
+          return;
+        }
+        for (const model of result) {
+          console.log(`  ${model.name}`);
+          console.log(`    Status:    ${model.status}`);
+          console.log(`    Type:      ${model.modelType}`);
+          if (model.algorithm) {
+            console.log(`    Algorithm: ${model.algorithm}`);
+          }
+          console.log(`    ID:        ${model.id}`);
+          console.log(`    URL:       ${model.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+recommendations
+  .command('view-performance')
+  .description(
+    'View performance metrics for a recommendation model (impressions, clicks, conversions, revenue)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--model-id <id>', 'Recommendation model ID')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; modelId: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachRecommendationsService(options.project);
+      const result = await service.viewModelPerformance({
+        project: options.project,
+        modelId: options.modelId,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Model Performance: ${result.modelId}`);
+        console.log(`  Impressions:   ${result.impressions}`);
+        console.log(`  Clicks:        ${result.clicks}`);
+        console.log(`  CTR:           ${(result.clickThroughRate * 100).toFixed(1)}%`);
+        console.log(`  Conversions:   ${result.conversions}`);
+        console.log(`  Conv. Rate:    ${(result.conversionRate * 100).toFixed(1)}%`);
+        console.log(`  Revenue:       ${result.revenue}`);
+        console.log(`  Avg. Order:    ${result.averageOrderValue}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+recommendations
+  .command('create')
+  .description(
+    'Prepare creation of a new recommendation model (two-phase commit). ' +
+      'Model name max 200 characters. Algorithm types: collaborative_filtering, content_based, hybrid, trending, personalized.',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Model name (1–200 characters)')
+  .requiredOption(
+    '--model-type <type>',
+    'Model type (e.g. product_recommendations, category_recommendations)',
+  )
+  .option(
+    '--algorithm <algorithm>',
+    'Algorithm type: collaborative_filtering, content_based, hybrid, trending, or personalized',
+  )
+  .option('--catalog-id <id>', 'Catalog ID to use for recommendations')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      modelType: string;
+      algorithm?: string;
+      catalogId?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachRecommendationsService(options.project);
+        const result = service.prepareCreateRecommendationModel({
+          project: options.project,
+          name: options.name,
+          modelType: options.modelType,
+          algorithm: options.algorithm,
+          catalogId: options.catalogId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Recommendation model creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Type:    ${options.modelType}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+recommendations
+  .command('configure')
+  .description(
+    'Prepare configuration of a recommendation model (two-phase commit). ' +
+      'Supports algorithm, catalog, filter rules (max 50), boost rules (max 50), and max items (1–100).',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--model-id <id>', 'Recommendation model ID')
+  .option(
+    '--algorithm <algorithm>',
+    'Algorithm type: collaborative_filtering, content_based, hybrid, trending, or personalized',
+  )
+  .option('--catalog-id <id>', 'Catalog ID to use for recommendations')
+  .option('--filters <json>', 'JSON array of filter rules [{field, operator, value}]')
+  .option('--boost-rules <json>', 'JSON array of boost rules [{field, weight}] (weight: 0–100)')
+  .option('--max-items <n>', 'Maximum number of items to recommend (1–100)')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      modelId: string;
+      algorithm?: string;
+      catalogId?: string;
+      filters?: string;
+      boostRules?: string;
+      maxItems?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const filters = options.filters
+          ? (JSON.parse(options.filters) as RecommendationFilterRule[])
+          : undefined;
+        const boostRules = options.boostRules
+          ? (JSON.parse(options.boostRules) as RecommendationBoostRule[])
+          : undefined;
+
+        const service = new BloomreachRecommendationsService(options.project);
+        const result = service.prepareConfigureRecommendationModel({
+          project: options.project,
+          modelId: options.modelId,
+          algorithm: options.algorithm,
+          catalogId: options.catalogId,
+          filters,
+          boostRules,
+          maxItems: options.maxItems ? parseInt(options.maxItems, 10) : undefined,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Recommendation model configuration prepared.');
+          console.log(`  Model:   ${options.modelId}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+recommendations
+  .command('delete')
+  .description(
+    'Prepare deletion of a recommendation model (two-phase commit). ' +
+      'This action is irreversible once confirmed.',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--model-id <id>', 'Recommendation model ID to delete')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; modelId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachRecommendationsService(options.project);
+        const result = service.prepareDeleteRecommendationModel({
+          project: options.project,
+          modelId: options.modelId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Recommendation model deletion prepared.');
+          console.log(`  Model:   ${options.modelId}`);
           console.log(`  Token:   ${result.confirmToken}`);
           console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');
