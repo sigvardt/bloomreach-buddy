@@ -1,4 +1,6 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
+import { bloomreachApiFetch, buildDataPath } from './bloomreachApiClient.js';
 
 export const CREATE_CATALOG_ACTION_TYPE = 'catalogs.create_catalog';
 export const ADD_CATALOG_ITEMS_ACTION_TYPE = 'catalogs.add_catalog_items';
@@ -77,6 +79,19 @@ export interface PreparedCatalogAction {
   preview: Record<string, unknown>;
 }
 
+export const VALID_CATALOG_FIELD_TYPES = new Set([
+  'string',
+  'long text',
+  'number',
+  'boolean',
+  'date',
+  'datetime',
+  'duration',
+  'list',
+  'url',
+  'json',
+]);
+
 const MAX_CATALOG_NAME_LENGTH = 200;
 const MIN_CATALOG_NAME_LENGTH = 1;
 
@@ -112,6 +127,12 @@ export function validateCatalogSchema(schema: Record<string, string>): Record<st
     const normalizedFieldName = fieldName.trim();
     if (normalizedFieldName.length === 0) {
       throw new Error('Catalog schema field names must not be empty.');
+    }
+    if (!VALID_CATALOG_FIELD_TYPES.has(fieldType)) {
+      throw new Error(
+        `Invalid catalog field type "${fieldType}" for field "${normalizedFieldName}". ` +
+          `Valid types: ${[...VALID_CATALOG_FIELD_TYPES].join(', ')}.`,
+      );
     }
     normalizedSchema[normalizedFieldName] = fieldType;
   }
@@ -154,68 +175,134 @@ export interface CatalogActionExecutor {
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
 class CreateCatalogExecutor implements CatalogActionExecutor {
   readonly actionType = CREATE_CATALOG_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
-    throw new Error(
-      'CreateCatalogExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const config = requireApiConfig(this.apiConfig, 'CreateCatalogExecutor');
+    const name = payload.name as string;
+    const schema = payload.schema as Record<string, string>;
+
+    const fields = Object.entries(schema).map(([fieldName, fieldType]) => ({
+      name: fieldName,
+      type: fieldType,
+      searchable: true,
+    }));
+
+    const path = buildDataPath(config, '/catalogs');
+    const response = await bloomreachApiFetch(config, path, {
+      body: { name, fields, is_product_catalog: false },
+    });
+    return { success: true, response };
   }
 }
 
 class AddCatalogItemsExecutor implements CatalogActionExecutor {
   readonly actionType = ADD_CATALOG_ITEMS_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
-    throw new Error(
-      'AddCatalogItemsExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const config = requireApiConfig(this.apiConfig, 'AddCatalogItemsExecutor');
+    const catalogId = payload.catalogId as string;
+    const items = payload.items as Record<string, unknown>[];
+
+    const path = buildDataPath(config, `/catalogs/${encodeURIComponent(catalogId)}/items`);
+    const response = await bloomreachApiFetch(config, path, {
+      method: 'PUT',
+      body: items,
+    });
+    return { success: true, response };
   }
 }
 
 class UpdateCatalogItemsExecutor implements CatalogActionExecutor {
   readonly actionType = UPDATE_CATALOG_ITEMS_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
-    throw new Error(
-      'UpdateCatalogItemsExecutor: not yet implemented. Requires browser automation infrastructure.',
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const config = requireApiConfig(this.apiConfig, 'UpdateCatalogItemsExecutor');
+    const catalogId = payload.catalogId as string;
+    const items = payload.items as { id: string; properties: Record<string, unknown> }[];
+
+    const path = buildDataPath(
+      config,
+      `/catalogs/${encodeURIComponent(catalogId)}/items/partial-update`,
     );
+    const response = await bloomreachApiFetch(config, path, {
+      body: items.map((item) => ({
+        item_id: item.id,
+        properties: item.properties,
+        upsert: false,
+      })),
+    });
+    return { success: true, response };
   }
 }
 
 class DeleteCatalogExecutor implements CatalogActionExecutor {
   readonly actionType = DELETE_CATALOG_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
-    throw new Error(
-      'DeleteCatalogExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const config = requireApiConfig(this.apiConfig, 'DeleteCatalogExecutor');
+    const catalogId = payload.catalogId as string;
+
+    const path = buildDataPath(config, `/catalogs/${encodeURIComponent(catalogId)}`);
+    const response = await bloomreachApiFetch(config, path, {
+      method: 'DELETE',
+    });
+    return { success: true, response };
   }
 }
 
-export function createCatalogActionExecutors(): Record<string, CatalogActionExecutor> {
+export function createCatalogActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, CatalogActionExecutor> {
   return {
-    [CREATE_CATALOG_ACTION_TYPE]: new CreateCatalogExecutor(),
-    [ADD_CATALOG_ITEMS_ACTION_TYPE]: new AddCatalogItemsExecutor(),
-    [UPDATE_CATALOG_ITEMS_ACTION_TYPE]: new UpdateCatalogItemsExecutor(),
-    [DELETE_CATALOG_ACTION_TYPE]: new DeleteCatalogExecutor(),
+    [CREATE_CATALOG_ACTION_TYPE]: new CreateCatalogExecutor(apiConfig),
+    [ADD_CATALOG_ITEMS_ACTION_TYPE]: new AddCatalogItemsExecutor(apiConfig),
+    [UPDATE_CATALOG_ITEMS_ACTION_TYPE]: new UpdateCatalogItemsExecutor(apiConfig),
+    [DELETE_CATALOG_ACTION_TYPE]: new DeleteCatalogExecutor(apiConfig),
   };
 }
 
 export class BloomreachCatalogsService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildCatalogsUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get catalogsUrl(): string {
@@ -227,9 +314,20 @@ export class BloomreachCatalogsService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listCatalogs: not yet implemented. Requires browser automation infrastructure.',
-    );
+    const config = requireApiConfig(this.apiConfig, 'listCatalogs');
+    const path = buildDataPath(config, '/catalogs');
+    const response = (await bloomreachApiFetch(config, path, {
+      method: 'GET',
+    })) as { data?: Array<{ id: string; name: string }> };
+
+    const catalogs = Array.isArray(response.data) ? response.data : [];
+    return catalogs.map((catalog) => ({
+      id: catalog.id,
+      name: catalog.name,
+      itemCount: 0,
+      schema: {},
+      url: '',
+    }));
   }
 
   async viewCatalogItems(input: ViewCatalogItemsInput): Promise<CatalogItemsPage> {
@@ -246,9 +344,39 @@ export class BloomreachCatalogsService {
       }
     }
 
-    throw new Error(
-      'viewCatalogItems: not yet implemented. Requires browser automation infrastructure.',
-    );
+    const config = requireApiConfig(this.apiConfig, 'viewCatalogItems');
+    const pageSize = input.pageSize ?? 20;
+    const page = input.page ?? 1;
+    const skip = (page - 1) * pageSize;
+
+    const itemsPath = `/catalogs/${encodeURIComponent(input.catalogId)}/items?count=${pageSize}&skip=${skip}`;
+    const path = buildDataPath(config, itemsPath);
+    const response = (await bloomreachApiFetch(config, path, {
+      method: 'GET',
+    })) as {
+      data?: Array<{ catalog_id: string; item_id: string; properties?: Record<string, unknown> }>;
+      total?: number;
+      matched?: number;
+    };
+
+    const itemsData = Array.isArray(response.data) ? response.data : [];
+    const items: CatalogItem[] = itemsData.map((item) => ({
+      id: item.item_id,
+      catalogId: item.catalog_id,
+      properties: item.properties ?? {},
+    }));
+
+    return {
+      items,
+      totalCount:
+        typeof response.total === 'number'
+          ? response.total
+          : typeof response.matched === 'number'
+            ? response.matched
+            : items.length,
+      page,
+      pageSize,
+    };
   }
 
   prepareCreateCatalog(input: CreateCatalogInput): PreparedCatalogAction {
