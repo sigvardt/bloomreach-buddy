@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const CREATE_SURVEY_ACTION_TYPE = 'surveys.create_survey';
 export const START_SURVEY_ACTION_TYPE = 'surveys.start_survey';
@@ -190,6 +191,21 @@ export function buildSurveysUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/campaigns/surveys`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 export interface SurveyActionExecutor {
   readonly actionType: string;
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -197,58 +213,100 @@ export interface SurveyActionExecutor {
 
 class CreateSurveyExecutor implements SurveyActionExecutor {
   readonly actionType = CREATE_SURVEY_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateSurveyExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateSurveyExecutor: not yet implemented. ' +
+        'Survey creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class StartSurveyExecutor implements SurveyActionExecutor {
   readonly actionType = START_SURVEY_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'StartSurveyExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'StartSurveyExecutor: not yet implemented. ' +
+        'Starting surveys is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class StopSurveyExecutor implements SurveyActionExecutor {
   readonly actionType = STOP_SURVEY_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'StopSurveyExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'StopSurveyExecutor: not yet implemented. ' +
+        'Stopping surveys is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ArchiveSurveyExecutor implements SurveyActionExecutor {
   readonly actionType = ARCHIVE_SURVEY_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ArchiveSurveyExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ArchiveSurveyExecutor: not yet implemented. ' +
+        'Survey archiving is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createSurveyActionExecutors(): Record<string, SurveyActionExecutor> {
+export function createSurveyActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, SurveyActionExecutor> {
   return {
-    [CREATE_SURVEY_ACTION_TYPE]: new CreateSurveyExecutor(),
-    [START_SURVEY_ACTION_TYPE]: new StartSurveyExecutor(),
-    [STOP_SURVEY_ACTION_TYPE]: new StopSurveyExecutor(),
-    [ARCHIVE_SURVEY_ACTION_TYPE]: new ArchiveSurveyExecutor(),
+    [CREATE_SURVEY_ACTION_TYPE]: new CreateSurveyExecutor(apiConfig),
+    [START_SURVEY_ACTION_TYPE]: new StartSurveyExecutor(apiConfig),
+    [STOP_SURVEY_ACTION_TYPE]: new StopSurveyExecutor(apiConfig),
+    [ARCHIVE_SURVEY_ACTION_TYPE]: new ArchiveSurveyExecutor(apiConfig),
   };
 }
 
+/**
+ * Manages Bloomreach Engagement on-site surveys. Read methods return data directly.
+ * Mutation methods follow the two-phase commit pattern (prepare + confirm).
+ *
+ * **API support:** The Bloomreach Engagement API does not expose survey
+ * management endpoints — survey creation, editing, starting/stopping, and
+ * analytics are only available through the Bloomreach Engagement UI. This
+ * service validates inputs and manages two-phase commit flows; browser
+ * automation is required for actual execution.
+ */
 export class BloomreachSurveysService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildSurveysUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get surveysUrl(): string {
@@ -263,8 +321,10 @@ export class BloomreachSurveysService {
       }
     }
 
+    void this.apiConfig;
     throw new Error(
-      'listSurveys: not yet implemented. Requires browser automation infrastructure.',
+      'listSurveys: the Bloomreach API does not provide a list endpoint for surveys. ' +
+        'Survey management is only available through the Bloomreach Engagement UI.',
     );
   }
 
@@ -272,8 +332,10 @@ export class BloomreachSurveysService {
     validateProject(input.project);
     validateSurveyId(input.surveyId);
 
+    void this.apiConfig;
     throw new Error(
-      'viewSurveyResults: not yet implemented. Requires browser automation infrastructure.',
+      'viewSurveyResults: the Bloomreach API does not provide a survey results endpoint. ' +
+        'Survey analytics are only available through the Bloomreach Engagement UI.',
     );
   }
 
