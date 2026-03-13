@@ -1,3 +1,10 @@
+import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
+
+// ---------------------------------------------------------------------------
+// Action type constants
+// ---------------------------------------------------------------------------
+
 export const CREATE_INTEGRATION_ACTION_TYPE = 'integrations.create_integration';
 export const CONFIGURE_INTEGRATION_ACTION_TYPE = 'integrations.configure_integration';
 export const ENABLE_INTEGRATION_ACTION_TYPE = 'integrations.enable_integration';
@@ -5,12 +12,20 @@ export const DISABLE_INTEGRATION_ACTION_TYPE = 'integrations.disable_integration
 export const DELETE_INTEGRATION_ACTION_TYPE = 'integrations.delete_integration';
 export const TEST_INTEGRATION_ACTION_TYPE = 'integrations.test_integration';
 
+// ---------------------------------------------------------------------------
+// Rate limit constants
+// ---------------------------------------------------------------------------
+
 /** Rate limit window for integration operations (1 hour in ms). */
 export const INTEGRATION_RATE_LIMIT_WINDOW_MS = 3_600_000;
 export const INTEGRATION_CREATE_RATE_LIMIT = 10;
 export const INTEGRATION_MODIFY_RATE_LIMIT = 20;
 export const INTEGRATION_DELETE_RATE_LIMIT = 10;
 export const INTEGRATION_TEST_RATE_LIMIT = 30;
+
+// ---------------------------------------------------------------------------
+// Data interfaces
+// ---------------------------------------------------------------------------
 
 export const INTEGRATION_TYPES = [
   'esp',
@@ -59,6 +74,10 @@ export interface IntegrationCredentials {
 export interface IntegrationSettings {
   [key: string]: unknown;
 }
+
+// ---------------------------------------------------------------------------
+// Input interfaces
+// ---------------------------------------------------------------------------
 
 export interface ListIntegrationsInput {
   project: string;
@@ -113,6 +132,10 @@ export interface TestIntegrationInput {
   operatorNote?: string;
 }
 
+// ---------------------------------------------------------------------------
+// Prepared action result
+// ---------------------------------------------------------------------------
+
 /** Staged action awaiting confirmation via two-phase commit. */
 export interface PreparedIntegrationAction {
   preparedActionId: string;
@@ -122,6 +145,10 @@ export interface PreparedIntegrationAction {
   expiresAtMs: number;
   preview: Record<string, unknown>;
 }
+
+// ---------------------------------------------------------------------------
+// Validation helpers
+// ---------------------------------------------------------------------------
 
 const MAX_INTEGRATION_NAME_LENGTH = 200;
 const MIN_INTEGRATION_NAME_LENGTH = 1;
@@ -187,9 +214,32 @@ export function validateProvider(provider: string): string {
   return trimmed;
 }
 
+// ---------------------------------------------------------------------------
+// URL builders
+// ---------------------------------------------------------------------------
+
 export function buildIntegrationsUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/data/integrations`;
 }
+
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
+// ---------------------------------------------------------------------------
+// Action executor interface + implementations
+// ---------------------------------------------------------------------------
 
 /**
  * Executor for a confirmed integration mutation.
@@ -202,74 +252,114 @@ export interface IntegrationActionExecutor {
 
 class CreateIntegrationExecutor implements IntegrationActionExecutor {
   readonly actionType = CREATE_INTEGRATION_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateIntegrationExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateIntegrationExecutor: not yet implemented. Integration creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ConfigureIntegrationExecutor implements IntegrationActionExecutor {
   readonly actionType = CONFIGURE_INTEGRATION_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ConfigureIntegrationExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ConfigureIntegrationExecutor: not yet implemented. Integration configuration is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class EnableIntegrationExecutor implements IntegrationActionExecutor {
   readonly actionType = ENABLE_INTEGRATION_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'EnableIntegrationExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'EnableIntegrationExecutor: not yet implemented. Integration management is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class DisableIntegrationExecutor implements IntegrationActionExecutor {
   readonly actionType = DISABLE_INTEGRATION_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'DisableIntegrationExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DisableIntegrationExecutor: not yet implemented. Integration management is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class DeleteIntegrationExecutor implements IntegrationActionExecutor {
   readonly actionType = DELETE_INTEGRATION_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'DeleteIntegrationExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DeleteIntegrationExecutor: not yet implemented. Integration deletion is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class TestIntegrationExecutor implements IntegrationActionExecutor {
   readonly actionType = TEST_INTEGRATION_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'TestIntegrationExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'TestIntegrationExecutor: not yet implemented. Integration testing is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createIntegrationActionExecutors(): Record<string, IntegrationActionExecutor> {
+export function createIntegrationActionExecutors(apiConfig?: BloomreachApiConfig): Record<string, IntegrationActionExecutor> {
   return {
-    [CREATE_INTEGRATION_ACTION_TYPE]: new CreateIntegrationExecutor(),
-    [CONFIGURE_INTEGRATION_ACTION_TYPE]: new ConfigureIntegrationExecutor(),
-    [ENABLE_INTEGRATION_ACTION_TYPE]: new EnableIntegrationExecutor(),
-    [DISABLE_INTEGRATION_ACTION_TYPE]: new DisableIntegrationExecutor(),
-    [DELETE_INTEGRATION_ACTION_TYPE]: new DeleteIntegrationExecutor(),
-    [TEST_INTEGRATION_ACTION_TYPE]: new TestIntegrationExecutor(),
+    [CREATE_INTEGRATION_ACTION_TYPE]: new CreateIntegrationExecutor(apiConfig),
+    [CONFIGURE_INTEGRATION_ACTION_TYPE]: new ConfigureIntegrationExecutor(apiConfig),
+    [ENABLE_INTEGRATION_ACTION_TYPE]: new EnableIntegrationExecutor(apiConfig),
+    [DISABLE_INTEGRATION_ACTION_TYPE]: new DisableIntegrationExecutor(apiConfig),
+    [DELETE_INTEGRATION_ACTION_TYPE]: new DeleteIntegrationExecutor(apiConfig),
+    [TEST_INTEGRATION_ACTION_TYPE]: new TestIntegrationExecutor(apiConfig),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Service class
+// ---------------------------------------------------------------------------
 
 /**
  * Manages Bloomreach Engagement integrations. Read methods return data directly.
@@ -277,9 +367,11 @@ export function createIntegrationActionExecutors(): Record<string, IntegrationAc
  * Browser-dependent methods throw until Playwright infrastructure is available.
  */
 export class BloomreachIntegrationsService {
+  private readonly apiConfig?: BloomreachApiConfig;
   private readonly baseUrl: string;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
     this.baseUrl = buildIntegrationsUrl(validateIntegrationProject(project));
   }
 
@@ -288,16 +380,29 @@ export class BloomreachIntegrationsService {
   }
 
   /** @throws {Error} Browser automation not yet available. */
-  async listIntegrations(_input?: ListIntegrationsInput): Promise<BloomreachIntegration[]> {
+  async listIntegrations(input?: ListIntegrationsInput): Promise<BloomreachIntegration[]> {
+    void this.apiConfig;
+    if (input !== undefined) {
+      validateProject(input.project);
+      if (input.type !== undefined) {
+        validateIntegrationType(input.type);
+      }
+      if (input.status !== undefined) {
+        validateIntegrationStatus(input.status);
+      }
+    }
     throw new Error(
-      'listIntegrations: not yet implemented. Requires browser automation infrastructure.',
+      'listIntegrations: not yet implemented. The Bloomreach API does not provide an endpoint for integrations. Integrations must be managed through the Bloomreach Engagement UI (navigate to Data & Assets > Integrations).',
     );
   }
 
   /** @throws {Error} Browser automation not yet available. */
-  async viewIntegration(_input: ViewIntegrationInput): Promise<IntegrationDetail> {
+  async viewIntegration(input: ViewIntegrationInput): Promise<IntegrationDetail> {
+    void this.apiConfig;
+    validateProject(input.project);
+    validateIntegrationId(input.integrationId);
     throw new Error(
-      'viewIntegration: not yet implemented. Requires browser automation infrastructure.',
+      'viewIntegration: not yet implemented. The Bloomreach API does not provide an endpoint for integration details. Integrations must be managed through the Bloomreach Engagement UI (navigate to Data & Assets > Integrations).',
     );
   }
 

@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
 import {
   CREATE_INTEGRATION_ACTION_TYPE,
   CONFIGURE_INTEGRATION_ACTION_TYPE,
@@ -23,6 +24,17 @@ import {
   createIntegrationActionExecutors,
   BloomreachIntegrationsService,
 } from '../index.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_INTEGRATION_ACTION_TYPE', () => {
@@ -113,6 +125,22 @@ describe('validateIntegrationName', () => {
     expect(() => validateIntegrationName('   ')).toThrow('must not be empty');
   });
 
+  it('throws for whitespace-only string with tabs', () => {
+    expect(() => validateIntegrationName('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateIntegrationName('\n\n')).toThrow('must not be empty');
+  });
+
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateIntegrationName('\n\tMy Integration\t\n')).toBe('My Integration');
+  });
+
+  it('accepts unicode name', () => {
+    expect(validateIntegrationName('Integrační modul')).toBe('Integrační modul');
+  });
+
   it('throws for name exceeding maximum length', () => {
     const name = 'x'.repeat(201);
     expect(() => validateIntegrationName(name)).toThrow('must not exceed 200 characters');
@@ -131,6 +159,22 @@ describe('validateIntegrationProject', () => {
   it('throws for whitespace-only string', () => {
     expect(() => validateIntegrationProject('   ')).toThrow('must not be empty');
   });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateIntegrationProject('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateIntegrationProject('\n\n')).toThrow('must not be empty');
+  });
+
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateIntegrationProject('\n\tmy-project\t\n')).toBe('my-project');
+  });
+
+  it('accepts unicode project name', () => {
+    expect(validateIntegrationProject('projekt-åäö')).toBe('projekt-åäö');
+  });
 });
 
 describe('validateIntegrationId', () => {
@@ -144,6 +188,22 @@ describe('validateIntegrationId', () => {
 
   it('throws for whitespace-only string', () => {
     expect(() => validateIntegrationId('   ')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateIntegrationId('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateIntegrationId('\n\n')).toThrow('must not be empty');
+  });
+
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateIntegrationId('\n\tinteg-abc\t\n')).toBe('integ-abc');
+  });
+
+  it('accepts unicode integration ID', () => {
+    expect(validateIntegrationId('integrace-123')).toBe('integrace-123');
   });
 });
 
@@ -160,6 +220,10 @@ describe('validateIntegrationType', () => {
 
   it('throws for empty string', () => {
     expect(() => validateIntegrationType('')).toThrow('Invalid integration type');
+  });
+
+  it('throws for type with wrong case', () => {
+    expect(() => validateIntegrationType('ESP')).toThrow('Invalid integration type');
   });
 });
 
@@ -179,6 +243,10 @@ describe('validateIntegrationStatus', () => {
   it('throws for empty string', () => {
     expect(() => validateIntegrationStatus('')).toThrow('Invalid integration status');
   });
+
+  it('throws for status with wrong case', () => {
+    expect(() => validateIntegrationStatus('Active')).toThrow('Invalid integration status');
+  });
 });
 
 describe('validateProvider', () => {
@@ -193,6 +261,22 @@ describe('validateProvider', () => {
   it('throws for whitespace-only string', () => {
     expect(() => validateProvider('   ')).toThrow('must not be empty');
   });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateProvider('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateProvider('\n\n')).toThrow('must not be empty');
+  });
+
+  it('returns trimmed value with tabs and newlines', () => {
+    expect(validateProvider('\n\tSendGrid\t\n')).toBe('SendGrid');
+  });
+
+  it('accepts unicode provider', () => {
+    expect(validateProvider('Posílač')).toBe('Posílač');
+  });
 });
 
 describe('buildIntegrationsUrl', () => {
@@ -206,6 +290,14 @@ describe('buildIntegrationsUrl', () => {
 
   it('handles project name with slashes', () => {
     expect(buildIntegrationsUrl('org/project')).toBe('/p/org%2Fproject/data/integrations');
+  });
+
+  it('encodes unicode project names', () => {
+    expect(buildIntegrationsUrl('projekt åäö')).toContain('%C3%A5');
+  });
+
+  it('encodes hash in project name', () => {
+    expect(buildIntegrationsUrl('my#project')).toBe('/p/my%23project/data/integrations');
   });
 });
 
@@ -234,6 +326,79 @@ describe('createIntegrationActionExecutors', () => {
       await expect(executor.execute({})).rejects.toThrow('not yet implemented');
     }
   });
+
+  it('executors throw UI-only availability message on execute', async () => {
+    const executors = createIntegrationActionExecutors();
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow(
+        'only available through the Bloomreach Engagement UI',
+      );
+    }
+  });
+
+  it('CreateIntegrationExecutor mentions UI-only availability', async () => {
+    const executors = createIntegrationActionExecutors();
+    await expect(executors[CREATE_INTEGRATION_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('ConfigureIntegrationExecutor mentions UI-only availability', async () => {
+    const executors = createIntegrationActionExecutors();
+    await expect(executors[CONFIGURE_INTEGRATION_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('EnableIntegrationExecutor mentions UI-only availability', async () => {
+    const executors = createIntegrationActionExecutors();
+    await expect(executors[ENABLE_INTEGRATION_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('DisableIntegrationExecutor mentions UI-only availability', async () => {
+    const executors = createIntegrationActionExecutors();
+    await expect(executors[DISABLE_INTEGRATION_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('DeleteIntegrationExecutor mentions UI-only availability', async () => {
+    const executors = createIntegrationActionExecutors();
+    await expect(executors[DELETE_INTEGRATION_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('TestIntegrationExecutor mentions UI-only availability', async () => {
+    const executors = createIntegrationActionExecutors();
+    await expect(executors[TEST_INTEGRATION_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+});
+
+describe('apiConfig acceptance', () => {
+  it('createIntegrationActionExecutors accepts apiConfig', () => {
+    const executors = createIntegrationActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(6);
+  });
+
+  it('createIntegrationActionExecutors works without apiConfig', () => {
+    const executors = createIntegrationActionExecutors();
+    expect(Object.keys(executors)).toHaveLength(6);
+  });
+
+  it('BloomreachIntegrationsService accepts apiConfig', () => {
+    const service = new BloomreachIntegrationsService('test', TEST_API_CONFIG);
+    expect(service.integrationsUrl).toBe('/p/test/data/integrations');
+  });
+
+  it('BloomreachIntegrationsService works without apiConfig', () => {
+    const service = new BloomreachIntegrationsService('test');
+    expect(service.integrationsUrl).toBe('/p/test/data/integrations');
+  });
 });
 
 describe('BloomreachIntegrationsService', () => {
@@ -253,24 +418,89 @@ describe('BloomreachIntegrationsService', () => {
       expect(service.integrationsUrl).toBe('/p/my-project/data/integrations');
     });
 
+    it('encodes spaces in URL', () => {
+      const service = new BloomreachIntegrationsService('my project');
+      expect(service.integrationsUrl).toBe('/p/my%20project/data/integrations');
+    });
+
+    it('encodes unicode in URL', () => {
+      const service = new BloomreachIntegrationsService('projekt åäö');
+      expect(service.integrationsUrl).toContain('%C3%A5');
+    });
+
+    it('encodes hash in URL', () => {
+      const service = new BloomreachIntegrationsService('my#project');
+      expect(service.integrationsUrl).toBe('/p/my%23project/data/integrations');
+    });
+
     it('throws for empty project', () => {
       expect(() => new BloomreachIntegrationsService('')).toThrow('must not be empty');
     });
   });
 
-  describe('listIntegrations', () => {
-    it('throws not-yet-implemented error', async () => {
+  describe('read methods', () => {
+    it('listIntegrations throws not-yet-implemented error', async () => {
       const service = new BloomreachIntegrationsService('test');
       await expect(service.listIntegrations()).rejects.toThrow('not yet implemented');
     });
-  });
 
-  describe('viewIntegration', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('viewIntegration throws not-yet-implemented error', async () => {
       const service = new BloomreachIntegrationsService('test');
       await expect(
         service.viewIntegration({ project: 'test', integrationId: 'integ-1' }),
       ).rejects.toThrow('not yet implemented');
+    });
+
+    it('listIntegrations throws descriptive UI-only error', async () => {
+      const service = new BloomreachIntegrationsService('test');
+      await expect(service.listIntegrations()).rejects.toThrow('Bloomreach Engagement UI');
+    });
+
+    it('viewIntegration throws descriptive UI-only error', async () => {
+      const service = new BloomreachIntegrationsService('test');
+      await expect(
+        service.viewIntegration({ project: 'test', integrationId: 'integ-1' }),
+      ).rejects.toThrow('Bloomreach Engagement UI');
+    });
+
+    it('listIntegrations validates project when input provided', async () => {
+      const service = new BloomreachIntegrationsService('test');
+      await expect(service.listIntegrations({ project: '' })).rejects.toThrow('must not be empty');
+    });
+
+    it('listIntegrations validates type when provided', async () => {
+      const service = new BloomreachIntegrationsService('test');
+      await expect(
+        service.listIntegrations({ project: 'test', type: 'invalid-type' }),
+      ).rejects.toThrow('Invalid integration type');
+    });
+
+    it('listIntegrations validates status when provided', async () => {
+      const service = new BloomreachIntegrationsService('test');
+      await expect(
+        service.listIntegrations({ project: 'test', status: 'bogus' }),
+      ).rejects.toThrow('Invalid integration status');
+    });
+
+    it('viewIntegration validates project', async () => {
+      const service = new BloomreachIntegrationsService('test');
+      await expect(
+        service.viewIntegration({ project: '', integrationId: 'integ-1' }),
+      ).rejects.toThrow('must not be empty');
+    });
+
+    it('viewIntegration validates integrationId', async () => {
+      const service = new BloomreachIntegrationsService('test');
+      await expect(
+        service.viewIntegration({ project: 'test', integrationId: '' }),
+      ).rejects.toThrow('must not be empty');
+    });
+
+    it('viewIntegration validates whitespace-only integrationId', async () => {
+      const service = new BloomreachIntegrationsService('test');
+      await expect(
+        service.viewIntegration({ project: 'test', integrationId: '   ' }),
+      ).rejects.toThrow('must not be empty');
     });
   });
 
@@ -339,6 +569,17 @@ describe('BloomreachIntegrationsService', () => {
       expect(result.preview).toEqual(
         expect.objectContaining({ operatorNote: 'Setting up SMS channel' }),
       );
+    });
+
+    it('trims name value', () => {
+      const service = new BloomreachIntegrationsService('test');
+      const result = service.prepareCreateIntegration({
+        project: 'test',
+        name: '  SendGrid ESP  ',
+        type: 'esp',
+        provider: 'SendGrid',
+      });
+      expect(result.preview).toEqual(expect.objectContaining({ name: 'SendGrid ESP' }));
     });
 
     it('throws for empty name', () => {
@@ -443,6 +684,13 @@ describe('BloomreachIntegrationsService', () => {
       ).toThrow('must not be empty');
     });
 
+    it('throws for whitespace-only integrationId', () => {
+      const service = new BloomreachIntegrationsService('test');
+      expect(() =>
+        service.prepareConfigureIntegration({ project: 'test', integrationId: '   ' }),
+      ).toThrow('must not be empty');
+    });
+
     it('throws for empty project', () => {
       const service = new BloomreachIntegrationsService('test');
       expect(() =>
@@ -487,6 +735,13 @@ describe('BloomreachIntegrationsService', () => {
       const service = new BloomreachIntegrationsService('test');
       expect(() =>
         service.prepareEnableIntegration({ project: 'test', integrationId: '' }),
+      ).toThrow('must not be empty');
+    });
+
+    it('throws for whitespace-only integrationId', () => {
+      const service = new BloomreachIntegrationsService('test');
+      expect(() =>
+        service.prepareEnableIntegration({ project: 'test', integrationId: '   ' }),
       ).toThrow('must not be empty');
     });
 
@@ -571,6 +826,18 @@ describe('BloomreachIntegrationsService', () => {
       );
     });
 
+    it('includes operatorNote in preview', () => {
+      const service = new BloomreachIntegrationsService('test');
+      const result = service.prepareDeleteIntegration({
+        project: 'test',
+        integrationId: 'integ-456',
+        operatorNote: 'Removing deprecated webhook',
+      });
+      expect(result.preview).toEqual(
+        expect.objectContaining({ operatorNote: 'Removing deprecated webhook' }),
+      );
+    });
+
     it('throws for empty integrationId', () => {
       const service = new BloomreachIntegrationsService('test');
       expect(() =>
@@ -629,6 +896,13 @@ describe('BloomreachIntegrationsService', () => {
       const service = new BloomreachIntegrationsService('test');
       expect(() =>
         service.prepareTestIntegration({ project: 'test', integrationId: '' }),
+      ).toThrow('must not be empty');
+    });
+
+    it('throws for whitespace-only integrationId', () => {
+      const service = new BloomreachIntegrationsService('test');
+      expect(() =>
+        service.prepareTestIntegration({ project: 'test', integrationId: '   ' }),
       ).toThrow('must not be empty');
     });
 
