@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const CREATE_EMAIL_CAMPAIGN_ACTION_TYPE = 'email_campaigns.create_campaign';
 export const SEND_EMAIL_CAMPAIGN_ACTION_TYPE = 'email_campaigns.send_campaign';
@@ -238,10 +239,6 @@ export function buildEmailCampaignsUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/campaigns/email-campaigns`;
 }
 
-/**
- * Executor for a confirmed email campaign mutation.
- * Execute methods require browser automation infrastructure (not yet built).
- */
 export interface EmailCampaignActionExecutor {
   readonly actionType: string;
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -249,70 +246,110 @@ export interface EmailCampaignActionExecutor {
 
 class CreateEmailCampaignExecutor implements EmailCampaignActionExecutor {
   readonly actionType = CREATE_EMAIL_CAMPAIGN_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateEmailCampaignExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateEmailCampaignExecutor: not yet implemented. ' +
+        'Email campaign creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class SendEmailCampaignExecutor implements EmailCampaignActionExecutor {
   readonly actionType = SEND_EMAIL_CAMPAIGN_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'SendEmailCampaignExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'SendEmailCampaignExecutor: not yet implemented. ' +
+        'Email campaign sending is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CloneEmailCampaignExecutor implements EmailCampaignActionExecutor {
   readonly actionType = CLONE_EMAIL_CAMPAIGN_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CloneEmailCampaignExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CloneEmailCampaignExecutor: not yet implemented. ' +
+        'Email campaign cloning is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ArchiveEmailCampaignExecutor implements EmailCampaignActionExecutor {
   readonly actionType = ARCHIVE_EMAIL_CAMPAIGN_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ArchiveEmailCampaignExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ArchiveEmailCampaignExecutor: not yet implemented. ' +
+        'Email campaign archiving is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createEmailCampaignActionExecutors(): Record<string, EmailCampaignActionExecutor> {
+export function createEmailCampaignActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, EmailCampaignActionExecutor> {
   return {
-    [CREATE_EMAIL_CAMPAIGN_ACTION_TYPE]: new CreateEmailCampaignExecutor(),
-    [SEND_EMAIL_CAMPAIGN_ACTION_TYPE]: new SendEmailCampaignExecutor(),
-    [CLONE_EMAIL_CAMPAIGN_ACTION_TYPE]: new CloneEmailCampaignExecutor(),
-    [ARCHIVE_EMAIL_CAMPAIGN_ACTION_TYPE]: new ArchiveEmailCampaignExecutor(),
+    [CREATE_EMAIL_CAMPAIGN_ACTION_TYPE]: new CreateEmailCampaignExecutor(apiConfig),
+    [SEND_EMAIL_CAMPAIGN_ACTION_TYPE]: new SendEmailCampaignExecutor(apiConfig),
+    [CLONE_EMAIL_CAMPAIGN_ACTION_TYPE]: new CloneEmailCampaignExecutor(apiConfig),
+    [ARCHIVE_EMAIL_CAMPAIGN_ACTION_TYPE]: new ArchiveEmailCampaignExecutor(apiConfig),
   };
 }
 
 /**
  * Manages Bloomreach Engagement email campaigns. Read methods return data directly.
  * Mutation methods follow the two-phase commit pattern (prepare + confirm).
- * Browser-dependent methods throw until Playwright infrastructure is available.
+ *
+ * **API support:** The Bloomreach Engagement API does not expose email campaign
+ * management endpoints — campaign creation, editing, sending, and analytics are
+ * only available through the Bloomreach Engagement UI. This service validates
+ * inputs and manages two-phase commit flows; browser automation is required for
+ * actual execution.
  */
 export class BloomreachEmailCampaignsService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildEmailCampaignsUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get emailCampaignsUrl(): string {
     return this.baseUrl;
   }
 
-  /** @throws {Error} Browser automation not yet available. */
+  /**
+   * List email campaigns in the project.
+   * @throws {Error} The Bloomreach API does not provide a list endpoint for email campaigns.
+   */
   async listEmailCampaigns(input?: ListEmailCampaignsInput): Promise<BloomreachEmailCampaign[]> {
     if (input !== undefined) {
       validateProject(input.project);
@@ -321,18 +358,25 @@ export class BloomreachEmailCampaignsService {
       }
     }
 
+    void this.apiConfig;
     throw new Error(
-      'listEmailCampaigns: not yet implemented. Requires browser automation infrastructure.',
+      'listEmailCampaigns: the Bloomreach API does not provide a list endpoint for email campaigns. ' +
+        'Email campaign management is only available through the Bloomreach Engagement UI.',
     );
   }
 
-  /** @throws {Error} Browser automation not yet available. */
+  /**
+   * View delivery and engagement metrics for an email campaign.
+   * @throws {Error} The Bloomreach API does not provide a campaign results endpoint.
+   */
   async viewCampaignResults(input: ViewEmailCampaignResultsInput): Promise<EmailCampaignResults> {
     validateProject(input.project);
     validateCampaignId(input.campaignId);
 
+    void this.apiConfig;
     throw new Error(
-      'viewCampaignResults: not yet implemented. Requires browser automation infrastructure.',
+      'viewCampaignResults: the Bloomreach API does not provide a campaign results endpoint for email campaigns. ' +
+        'Email campaign analytics are only available through the Bloomreach Engagement UI.',
     );
   }
 

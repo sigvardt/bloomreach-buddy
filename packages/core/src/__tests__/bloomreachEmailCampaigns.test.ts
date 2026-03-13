@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   CREATE_EMAIL_CAMPAIGN_ACTION_TYPE,
   SEND_EMAIL_CAMPAIGN_ACTION_TYPE,
@@ -22,6 +22,18 @@ import {
   createEmailCampaignActionExecutors,
   BloomreachEmailCampaignsService,
 } from '../index.js';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_EMAIL_CAMPAIGN_ACTION_TYPE', () => {
@@ -60,6 +72,30 @@ describe('EMAIL_CAMPAIGN_STATUSES', () => {
     expect(EMAIL_CAMPAIGN_STATUSES).toHaveLength(6);
   });
 
+  it('contains draft at index 0', () => {
+    expect(EMAIL_CAMPAIGN_STATUSES[0]).toBe('draft');
+  });
+
+  it('contains scheduled at index 1', () => {
+    expect(EMAIL_CAMPAIGN_STATUSES[1]).toBe('scheduled');
+  });
+
+  it('contains sending at index 2', () => {
+    expect(EMAIL_CAMPAIGN_STATUSES[2]).toBe('sending');
+  });
+
+  it('contains sent at index 3', () => {
+    expect(EMAIL_CAMPAIGN_STATUSES[3]).toBe('sent');
+  });
+
+  it('contains paused at index 4', () => {
+    expect(EMAIL_CAMPAIGN_STATUSES[4]).toBe('paused');
+  });
+
+  it('contains archived at index 5', () => {
+    expect(EMAIL_CAMPAIGN_STATUSES[5]).toBe('archived');
+  });
+
   it('contains expected statuses in order', () => {
     expect(EMAIL_CAMPAIGN_STATUSES).toEqual([
       'draft',
@@ -77,6 +113,18 @@ describe('SEND_SCHEDULE_TYPES', () => {
     expect(SEND_SCHEDULE_TYPES).toHaveLength(3);
   });
 
+  it('contains immediate at index 0', () => {
+    expect(SEND_SCHEDULE_TYPES[0]).toBe('immediate');
+  });
+
+  it('contains scheduled at index 1', () => {
+    expect(SEND_SCHEDULE_TYPES[1]).toBe('scheduled');
+  });
+
+  it('contains recurring at index 2', () => {
+    expect(SEND_SCHEDULE_TYPES[2]).toBe('recurring');
+  });
+
   it('contains expected types in order', () => {
     expect(SEND_SCHEDULE_TYPES).toEqual(['immediate', 'scheduled', 'recurring']);
   });
@@ -85,6 +133,14 @@ describe('SEND_SCHEDULE_TYPES', () => {
 describe('EMAIL_TEMPLATE_TYPES', () => {
   it('contains 2 template types', () => {
     expect(EMAIL_TEMPLATE_TYPES).toHaveLength(2);
+  });
+
+  it('contains visual at index 0', () => {
+    expect(EMAIL_TEMPLATE_TYPES[0]).toBe('visual');
+  });
+
+  it('contains html at index 1', () => {
+    expect(EMAIL_TEMPLATE_TYPES[1]).toBe('html');
   });
 
   it('contains expected types in order', () => {
@@ -97,13 +153,29 @@ describe('validateCampaignName', () => {
     expect(validateCampaignName('  My Campaign  ')).toBe('My Campaign');
   });
 
+  it('returns trimmed name with tabs and newlines', () => {
+    expect(validateCampaignName('\n\tCampaign Name\t\n')).toBe('Campaign Name');
+  });
+
   it('accepts single-character name', () => {
     expect(validateCampaignName('A')).toBe('A');
+  });
+
+  it('accepts numeric name', () => {
+    expect(validateCampaignName('12345')).toBe('12345');
+  });
+
+  it('accepts punctuation input', () => {
+    expect(validateCampaignName('Campaign: Weekly v2')).toBe('Campaign: Weekly v2');
   });
 
   it('accepts name at maximum length', () => {
     const name = 'x'.repeat(200);
     expect(validateCampaignName(name)).toBe(name);
+  });
+
+  it('accepts mixed whitespace around valid input', () => {
+    expect(validateCampaignName(' \t  Weekly Newsletter \n ')).toBe('Weekly Newsletter');
   });
 
   it('throws for empty string', () => {
@@ -112,6 +184,14 @@ describe('validateCampaignName', () => {
 
   it('throws for whitespace-only string', () => {
     expect(() => validateCampaignName('   ')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateCampaignName('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateCampaignName('\n\n')).toThrow('must not be empty');
   });
 
   it('throws for name exceeding maximum length', () => {
@@ -125,13 +205,31 @@ describe('validateSubjectLine', () => {
     expect(validateSubjectLine('  Hello World  ')).toBe('Hello World');
   });
 
+  it('returns trimmed subject line with tabs and newlines', () => {
+    expect(validateSubjectLine('\n\tHello from Weekly Campaign\t\n')).toBe(
+      'Hello from Weekly Campaign',
+    );
+  });
+
   it('accepts single-character subject line', () => {
     expect(validateSubjectLine('A')).toBe('A');
+  });
+
+  it('accepts numeric subject line', () => {
+    expect(validateSubjectLine('2026')).toBe('2026');
+  });
+
+  it('accepts punctuation subject line', () => {
+    expect(validateSubjectLine('Campaign: Weekly v2')).toBe('Campaign: Weekly v2');
   });
 
   it('accepts subject line at maximum length', () => {
     const subject = 'x'.repeat(998);
     expect(validateSubjectLine(subject)).toBe(subject);
+  });
+
+  it('accepts mixed whitespace around valid subject line', () => {
+    expect(validateSubjectLine(' \t Weekly launch update \n ')).toBe('Weekly launch update');
   });
 
   it('throws for empty string', () => {
@@ -140,6 +238,14 @@ describe('validateSubjectLine', () => {
 
   it('throws for whitespace-only string', () => {
     expect(() => validateSubjectLine('   ')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateSubjectLine('\t\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateSubjectLine('\n\n')).toThrow('must not be empty');
   });
 
   it('throws for subject line exceeding maximum length', () => {
@@ -180,6 +286,26 @@ describe('validateEmailCampaignStatus', () => {
   it('throws for empty status', () => {
     expect(() => validateEmailCampaignStatus('')).toThrow('status must be one of');
   });
+
+  it('throws for whitespace-only status', () => {
+    expect(() => validateEmailCampaignStatus('   ')).toThrow('status must be one of');
+  });
+
+  it('throws for tab-only status', () => {
+    expect(() => validateEmailCampaignStatus('\t')).toThrow('status must be one of');
+  });
+
+  it('throws for newline-only status', () => {
+    expect(() => validateEmailCampaignStatus('\n')).toThrow('status must be one of');
+  });
+
+  it('throws for incorrect casing', () => {
+    expect(() => validateEmailCampaignStatus('Draft')).toThrow('status must be one of');
+  });
+
+  it('throws for trailing whitespace on valid value', () => {
+    expect(() => validateEmailCampaignStatus('draft ')).toThrow('status must be one of');
+  });
 });
 
 describe('validateTemplateType', () => {
@@ -197,6 +323,26 @@ describe('validateTemplateType', () => {
 
   it('throws for empty template type', () => {
     expect(() => validateTemplateType('')).toThrow('templateType must be one of');
+  });
+
+  it('throws for whitespace-only template type', () => {
+    expect(() => validateTemplateType('   ')).toThrow('templateType must be one of');
+  });
+
+  it('throws for tab-only template type', () => {
+    expect(() => validateTemplateType('\t')).toThrow('templateType must be one of');
+  });
+
+  it('throws for newline-only template type', () => {
+    expect(() => validateTemplateType('\n')).toThrow('templateType must be one of');
+  });
+
+  it('throws for incorrect casing', () => {
+    expect(() => validateTemplateType('Visual')).toThrow('templateType must be one of');
+  });
+
+  it('throws for value with trailing whitespace', () => {
+    expect(() => validateTemplateType('html ')).toThrow('templateType must be one of');
   });
 });
 
@@ -219,6 +365,26 @@ describe('validateScheduleType', () => {
 
   it('throws for empty schedule type', () => {
     expect(() => validateScheduleType('')).toThrow('schedule type must be one of');
+  });
+
+  it('throws for whitespace-only schedule type', () => {
+    expect(() => validateScheduleType('   ')).toThrow('schedule type must be one of');
+  });
+
+  it('throws for tab-only schedule type', () => {
+    expect(() => validateScheduleType('\t')).toThrow('schedule type must be one of');
+  });
+
+  it('throws for newline-only schedule type', () => {
+    expect(() => validateScheduleType('\n')).toThrow('schedule type must be one of');
+  });
+
+  it('throws for incorrect casing', () => {
+    expect(() => validateScheduleType('Immediate')).toThrow('schedule type must be one of');
+  });
+
+  it('throws for trailing whitespace on valid value', () => {
+    expect(() => validateScheduleType('scheduled ')).toThrow('schedule type must be one of');
   });
 });
 
@@ -243,6 +409,21 @@ describe('validateABTestConfig', () => {
     expect(
       validateABTestConfig({ enabled: true, variants: 2, splitPercentage: 100 }),
     ).toBeDefined();
+  });
+
+  it('accepts config without splitPercentage', () => {
+    const config = { enabled: false, variants: 2 };
+    expect(validateABTestConfig(config)).toEqual(config);
+  });
+
+  it('accepts winnerCriteria payload without additional validation', () => {
+    const config = {
+      enabled: true,
+      variants: 2,
+      splitPercentage: 50,
+      winnerCriteria: 'click_rate',
+    };
+    expect(validateABTestConfig(config)).toEqual(config);
   });
 
   it('throws for variants below minimum', () => {
@@ -274,11 +455,50 @@ describe('validateABTestConfig', () => {
       validateABTestConfig({ enabled: true, variants: 2, splitPercentage: 101 }),
     ).toThrow('must be between 0 and 100');
   });
+
+  it('throws for NaN variants', () => {
+    expect(() => validateABTestConfig({ enabled: true, variants: Number.NaN })).toThrow(
+      'must be an integer between 2 and 10',
+    );
+  });
 });
 
 describe('validateCampaignId', () => {
   it('returns trimmed campaign ID for valid input', () => {
     expect(validateCampaignId('  campaign-123  ')).toBe('campaign-123');
+  });
+
+  it('returns trimmed campaign ID with tabs and newlines', () => {
+    expect(validateCampaignId('\n\tcampaign-123\t\n')).toBe('campaign-123');
+  });
+
+  it('accepts single-character campaign ID', () => {
+    expect(validateCampaignId('A')).toBe('A');
+  });
+
+  it('accepts numeric campaign ID', () => {
+    expect(validateCampaignId('12345')).toBe('12345');
+  });
+
+  it('accepts punctuation campaign ID', () => {
+    expect(validateCampaignId('Campaign: Weekly v2')).toBe('Campaign: Weekly v2');
+  });
+
+  it('accepts campaign ID at 200 characters', () => {
+    const campaignId = 'x'.repeat(200);
+    expect(validateCampaignId(campaignId)).toBe(campaignId);
+  });
+
+  it('accepts mixed whitespace around valid campaign ID', () => {
+    expect(validateCampaignId(' \t campaign-456 \n ')).toBe('campaign-456');
+  });
+
+  it('returns campaign ID containing slashes', () => {
+    expect(validateCampaignId('campaign/group/a')).toBe('campaign/group/a');
+  });
+
+  it('returns campaign ID containing dots and dashes', () => {
+    expect(validateCampaignId('campaign.v2-alpha')).toBe('campaign.v2-alpha');
   });
 
   it('throws for empty string', () => {
@@ -287,6 +507,19 @@ describe('validateCampaignId', () => {
 
   it('throws for whitespace-only string', () => {
     expect(() => validateCampaignId('   ')).toThrow('must not be empty');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateCampaignId('\t')).toThrow('must not be empty');
+  });
+
+  it('throws for newline-only string', () => {
+    expect(() => validateCampaignId('\n')).toThrow('must not be empty');
+  });
+
+  it('returns large campaign IDs beyond 200 chars as-is', () => {
+    const campaignId = 'x'.repeat(201);
+    expect(validateCampaignId(campaignId)).toBe(campaignId);
   });
 
   it('returns same value when already trimmed', () => {
@@ -310,6 +543,20 @@ describe('validateSchedule', () => {
     expect(validateSchedule(schedule)).toEqual(schedule);
   });
 
+  it('accepts scheduled when both scheduledAt and cronExpression are provided', () => {
+    const schedule = {
+      type: 'scheduled' as const,
+      scheduledAt: '2026-04-01T10:00:00Z',
+      cronExpression: '0 9 * * MON',
+    };
+    expect(validateSchedule(schedule)).toEqual(schedule);
+  });
+
+  it('accepts recurring when cron expression includes step values', () => {
+    const schedule = { type: 'recurring' as const, cronExpression: '*/15 * * * *' };
+    expect(validateSchedule(schedule)).toEqual(schedule);
+  });
+
   it('throws for scheduled without scheduledAt', () => {
     expect(() => validateSchedule({ type: 'scheduled' as const })).toThrow(
       'scheduledAt is required',
@@ -324,6 +571,12 @@ describe('validateSchedule', () => {
 
   it('throws for unknown schedule type', () => {
     expect(() => validateSchedule({ type: 'delayed' as unknown as 'immediate' })).toThrow(
+      'schedule type must be one of',
+    );
+  });
+
+  it('throws for whitespace schedule type', () => {
+    expect(() => validateSchedule({ type: '   ' as unknown as 'immediate' })).toThrow(
       'schedule type must be one of',
     );
   });
@@ -345,6 +598,20 @@ describe('buildEmailCampaignsUrl', () => {
       '/p/org%2Fproject/campaigns/email-campaigns',
     );
   });
+
+  it('encodes unicode characters in project name', () => {
+    expect(buildEmailCampaignsUrl('projekt åäö')).toBe(
+      '/p/projekt%20%C3%A5%C3%A4%C3%B6/campaigns/email-campaigns',
+    );
+  });
+
+  it('encodes hash character in project name', () => {
+    expect(buildEmailCampaignsUrl('my#project')).toBe('/p/my%23project/campaigns/email-campaigns');
+  });
+
+  it('keeps dashes unencoded in project name', () => {
+    expect(buildEmailCampaignsUrl('team-alpha')).toBe('/p/team-alpha/campaigns/email-campaigns');
+  });
 });
 
 describe('createEmailCampaignActionExecutors', () => {
@@ -364,8 +631,41 @@ describe('createEmailCampaignActionExecutors', () => {
     }
   });
 
-  it('executors throw "not yet implemented" on execute', async () => {
+  it('create executor throws "not yet implemented" with UI-only context', async () => {
     const executors = createEmailCampaignActionExecutors();
+    await expect(executors[CREATE_EMAIL_CAMPAIGN_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('send executor throws "not yet implemented" with UI-only context', async () => {
+    const executors = createEmailCampaignActionExecutors();
+    await expect(executors[SEND_EMAIL_CAMPAIGN_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('clone executor throws "not yet implemented" with UI-only context', async () => {
+    const executors = createEmailCampaignActionExecutors();
+    await expect(executors[CLONE_EMAIL_CAMPAIGN_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('archive executor throws "not yet implemented" with UI-only context', async () => {
+    const executors = createEmailCampaignActionExecutors();
+    await expect(executors[ARCHIVE_EMAIL_CAMPAIGN_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('accepts optional apiConfig parameter', () => {
+    const executors = createEmailCampaignActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(4);
+  });
+
+  it('executors still throw not-yet-implemented with apiConfig', async () => {
+    const executors = createEmailCampaignActionExecutors(TEST_API_CONFIG);
     for (const executor of Object.values(executors)) {
       await expect(executor.execute({})).rejects.toThrow('not yet implemented');
     }
@@ -392,12 +692,31 @@ describe('BloomreachEmailCampaignsService', () => {
     it('throws for empty project', () => {
       expect(() => new BloomreachEmailCampaignsService('')).toThrow('must not be empty');
     });
+
+    it('throws for whitespace-only project', () => {
+      expect(() => new BloomreachEmailCampaignsService('   ')).toThrow('must not be empty');
+    });
+
+    it('encodes slashes in constructor project URL', () => {
+      const service = new BloomreachEmailCampaignsService('org/project');
+      expect(service.emailCampaignsUrl).toBe('/p/org%2Fproject/campaigns/email-campaigns');
+    });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachEmailCampaignsService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachEmailCampaignsService);
+    });
+
+    it('exposes email campaigns URL when constructed with apiConfig', () => {
+      const service = new BloomreachEmailCampaignsService('test', TEST_API_CONFIG);
+      expect(service.emailCampaignsUrl).toBe('/p/test/campaigns/email-campaigns');
+    });
   });
 
   describe('listEmailCampaigns', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachEmailCampaignsService('test');
-      await expect(service.listEmailCampaigns()).rejects.toThrow('not yet implemented');
+      await expect(service.listEmailCampaigns()).rejects.toThrow('does not provide a list endpoint');
     });
 
     it('validates status when provided', async () => {
@@ -413,14 +732,35 @@ describe('BloomreachEmailCampaignsService', () => {
         'must not be empty',
       );
     });
+
+    it('validates whitespace-only project when input is provided', async () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      await expect(service.listEmailCampaigns({ project: '   ', status: 'draft' })).rejects.toThrow(
+        'must not be empty',
+      );
+    });
+
+    it('throws no-API-endpoint error for valid project override', async () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      await expect(service.listEmailCampaigns({ project: 'kingdom-of-joakim' })).rejects.toThrow(
+        'does not provide a list endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error for trimmed project override', async () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      await expect(service.listEmailCampaigns({ project: '  kingdom-of-joakim  ' })).rejects.toThrow(
+        'does not provide a list endpoint',
+      );
+    });
   });
 
   describe('viewCampaignResults', () => {
-    it('throws not-yet-implemented error with valid input', async () => {
+    it('throws no-campaign-results-endpoint error with valid input', async () => {
       const service = new BloomreachEmailCampaignsService('test');
       await expect(
         service.viewCampaignResults({ project: 'test', campaignId: 'campaign-1' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide a campaign results endpoint');
     });
 
     it('validates project input', async () => {
@@ -430,10 +770,24 @@ describe('BloomreachEmailCampaignsService', () => {
       ).rejects.toThrow('must not be empty');
     });
 
+    it('validates whitespace-only project input', async () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      await expect(
+        service.viewCampaignResults({ project: '   ', campaignId: 'campaign-1' }),
+      ).rejects.toThrow('must not be empty');
+    });
+
     it('validates campaignId input', async () => {
       const service = new BloomreachEmailCampaignsService('test');
       await expect(
         service.viewCampaignResults({ project: 'test', campaignId: '   ' }),
+      ).rejects.toThrow('Campaign ID must not be empty');
+    });
+
+    it('validates empty campaignId input', async () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      await expect(
+        service.viewCampaignResults({ project: 'test', campaignId: '' }),
       ).rejects.toThrow('Campaign ID must not be empty');
     });
   });
@@ -524,6 +878,37 @@ describe('BloomreachEmailCampaignsService', () => {
       );
     });
 
+    it('trims project and name in preview', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      const result = service.prepareCreateEmailCampaign({
+        project: '  my-project  ',
+        name: '  My Campaign  ',
+        subjectLine: 'Launch now',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          project: 'my-project',
+          name: 'My Campaign',
+        }),
+      );
+    });
+
+    it('trims subjectLine in preview', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      const result = service.prepareCreateEmailCampaign({
+        project: 'test',
+        name: 'Campaign',
+        subjectLine: '  Launch now  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          subjectLine: 'Launch now',
+        }),
+      );
+    });
+
     it('throws for empty name', () => {
       const service = new BloomreachEmailCampaignsService('test');
       expect(() =>
@@ -551,6 +936,17 @@ describe('BloomreachEmailCampaignsService', () => {
       expect(() =>
         service.prepareCreateEmailCampaign({
           project: '',
+          name: 'Campaign',
+          subjectLine: 'Hello',
+        }),
+      ).toThrow('must not be empty');
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      expect(() =>
+        service.prepareCreateEmailCampaign({
+          project: '   ',
           name: 'Campaign',
           subjectLine: 'Hello',
         }),
@@ -603,6 +999,22 @@ describe('BloomreachEmailCampaignsService', () => {
         }),
       ).toThrow('must be an integer between 2 and 10');
     });
+
+    it('accepts max-length name and still prepares action', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      const maxName = 'x'.repeat(200);
+      const result = service.prepareCreateEmailCampaign({
+        project: 'test',
+        name: maxName,
+        subjectLine: 'Hello',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          name: maxName,
+        }),
+      );
+    });
   });
 
   describe('prepareSendEmailCampaign', () => {
@@ -637,6 +1049,34 @@ describe('BloomreachEmailCampaignsService', () => {
       );
     });
 
+    it('trims campaignId and reaches prepared state', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      const result = service.prepareSendEmailCampaign({
+        project: 'test',
+        campaignId: '  campaign-123  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          campaignId: 'campaign-123',
+        }),
+      );
+    });
+
+    it('trims project in preview', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      const result = service.prepareSendEmailCampaign({
+        project: '  my-project  ',
+        campaignId: 'campaign-123',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          project: 'my-project',
+        }),
+      );
+    });
+
     it('throws for empty campaignId', () => {
       const service = new BloomreachEmailCampaignsService('test');
       expect(() => service.prepareSendEmailCampaign({ project: 'test', campaignId: '' })).toThrow(
@@ -644,10 +1084,24 @@ describe('BloomreachEmailCampaignsService', () => {
       );
     });
 
+    it('throws for whitespace-only campaignId', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      expect(() =>
+        service.prepareSendEmailCampaign({ project: 'test', campaignId: '   ' }),
+      ).toThrow('must not be empty');
+    });
+
     it('throws for empty project', () => {
       const service = new BloomreachEmailCampaignsService('test');
       expect(() =>
         service.prepareSendEmailCampaign({ project: '', campaignId: 'campaign-123' }),
+      ).toThrow('must not be empty');
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      expect(() =>
+        service.prepareSendEmailCampaign({ project: '   ', campaignId: 'campaign-123' }),
       ).toThrow('must not be empty');
     });
   });
@@ -693,6 +1147,34 @@ describe('BloomreachEmailCampaignsService', () => {
       expect(result.preview).toEqual(expect.objectContaining({ operatorNote: 'Clone for Q3' }));
     });
 
+    it('trims campaignId and reaches prepared state', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      const result = service.prepareCloneEmailCampaign({
+        project: 'test',
+        campaignId: '  campaign-789  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          campaignId: 'campaign-789',
+        }),
+      );
+    });
+
+    it('trims project in preview', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      const result = service.prepareCloneEmailCampaign({
+        project: '  my-project  ',
+        campaignId: 'campaign-789',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          project: 'my-project',
+        }),
+      );
+    });
+
     it('throws for empty campaignId', () => {
       const service = new BloomreachEmailCampaignsService('test');
       expect(() => service.prepareCloneEmailCampaign({ project: 'test', campaignId: '' })).toThrow(
@@ -700,10 +1182,24 @@ describe('BloomreachEmailCampaignsService', () => {
       );
     });
 
+    it('throws for whitespace-only campaignId', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      expect(() =>
+        service.prepareCloneEmailCampaign({ project: 'test', campaignId: '   ' }),
+      ).toThrow('must not be empty');
+    });
+
     it('throws for empty project', () => {
       const service = new BloomreachEmailCampaignsService('test');
       expect(() =>
         service.prepareCloneEmailCampaign({ project: '', campaignId: 'campaign-789' }),
+      ).toThrow('must not be empty');
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      expect(() =>
+        service.prepareCloneEmailCampaign({ project: '   ', campaignId: 'campaign-789' }),
       ).toThrow('must not be empty');
     });
 
@@ -716,6 +1212,33 @@ describe('BloomreachEmailCampaignsService', () => {
           newName: '   ',
         }),
       ).toThrow('must not be empty');
+    });
+
+    it('throws when newName exceeds maximum length', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      expect(() =>
+        service.prepareCloneEmailCampaign({
+          project: 'test',
+          campaignId: 'campaign-789',
+          newName: 'x'.repeat(201),
+        }),
+      ).toThrow('must not exceed 200 characters');
+    });
+
+    it('accepts max-length newName', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      const newName = 'x'.repeat(200);
+      const result = service.prepareCloneEmailCampaign({
+        project: 'test',
+        campaignId: 'campaign-789',
+        newName,
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          newName,
+        }),
+      );
     });
   });
 
@@ -751,10 +1274,59 @@ describe('BloomreachEmailCampaignsService', () => {
       );
     });
 
+    it('accepts trimmed campaignId and reaches prepared state', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      const result = service.prepareArchiveEmailCampaign({
+        project: 'test',
+        campaignId: '  campaign-900  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          campaignId: 'campaign-900',
+        }),
+      );
+    });
+
+    it('trims project and reaches prepared state', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      const result = service.prepareArchiveEmailCampaign({
+        project: '  my-project  ',
+        campaignId: 'campaign-900',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          project: 'my-project',
+        }),
+      );
+    });
+
+    it('keeps slash-containing campaignId after trim', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      const result = service.prepareArchiveEmailCampaign({
+        project: 'test',
+        campaignId: '  campaign/group/a  ',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          campaignId: 'campaign/group/a',
+        }),
+      );
+    });
+
     it('throws for empty campaignId', () => {
       const service = new BloomreachEmailCampaignsService('test');
       expect(() =>
         service.prepareArchiveEmailCampaign({ project: 'test', campaignId: '' }),
+      ).toThrow('must not be empty');
+    });
+
+    it('throws for whitespace-only campaignId', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      expect(() =>
+        service.prepareArchiveEmailCampaign({ project: 'test', campaignId: '   ' }),
       ).toThrow('must not be empty');
     });
 
@@ -763,6 +1335,25 @@ describe('BloomreachEmailCampaignsService', () => {
       expect(() =>
         service.prepareArchiveEmailCampaign({ project: '', campaignId: 'campaign-900' }),
       ).toThrow('must not be empty');
+    });
+
+    it('throws for whitespace-only project', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      expect(() =>
+        service.prepareArchiveEmailCampaign({ project: '   ', campaignId: 'campaign-900' }),
+      ).toThrow('must not be empty');
+    });
+
+    it('produces token fields with expected prefixes', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      const result = service.prepareArchiveEmailCampaign({
+        project: 'test',
+        campaignId: 'campaign-900',
+      });
+
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.confirmToken).toMatch(/^ct_stub_/);
+      expect(result.expiresAtMs).toBeGreaterThan(Date.now());
     });
   });
 });
