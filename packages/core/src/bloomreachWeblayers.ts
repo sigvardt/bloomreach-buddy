@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const CREATE_WEBLAYER_ACTION_TYPE = 'weblayers.create_weblayer';
 export const START_WEBLAYER_ACTION_TYPE = 'weblayers.start_weblayer';
@@ -197,6 +198,21 @@ export function buildWeblayersUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/campaigns/banners`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 export interface WeblayerActionExecutor {
   readonly actionType: string;
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -204,79 +220,118 @@ export interface WeblayerActionExecutor {
 
 class CreateWeblayerExecutor implements WeblayerActionExecutor {
   readonly actionType = CREATE_WEBLAYER_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateWeblayerExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateWeblayerExecutor: not yet implemented. ' +
+        'Weblayer creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class StartWeblayerExecutor implements WeblayerActionExecutor {
   readonly actionType = START_WEBLAYER_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'StartWeblayerExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'StartWeblayerExecutor: not yet implemented. ' +
+        'Weblayer activation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class StopWeblayerExecutor implements WeblayerActionExecutor {
   readonly actionType = STOP_WEBLAYER_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'StopWeblayerExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'StopWeblayerExecutor: not yet implemented. ' +
+        'Weblayer deactivation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CloneWeblayerExecutor implements WeblayerActionExecutor {
   readonly actionType = CLONE_WEBLAYER_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CloneWeblayerExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CloneWeblayerExecutor: not yet implemented. ' +
+        'Weblayer cloning is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ArchiveWeblayerExecutor implements WeblayerActionExecutor {
   readonly actionType = ARCHIVE_WEBLAYER_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ArchiveWeblayerExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ArchiveWeblayerExecutor: not yet implemented. ' +
+        'Weblayer archiving is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createWeblayerActionExecutors(): Record<string, WeblayerActionExecutor> {
+export function createWeblayerActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, WeblayerActionExecutor> {
   return {
-    [CREATE_WEBLAYER_ACTION_TYPE]: new CreateWeblayerExecutor(),
-    [START_WEBLAYER_ACTION_TYPE]: new StartWeblayerExecutor(),
-    [STOP_WEBLAYER_ACTION_TYPE]: new StopWeblayerExecutor(),
-    [CLONE_WEBLAYER_ACTION_TYPE]: new CloneWeblayerExecutor(),
-    [ARCHIVE_WEBLAYER_ACTION_TYPE]: new ArchiveWeblayerExecutor(),
+    [CREATE_WEBLAYER_ACTION_TYPE]: new CreateWeblayerExecutor(apiConfig),
+    [START_WEBLAYER_ACTION_TYPE]: new StartWeblayerExecutor(apiConfig),
+    [STOP_WEBLAYER_ACTION_TYPE]: new StopWeblayerExecutor(apiConfig),
+    [CLONE_WEBLAYER_ACTION_TYPE]: new CloneWeblayerExecutor(apiConfig),
+    [ARCHIVE_WEBLAYER_ACTION_TYPE]: new ArchiveWeblayerExecutor(apiConfig),
   };
 }
 
 export class BloomreachWeblayersService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildWeblayersUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get weblayersUrl(): string {
@@ -291,8 +346,10 @@ export class BloomreachWeblayersService {
       }
     }
 
+    void this.apiConfig;
     throw new Error(
-      'listWeblayers: not yet implemented. Requires browser automation infrastructure.',
+      'listWeblayers: the Bloomreach API does not provide a weblayer listing endpoint. ' +
+        'Weblayer management is only available through the Bloomreach Engagement UI.',
     );
   }
 
@@ -302,8 +359,10 @@ export class BloomreachWeblayersService {
     validateProject(input.project);
     validateWeblayerId(input.weblayerId);
 
+    void this.apiConfig;
     throw new Error(
-      'viewWeblayerPerformance: not yet implemented. Requires browser automation infrastructure.',
+      'viewWeblayerPerformance: the Bloomreach API does not provide a weblayer performance endpoint. ' +
+        'Weblayer analytics are only available through the Bloomreach Engagement UI.',
     );
   }
 
