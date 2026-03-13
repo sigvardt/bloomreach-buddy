@@ -17,6 +17,7 @@ export * from './bloomreachTagManager.js';
 export * from './bloomreachDataManager.js';
 export * from './bloomreachMetrics.js';
 export * from './bloomreachExports.js';
+export * from './bloomreachIntegrations.js';
 
 export interface BloomreachClientConfig {
   /** Bloomreach environment ID */

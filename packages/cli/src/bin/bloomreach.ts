@@ -11,6 +11,7 @@ import {
   BloomreachEmailCampaignsService,
   BloomreachExportsService,
   BloomreachFlowsService,
+  BloomreachIntegrationsService,
   BloomreachFunnelsService,
   BloomreachGeoAnalysesService,
   BloomreachMetricsService,
@@ -26,6 +27,8 @@ import type {
   CustomerIds,
   DataSelection,
   EmailCampaignABTestConfig,
+  IntegrationCredentials,
+  IntegrationSettings,
   EmailCampaignSchedule,
   EventPropertyDefinition,
   ExportDestination,
@@ -5082,5 +5085,343 @@ exportsCmd
       process.exit(1);
     }
   });
+
+const integrations = program
+  .command('integrations')
+  .description('Manage Bloomreach Engagement third-party integrations');
+
+integrations
+  .command('list')
+  .description('List all configured integrations in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option(
+    '--type <type>',
+    'Filter by integration type (esp, sms, push, ad_platform, webhook, analytics, crm, custom)',
+  )
+  .option('--status <status>', 'Filter by status (active, inactive, error, pending)')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; type?: string; status?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachIntegrationsService(options.project);
+        const input: { project: string; type?: string; status?: string } = {
+          project: options.project,
+        };
+        if (options.type) input.type = options.type;
+        if (options.status) input.status = options.status;
+
+        const result = await service.listIntegrations(input);
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          if (result.length === 0) {
+            console.log('No integrations found.');
+            return;
+          }
+          for (const integration of result) {
+            console.log(`  ${integration.name}`);
+            console.log(`    Type:     ${integration.type}`);
+            console.log(`    Provider: ${integration.provider}`);
+            console.log(`    Status:   ${integration.status}`);
+            console.log(`    ID:       ${integration.id}`);
+            console.log(`    URL:      ${integration.url}`);
+          }
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+integrations
+  .command('view')
+  .description('View details of a specific integration')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--integration-id <id>', 'Integration ID')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; integrationId: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachIntegrationsService(options.project);
+      const result = await service.viewIntegration({
+        project: options.project,
+        integrationId: options.integrationId,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Integration: ${result.name}`);
+        console.log(`  Type:       ${result.type}`);
+        console.log(`  Provider:   ${result.provider}`);
+        console.log(`  Status:     ${result.status}`);
+        console.log(`  Settings:   ${Object.keys(result.settings).length} keys`);
+        if (result.lastTestedAt) {
+          console.log(`  Last test:  ${result.lastTestedAt} (${result.lastTestResult})`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+integrations
+  .command('create')
+  .description('Prepare creation of a new integration (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Integration name')
+  .requiredOption(
+    '--type <type>',
+    'Integration type (esp, sms, push, ad_platform, webhook, analytics, crm, custom)',
+  )
+  .requiredOption('--provider <provider>', 'Provider name (e.g. SendGrid, Twilio)')
+  .option('--credentials <json>', 'JSON object of integration credentials')
+  .option('--settings <json>', 'JSON object of integration settings')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      type: string;
+      provider: string;
+      credentials?: string;
+      settings?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const credentials = options.credentials
+          ? (JSON.parse(options.credentials) as IntegrationCredentials)
+          : undefined;
+        const settings = options.settings
+          ? (JSON.parse(options.settings) as IntegrationSettings)
+          : undefined;
+
+        const service = new BloomreachIntegrationsService(options.project);
+        const result = service.prepareCreateIntegration({
+          project: options.project,
+          name: options.name,
+          type: options.type as 'esp',
+          provider: options.provider,
+          credentials,
+          settings,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Integration creation prepared.');
+          console.log(`  Name:     ${options.name}`);
+          console.log(`  Type:     ${options.type}`);
+          console.log(`  Provider: ${options.provider}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+integrations
+  .command('configure')
+  .description('Prepare configuration update of an integration (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--integration-id <id>', 'Integration ID')
+  .option('--credentials <json>', 'JSON object of updated credentials')
+  .option('--settings <json>', 'JSON object of updated settings')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      integrationId: string;
+      credentials?: string;
+      settings?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const credentials = options.credentials
+          ? (JSON.parse(options.credentials) as IntegrationCredentials)
+          : undefined;
+        const settings = options.settings
+          ? (JSON.parse(options.settings) as IntegrationSettings)
+          : undefined;
+
+        const service = new BloomreachIntegrationsService(options.project);
+        const result = service.prepareConfigureIntegration({
+          project: options.project,
+          integrationId: options.integrationId,
+          credentials,
+          settings,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Integration configuration prepared.');
+          console.log(`  Integration: ${options.integrationId}`);
+          console.log(`  Token:       ${result.confirmToken}`);
+          console.log(`  Expires:     ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+integrations
+  .command('enable')
+  .description('Prepare enabling an integration (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--integration-id <id>', 'Integration ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; integrationId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachIntegrationsService(options.project);
+        const result = service.prepareEnableIntegration({
+          project: options.project,
+          integrationId: options.integrationId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Integration enable prepared.');
+          console.log(`  Integration: ${options.integrationId}`);
+          console.log(`  Token:       ${result.confirmToken}`);
+          console.log(`  Expires:     ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+integrations
+  .command('disable')
+  .description('Prepare disabling an integration (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--integration-id <id>', 'Integration ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; integrationId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachIntegrationsService(options.project);
+        const result = service.prepareDisableIntegration({
+          project: options.project,
+          integrationId: options.integrationId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Integration disable prepared.');
+          console.log(`  Integration: ${options.integrationId}`);
+          console.log(`  Token:       ${result.confirmToken}`);
+          console.log(`  Expires:     ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+integrations
+  .command('delete')
+  .description('Prepare deletion of an integration (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--integration-id <id>', 'Integration ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; integrationId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachIntegrationsService(options.project);
+        const result = service.prepareDeleteIntegration({
+          project: options.project,
+          integrationId: options.integrationId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Integration deletion prepared.');
+          console.log(`  Integration: ${options.integrationId}`);
+          console.log(`  Token:       ${result.confirmToken}`);
+          console.log(`  Expires:     ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+integrations
+  .command('test')
+  .description('Prepare testing integration connectivity (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--integration-id <id>', 'Integration ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; integrationId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachIntegrationsService(options.project);
+        const result = service.prepareTestIntegration({
+          project: options.project,
+          integrationId: options.integrationId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Integration test prepared.');
+          console.log(`  Integration: ${options.integrationId}`);
+          console.log(`  Token:       ${result.confirmToken}`);
+          console.log(`  Expires:     ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
 
 program.parse();
