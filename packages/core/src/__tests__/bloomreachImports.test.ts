@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
 import {
   CREATE_IMPORT_ACTION_TYPE,
   SCHEDULE_IMPORT_ACTION_TYPE,
@@ -8,9 +9,21 @@ import {
   IMPORTS_SCHEDULE_RATE_LIMIT,
   IMPORTS_CANCEL_RATE_LIMIT,
   buildImportsUrl,
+  buildImportDetailUrl,
   createImportsActionExecutors,
   BloomreachImportsService,
 } from '../index.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_IMPORT_ACTION_TYPE as imports.create_import', () => {
@@ -543,6 +556,16 @@ describe('buildImportsUrl', () => {
   });
 });
 
+describe('buildImportDetailUrl', () => {
+  it('builds URL with project and import ID', () => {
+    expect(buildImportDetailUrl('my-project', 'import-123')).toBe('/p/my-project/data/imports/import-123');
+  });
+
+  it('encodes spaces in project and import ID', () => {
+    expect(buildImportDetailUrl('my project', 'import 123')).toBe('/p/my%20project/data/imports/import%20123');
+  });
+});
+
 describe('createImportsActionExecutors', () => {
   it('returns executors for all 3 action types', () => {
     const executors = createImportsActionExecutors();
@@ -559,11 +582,43 @@ describe('createImportsActionExecutors', () => {
     }
   });
 
-  it('each executor throws not yet implemented on execute', async () => {
+  it('executors require API credentials when apiConfig is not provided', async () => {
     const executors = createImportsActionExecutors();
     for (const executor of Object.values(executors)) {
-      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+      await expect(executor.execute({})).rejects.toThrow('requires API credentials');
     }
+  });
+
+  it('executors attempt API calls when apiConfig is provided', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ),
+    );
+
+    const executors = createImportsActionExecutors(TEST_API_CONFIG);
+    await executors[CREATE_IMPORT_ACTION_TYPE].execute({
+      name: 'Test Import',
+      type: 'csv',
+      source: 'https://example.com/data.csv',
+      mapping: [{ sourceColumn: 'email', targetProperty: 'customer_email' }],
+    });
+    await executors[SCHEDULE_IMPORT_ACTION_TYPE].execute({
+      importId: 'imp-1',
+      name: 'Scheduled Import',
+      type: 'api',
+      source: 'https://api.example.com/data',
+      mapping: [{ sourceColumn: 'id', targetProperty: 'customer_id' }],
+      schedule: { frequency: 'daily', isActive: true },
+    });
+    await executors[CANCEL_IMPORT_ACTION_TYPE].execute({
+      importId: 'imp-2',
+    });
+
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
   });
 });
 
@@ -584,15 +639,50 @@ describe('BloomreachImportsService', () => {
       expect(service.importsUrl).toBe('/p/my-project/data/imports');
     });
 
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachImportsService('my-project', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachImportsService);
+    });
+
     it('throws for empty project', () => {
       expect(() => new BloomreachImportsService('')).toThrow('must not be empty');
     });
   });
 
   describe('listImports', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws API credential error when apiConfig is not provided', async () => {
       const service = new BloomreachImportsService('test');
-      await expect(service.listImports()).rejects.toThrow('not yet implemented');
+      await expect(service.listImports()).rejects.toThrow('requires API credentials');
+    });
+
+    it('returns mapped imports when apiConfig is provided', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify([
+            {
+              id: 'imp-1',
+              name: 'Customer Import',
+              type: 'csv',
+              status: 'completed',
+              source: 'https://example.com/data.csv',
+              rows_processed: 100,
+              rows_total: 100,
+              errors: 0,
+              warnings: 2,
+            },
+          ]),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachImportsService('test', TEST_API_CONFIG);
+      const result = await service.listImports({ project: 'test' });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('imp-1');
+      expect(result[0].name).toBe('Customer Import');
+      expect(result[0].type).toBe('csv');
+      expect(result[0].rowsProcessed).toBe(100);
     });
 
     it('validates project when input provided', async () => {
@@ -602,11 +692,41 @@ describe('BloomreachImportsService', () => {
   });
 
   describe('viewImportStatus', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws API credential error when apiConfig is not provided', async () => {
       const service = new BloomreachImportsService('test');
       await expect(service.viewImportStatus({ project: 'test', importId: 'import-123' })).rejects.toThrow(
-        'not yet implemented',
+        'requires API credentials',
       );
+    });
+
+    it('returns import status when apiConfig is provided', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            import_id: 'imp-1',
+            name: 'Customer Import',
+            status: 'processing',
+            type: 'csv',
+            source: 'https://example.com/data.csv',
+            rows_processed: 50,
+            rows_total: 100,
+            errors: 0,
+            warnings: 1,
+            created_at: '2026-01-01T00:00:00Z',
+            started_at: '2026-01-01T00:01:00Z',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+
+      const service = new BloomreachImportsService('test', TEST_API_CONFIG);
+      const result = await service.viewImportStatus({ project: 'test', importId: 'imp-1' });
+
+      expect(result.importId).toBe('imp-1');
+      expect(result.name).toBe('Customer Import');
+      expect(result.status).toBe('processing');
+      expect(result.rowsProcessed).toBe(50);
+      expect(result.rowsTotal).toBe(100);
     });
 
     it('validates project', async () => {
