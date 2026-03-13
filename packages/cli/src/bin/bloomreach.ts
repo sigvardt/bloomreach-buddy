@@ -12,6 +12,7 @@ import {
   BloomreachExportsService,
   BloomreachFlowsService,
   BloomreachIntegrationsService,
+  BloomreachInitiativesService,
   BloomreachFunnelsService,
   BloomreachGeoAnalysesService,
   BloomreachMetricsService,
@@ -28,6 +29,7 @@ import type {
   DataSelection,
   EmailCampaignABTestConfig,
   IntegrationCredentials,
+  InitiativeItemReference,
   IntegrationSettings,
   EmailCampaignSchedule,
   EventPropertyDefinition,
@@ -5413,6 +5415,306 @@ integrations
           console.log(`  Integration: ${options.integrationId}`);
           console.log(`  Token:       ${result.confirmToken}`);
           console.log(`  Expires:     ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+const initiatives = program
+  .command('initiatives')
+  .description('Manage Bloomreach Engagement initiatives');
+
+initiatives
+  .command('list')
+  .description('List all initiatives in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachInitiativesService(options.project);
+      const result = await service.listInitiatives({ project: options.project });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        if (result.length === 0) {
+          console.log('No initiatives found.');
+          return;
+        }
+        for (const initiative of result) {
+          console.log(`  ${initiative.name}`);
+          console.log(`    Status: ${initiative.status}`);
+          console.log(`    Tags:   ${initiative.tags.join(', ')}`);
+          console.log(`    Items:  ${initiative.itemCount}`);
+          console.log(`    ID:     ${initiative.id}`);
+          console.log(`    URL:    ${initiative.url}`);
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+initiatives
+  .command('filter')
+  .description('Filter initiatives by date, tags, owner, or status')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--start-date <date>', 'Filter by start date')
+  .option('--end-date <date>', 'Filter by end date')
+  .option('--tags <csv>', 'Filter by tags (comma-separated)')
+  .option('--owner <owner>', 'Filter by owner')
+  .option('--status <status>', 'Filter by status (active, archived, draft)')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      startDate?: string;
+      endDate?: string;
+      tags?: string;
+      owner?: string;
+      status?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachInitiativesService(options.project);
+        const input: {
+          project: string;
+          startDate?: string;
+          endDate?: string;
+          tags?: string[];
+          owner?: string;
+          status?: string;
+        } = {
+          project: options.project,
+        };
+        if (options.startDate) input.startDate = options.startDate;
+        if (options.endDate) input.endDate = options.endDate;
+        if (options.tags) input.tags = options.tags.split(',').map((tag) => tag.trim());
+        if (options.owner) input.owner = options.owner;
+        if (options.status) input.status = options.status;
+
+        const result = await service.filterInitiatives(input);
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          if (result.length === 0) {
+            console.log('No initiatives found.');
+            return;
+          }
+          for (const initiative of result) {
+            console.log(`  ${initiative.name}`);
+            console.log(`    Status: ${initiative.status}`);
+            console.log(`    Tags:   ${initiative.tags.join(', ')}`);
+            console.log(`    Items:  ${initiative.itemCount}`);
+            console.log(`    ID:     ${initiative.id}`);
+            console.log(`    URL:    ${initiative.url}`);
+          }
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+initiatives
+  .command('view')
+  .description('View details of a specific initiative')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--initiative-id <id>', 'Initiative ID')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { project: string; initiativeId: string; json?: boolean }) => {
+    try {
+      const service = new BloomreachInitiativesService(options.project);
+      const result = await service.viewInitiative({
+        project: options.project,
+        initiativeId: options.initiativeId,
+      });
+
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`  ${result.name}`);
+        console.log(`    Status:      ${result.status}`);
+        if (result.description) {
+          console.log(`    Description: ${result.description}`);
+        }
+        console.log(`    Tags:        ${result.tags.join(', ')}`);
+        if (result.items.length === 0) {
+          console.log('    Items:       none');
+        } else {
+          console.log('    Items:');
+          for (const item of result.items) {
+            console.log(`      - ${item.type}: ${item.name} (${item.id})`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+initiatives
+  .command('create')
+  .description('Prepare creation of a new initiative (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Initiative name')
+  .option('--description <description>', 'Initiative description')
+  .option('--tags <csv>', 'Tags (comma-separated)')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      description?: string;
+      tags?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachInitiativesService(options.project);
+        const result = service.prepareCreateInitiative({
+          project: options.project,
+          name: options.name,
+          description: options.description,
+          tags: options.tags ? options.tags.split(',').map((tag) => tag.trim()) : undefined,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Initiative creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+initiatives
+  .command('import')
+  .description('Prepare importing initiative configuration (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--configuration <json>', 'JSON configuration object')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; configuration: string; note?: string; json?: boolean }) => {
+      try {
+        const configuration = JSON.parse(options.configuration) as Record<string, unknown>;
+
+        const service = new BloomreachInitiativesService(options.project);
+        const result = service.prepareImportInitiative({
+          project: options.project,
+          configuration,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Initiative import prepared.');
+          console.log(`  Project: ${options.project}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+initiatives
+  .command('add-items')
+  .description('Prepare adding items to an initiative (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--initiative-id <id>', 'Initiative ID')
+  .requiredOption('--items <json>', 'JSON array of item references [{id, type}]')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      initiativeId: string;
+      items: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const items = JSON.parse(options.items) as InitiativeItemReference[];
+
+        const service = new BloomreachInitiativesService(options.project);
+        const result = service.prepareAddItems({
+          project: options.project,
+          initiativeId: options.initiativeId,
+          items,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Initiative add-items prepared.');
+          console.log(`  Initiative: ${options.initiativeId}`);
+          console.log(`  Token:      ${result.confirmToken}`);
+          console.log(`  Expires:    ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+initiatives
+  .command('archive')
+  .description('Prepare archiving an initiative (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--initiative-id <id>', 'Initiative ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { project: string; initiativeId: string; note?: string; json?: boolean }) => {
+      try {
+        const service = new BloomreachInitiativesService(options.project);
+        const result = service.prepareArchiveInitiative({
+          project: options.project,
+          initiativeId: options.initiativeId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Initiative archive prepared.');
+          console.log(`  Initiative: ${options.initiativeId}`);
+          console.log(`  Token:      ${result.confirmToken}`);
+          console.log(`  Expires:    ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');
           console.log('To confirm, run:');
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
