@@ -1,10 +1,15 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
+import {
+  bloomreachApiFetch,
+  buildDataPath,
+  buildTrackingPath,
+} from './bloomreachApiClient.js';
 
 export const CREATE_CUSTOMER_ACTION_TYPE = 'customers.create_customer';
 export const UPDATE_CUSTOMER_ACTION_TYPE = 'customers.update_customer';
 export const DELETE_CUSTOMER_ACTION_TYPE = 'customers.delete_customer';
 
-/** Rate limit window for customer operations (1 hour in ms). */
 export const CUSTOMER_RATE_LIMIT_WINDOW_MS = 3_600_000;
 export const CUSTOMER_CREATE_RATE_LIMIT = 50;
 export const CUSTOMER_UPDATE_RATE_LIMIT = 100;
@@ -190,58 +195,135 @@ export interface CustomerActionExecutor {
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
 class CreateCustomerExecutor implements CustomerActionExecutor {
   readonly actionType = CREATE_CUSTOMER_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
-    throw new Error(
-      'CreateCustomerExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const config = requireApiConfig(this.apiConfig, 'CreateCustomerExecutor');
+    const customerIds = payload.customerIds as CustomerIds;
+    const properties = payload.properties as Record<string, unknown>;
+
+    const path = buildTrackingPath(config, '/customers');
+    const response = await bloomreachApiFetch(config, path, {
+      body: {
+        customer_ids: customerIds,
+        properties,
+      },
+    });
+
+    return { success: true, response };
   }
 }
 
 class UpdateCustomerExecutor implements CustomerActionExecutor {
   readonly actionType = UPDATE_CUSTOMER_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
-    throw new Error(
-      'UpdateCustomerExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const config = requireApiConfig(this.apiConfig, 'UpdateCustomerExecutor');
+    const customerId = payload.customerId as string;
+    const idType = (payload.idType as string | undefined) ?? 'registered';
+    const properties = payload.properties as Record<string, unknown>;
+
+    const path = buildTrackingPath(config, '/customers');
+    const response = await bloomreachApiFetch(config, path, {
+      body: {
+        customer_ids: { [idType]: customerId },
+        properties,
+      },
+    });
+
+    return { success: true, response };
   }
 }
 
 class DeleteCustomerExecutor implements CustomerActionExecutor {
   readonly actionType = DELETE_CUSTOMER_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
-    throw new Error(
-      'DeleteCustomerExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const config = requireApiConfig(this.apiConfig, 'DeleteCustomerExecutor');
+    const customerId = payload.customerId as string;
+    const idType = (payload.idType as string | undefined) ?? 'registered';
+
+    const path = buildDataPath(config, '/customers/anonymize');
+    const response = await bloomreachApiFetch(config, path, {
+      body: {
+        customer_ids: { [idType]: customerId },
+      },
+    });
+
+    return { success: true, response };
   }
 }
 
-export function createCustomerActionExecutors(): Record<
-  string,
-  CustomerActionExecutor
-> {
+export function createCustomerActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, CustomerActionExecutor> {
   return {
-    [CREATE_CUSTOMER_ACTION_TYPE]: new CreateCustomerExecutor(),
-    [UPDATE_CUSTOMER_ACTION_TYPE]: new UpdateCustomerExecutor(),
-    [DELETE_CUSTOMER_ACTION_TYPE]: new DeleteCustomerExecutor(),
+    [CREATE_CUSTOMER_ACTION_TYPE]: new CreateCustomerExecutor(apiConfig),
+    [UPDATE_CUSTOMER_ACTION_TYPE]: new UpdateCustomerExecutor(apiConfig),
+    [DELETE_CUSTOMER_ACTION_TYPE]: new DeleteCustomerExecutor(apiConfig),
+  };
+}
+
+interface ExportResponseRow {
+  [key: string]: unknown;
+}
+
+function parseExportedCustomer(row: ExportResponseRow): BloomreachCustomer {
+  const customerIds: CustomerIds = {};
+  const properties: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(row)) {
+    if (key === 'registered' || key === 'cookie' || key === 'email_id') {
+      const idKey = key === 'email_id' ? 'email' : key;
+      customerIds[idKey] = typeof value === 'string' ? value : String(value ?? '');
+    } else {
+      properties[key] = value;
+    }
+  }
+
+  return {
+    customerIds,
+    properties,
+    url: '',
   };
 }
 
 export class BloomreachCustomersService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildCustomersUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get customersUrl(): string {
@@ -255,9 +337,23 @@ export class BloomreachCustomersService {
       validateListOffset(input.offset);
     }
 
-    throw new Error(
-      'listCustomers: not yet implemented. Requires browser automation infrastructure.',
-    );
+    const config = requireApiConfig(this.apiConfig, 'listCustomers');
+    const path = buildDataPath(config, '/customers/export');
+
+    const response = await bloomreachApiFetch(config, path, {
+      body: {
+        format: 'table_json',
+        attributes: { type: 'properties_and_ids' },
+      },
+    });
+
+    const rows = Array.isArray(response) ? response : [];
+    const limit = input?.limit ?? DEFAULT_LIST_LIMIT;
+    const offset = input?.offset ?? 0;
+
+    return rows
+      .slice(offset, offset + limit)
+      .map((row: ExportResponseRow) => parseExportedCustomer(row));
   }
 
   async searchCustomers(input: SearchCustomersInput): Promise<BloomreachCustomer[]> {
@@ -266,19 +362,112 @@ export class BloomreachCustomersService {
     validateListLimit(input.limit);
     validateListOffset(input.offset);
 
-    throw new Error(
-      'searchCustomers: not yet implemented. Requires browser automation infrastructure.',
-    );
+    const config = requireApiConfig(this.apiConfig, 'searchCustomers');
+    const path = buildDataPath(config, '/customers/attributes');
+
+    const response = await bloomreachApiFetch(config, path, {
+      body: {
+        customer_ids: { registered: input.query },
+        attributes: [
+          { type: 'property', property: 'first_name' },
+          { type: 'property', property: 'last_name' },
+          { type: 'property', property: 'email' },
+          { type: 'id', id: 'registered' },
+          { type: 'id', id: 'cookie' },
+        ],
+      },
+    });
+
+    const data = response as Record<string, unknown>;
+    if (!data.results || !Array.isArray(data.results)) {
+      return [];
+    }
+
+    const results = data.results as Array<{ success: boolean; value: unknown }>;
+    const properties: Record<string, unknown> = {};
+    const customerIds: CustomerIds = {};
+    const attrNames = ['first_name', 'last_name', 'email', 'registered', 'cookie'];
+
+    for (let i = 0; i < results.length; i++) {
+      const result = results[i];
+      if (result.success && result.value !== undefined && result.value !== null) {
+        const name = attrNames[i];
+        if (name === 'registered' || name === 'cookie') {
+          customerIds[name] = String(result.value);
+        } else {
+          properties[name] = result.value;
+        }
+      }
+    }
+
+    if (Object.keys(customerIds).length === 0 && Object.keys(properties).length === 0) {
+      return [];
+    }
+
+    return [
+      {
+        customerIds,
+        properties,
+        url: '',
+      },
+    ];
   }
 
   async viewCustomer(input: ViewCustomerInput): Promise<CustomerProfile> {
     validateProject(input.project);
     validateCustomerId(input.customerId);
-    validateIdType(input.idType);
+    const idType = validateIdType(input.idType);
 
-    throw new Error(
-      'viewCustomer: not yet implemented. Requires browser automation infrastructure.',
-    );
+    const config = requireApiConfig(this.apiConfig, 'viewCustomer');
+    const path = buildDataPath(config, '/customers/attributes');
+
+    const response = await bloomreachApiFetch(config, path, {
+      body: {
+        customer_ids: { [idType]: input.customerId },
+        attributes: [
+          { type: 'property', property: 'first_name' },
+          { type: 'property', property: 'last_name' },
+          { type: 'property', property: 'email' },
+          { type: 'property', property: 'phone' },
+          { type: 'id', id: 'registered' },
+          { type: 'id', id: 'cookie' },
+        ],
+      },
+    });
+
+    const data = response as Record<string, unknown>;
+    const results = (data.results ?? []) as Array<{ success: boolean; value: unknown }>;
+
+    const getValue = (index: number): string | undefined => {
+      const r = results[index];
+      if (r?.success && r.value !== undefined && r.value !== null) {
+        return String(r.value);
+      }
+      return undefined;
+    };
+
+    const customerIds: CustomerIds = { [idType]: input.customerId };
+    const registeredVal = getValue(4);
+    if (registeredVal) customerIds.registered = registeredVal;
+    const cookieVal = getValue(5);
+    if (cookieVal) customerIds.cookie = cookieVal;
+
+    return {
+      customerIds,
+      properties: {
+        first_name: getValue(0),
+        last_name: getValue(1),
+        email: getValue(2),
+        phone: getValue(3),
+      },
+      url: '',
+      firstName: getValue(0),
+      lastName: getValue(1),
+      email: getValue(2),
+      phone: getValue(3),
+      events: [],
+      segments: [],
+    };
   }
 
   prepareCreateCustomer(input: CreateCustomerInput): PreparedCustomerAction {
