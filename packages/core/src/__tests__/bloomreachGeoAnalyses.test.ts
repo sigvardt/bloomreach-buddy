@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
 import {
   CREATE_GEO_ANALYSIS_ACTION_TYPE,
   CLONE_GEO_ANALYSIS_ACTION_TYPE,
@@ -15,6 +16,17 @@ import {
   createGeoAnalysisActionExecutors,
   BloomreachGeoAnalysesService,
 } from '../index.js';
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_GEO_ANALYSIS_ACTION_TYPE', () => {
@@ -166,6 +178,24 @@ describe('validateGeoAnalysisName', () => {
   it('reports actual length when exceeding max by many', () => {
     expect(() => validateGeoAnalysisName('x'.repeat(250))).toThrow('(got 250)');
   });
+
+  it('accepts emoji in name', () => {
+    expect(validateGeoAnalysisName('Analysis 🌍')).toBe('Analysis 🌍');
+  });
+
+  it('accepts mixed whitespace around valid name', () => {
+    expect(validateGeoAnalysisName(' \t  Revenue by Region \n ')).toBe('Revenue by Region');
+  });
+
+  it('preserves internal spacing in valid name', () => {
+    expect(validateGeoAnalysisName('Revenue   by   Region')).toBe('Revenue   by   Region');
+  });
+
+  it('throws for too-long name even with surrounding whitespace', () => {
+    expect(() => validateGeoAnalysisName(`  ${'x'.repeat(201)}  `)).toThrow(
+      'must not exceed 200 characters',
+    );
+  });
 });
 
 describe('validateGeoGranularity', () => {
@@ -270,6 +300,18 @@ describe('validateGeoAnalysisId', () => {
   it('throws for newline-only value', () => {
     expect(() => validateGeoAnalysisId('\n')).toThrow('must not be empty');
   });
+
+  it('accepts unicode ID', () => {
+    expect(validateGeoAnalysisId('analyse-åäö')).toBe('analyse-åäö');
+  });
+
+  it('returns trimmed ID with mixed whitespace', () => {
+    expect(validateGeoAnalysisId(' \n\tgeo-789\t ')).toBe('geo-789');
+  });
+
+  it('throws for mixed-whitespace-only string', () => {
+    expect(() => validateGeoAnalysisId(' \n\t ')).toThrow('must not be empty');
+  });
 });
 
 describe('validateAttribute', () => {
@@ -311,6 +353,14 @@ describe('validateAttribute', () => {
 
   it('throws for newline-only attribute', () => {
     expect(() => validateAttribute('\n')).toThrow('attribute must not be empty');
+  });
+
+  it('accepts unicode attribute', () => {
+    expect(validateAttribute('client.région')).toBe('client.région');
+  });
+
+  it('accepts emoji attribute', () => {
+    expect(validateAttribute('customer.🌍')).toBe('customer.🌍');
   });
 });
 
@@ -354,6 +404,12 @@ describe('buildGeoAnalysesUrl', () => {
   it('encodes leading and trailing spaces when passed directly', () => {
     expect(buildGeoAnalysesUrl('  my project  ')).toBe(
       '/p/%20%20my%20project%20%20/analytics/geoanalyses',
+    );
+  });
+
+  it('encodes unicode project name', () => {
+    expect(buildGeoAnalysesUrl('projekt åäö')).toBe(
+      '/p/projekt%20%C3%A5%C3%A4%C3%B6/analytics/geoanalyses',
     );
   });
 });
@@ -426,6 +482,101 @@ describe('createGeoAnalysisActionExecutors', () => {
       ARCHIVE_GEO_ANALYSIS_ACTION_TYPE,
     );
   });
+
+  it('create executor mentions UI-only in error', async () => {
+    const executors = createGeoAnalysisActionExecutors();
+    await expect(executors[CREATE_GEO_ANALYSIS_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('clone executor mentions UI-only in error', async () => {
+    const executors = createGeoAnalysisActionExecutors();
+    await expect(executors[CLONE_GEO_ANALYSIS_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('archive executor mentions UI-only in error', async () => {
+    const executors = createGeoAnalysisActionExecutors();
+    await expect(executors[ARCHIVE_GEO_ANALYSIS_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('accepts optional apiConfig parameter', () => {
+    const executors = createGeoAnalysisActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(3);
+  });
+
+  it('executors still throw not-yet-implemented with apiConfig', async () => {
+    const executors = createGeoAnalysisActionExecutors(TEST_API_CONFIG);
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+    }
+  });
+
+  it('returns identical action keys with or without apiConfig', () => {
+    const withoutConfig = Object.keys(createGeoAnalysisActionExecutors()).sort();
+    const withConfig = Object.keys(createGeoAnalysisActionExecutors(TEST_API_CONFIG)).sort();
+    expect(withConfig).toEqual(withoutConfig);
+  });
+
+  it('preserves actionType mapping with apiConfig', () => {
+    const executors = createGeoAnalysisActionExecutors(TEST_API_CONFIG);
+    for (const [key, executor] of Object.entries(executors)) {
+      expect(executor.actionType).toBe(key);
+    }
+  });
+
+  it('returns expected action keys', () => {
+    const keys = Object.keys(createGeoAnalysisActionExecutors()).sort();
+    expect(keys).toEqual(
+      [
+        ARCHIVE_GEO_ANALYSIS_ACTION_TYPE,
+        CLONE_GEO_ANALYSIS_ACTION_TYPE,
+        CREATE_GEO_ANALYSIS_ACTION_TYPE,
+      ].sort(),
+    );
+  });
+
+  it('returns new executor instances on each call', () => {
+    const first = createGeoAnalysisActionExecutors(TEST_API_CONFIG);
+    const second = createGeoAnalysisActionExecutors(TEST_API_CONFIG);
+    expect(first[CREATE_GEO_ANALYSIS_ACTION_TYPE]).not.toBe(second[CREATE_GEO_ANALYSIS_ACTION_TYPE]);
+    expect(first[CLONE_GEO_ANALYSIS_ACTION_TYPE]).not.toBe(second[CLONE_GEO_ANALYSIS_ACTION_TYPE]);
+    expect(first[ARCHIVE_GEO_ANALYSIS_ACTION_TYPE]).not.toBe(second[ARCHIVE_GEO_ANALYSIS_ACTION_TYPE]);
+  });
+
+  it('all executors mention UI-only guidance with apiConfig', async () => {
+    const executors = createGeoAnalysisActionExecutors(TEST_API_CONFIG);
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow(
+        'only available through the Bloomreach Engagement UI',
+      );
+    }
+  });
+
+  it('uses independent executor maps for configured and unconfigured calls', () => {
+    const withoutConfig = createGeoAnalysisActionExecutors();
+    const withConfig = createGeoAnalysisActionExecutors(TEST_API_CONFIG);
+    expect(withoutConfig).not.toBe(withConfig);
+  });
+
+  it('supports custom apiConfig values without changing key set', () => {
+    const executors = createGeoAnalysisActionExecutors({
+      ...TEST_API_CONFIG,
+      baseUrl: 'https://api-alt.test.com',
+      projectToken: 'another-token',
+    });
+    expect(Object.keys(executors).sort()).toEqual(
+      [
+        CREATE_GEO_ANALYSIS_ACTION_TYPE,
+        CLONE_GEO_ANALYSIS_ACTION_TYPE,
+        ARCHIVE_GEO_ANALYSIS_ACTION_TYPE,
+      ].sort(),
+    );
+  });
 });
 
 describe('BloomreachGeoAnalysesService', () => {
@@ -470,12 +621,38 @@ describe('BloomreachGeoAnalysesService', () => {
       const service = new BloomreachGeoAnalysesService('my project');
       expect(service.geoAnalysesUrl).toBe('/p/my%20project/analytics/geoanalyses');
     });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachGeoAnalysesService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachGeoAnalysesService);
+    });
+
+    it('exposes geoAnalysesUrl when constructed with apiConfig', () => {
+      const service = new BloomreachGeoAnalysesService('test', TEST_API_CONFIG);
+      expect(service.geoAnalysesUrl).toBe('/p/test/analytics/geoanalyses');
+    });
+
+    it('encodes unicode project name in constructor URL', () => {
+      const service = new BloomreachGeoAnalysesService('projekt åäö');
+      expect(service.geoAnalysesUrl).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/analytics/geoanalyses');
+    });
+
+    it('encodes hash in constructor URL', () => {
+      const service = new BloomreachGeoAnalysesService('my#project');
+      expect(service.geoAnalysesUrl).toBe('/p/my%23project/analytics/geoanalyses');
+    });
+
+    it('returns stable geoAnalysesUrl with apiConfig across reads', () => {
+      const service = new BloomreachGeoAnalysesService('alpha', TEST_API_CONFIG);
+      expect(service.geoAnalysesUrl).toBe('/p/alpha/analytics/geoanalyses');
+      expect(service.geoAnalysesUrl).toBe('/p/alpha/analytics/geoanalyses');
+    });
   });
 
   describe('listGeoAnalyses', () => {
     it('throws not-yet-implemented error', async () => {
       const service = new BloomreachGeoAnalysesService('test');
-      await expect(service.listGeoAnalyses()).rejects.toThrow('not yet implemented');
+      await expect(service.listGeoAnalyses()).rejects.toThrow('does not provide an endpoint');
     });
 
     it('validates project when input is provided (empty string)', async () => {
@@ -495,7 +672,7 @@ describe('BloomreachGeoAnalysesService', () => {
     it('accepts trimmed project and still reaches not-yet-implemented', async () => {
       const service = new BloomreachGeoAnalysesService('test');
       await expect(service.listGeoAnalyses({ project: '  test  ' })).rejects.toThrow(
-        'not yet implemented',
+        'does not provide an endpoint',
       );
     });
 
@@ -503,7 +680,33 @@ describe('BloomreachGeoAnalysesService', () => {
       const service = new BloomreachGeoAnalysesService('test');
       await expect(
         service.listGeoAnalyses({ project: 'org/project' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachGeoAnalysesService('test', TEST_API_CONFIG);
+      await expect(service.listGeoAnalyses()).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error for unicode project override', async () => {
+      const service = new BloomreachGeoAnalysesService('test');
+      await expect(service.listGeoAnalyses({ project: 'projekt åäö' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error for slash project override', async () => {
+      const service = new BloomreachGeoAnalysesService('test');
+      await expect(service.listGeoAnalyses({ project: 'org/project' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error for tab/newline project override', async () => {
+      const service = new BloomreachGeoAnalysesService('test');
+      await expect(service.listGeoAnalyses({ project: '\n\tkingdom\t\n' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
     });
   });
 
@@ -512,7 +715,7 @@ describe('BloomreachGeoAnalysesService', () => {
       const service = new BloomreachGeoAnalysesService('test');
       await expect(
         service.viewGeoResults({ project: 'test', analysisId: 'geo-1' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide an endpoint');
     });
 
     it('throws not-yet-implemented with full valid input (including granularity, dates)', async () => {
@@ -525,7 +728,7 @@ describe('BloomreachGeoAnalysesService', () => {
           startDate: '2025-01-01',
           endDate: '2025-01-31',
         }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide an endpoint');
     });
 
     it('validates project input (empty)', async () => {
@@ -609,7 +812,7 @@ describe('BloomreachGeoAnalysesService', () => {
           analysisId: 'geo-1',
           startDate: '2025-01-01',
         }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide an endpoint');
     });
 
     it('accepts only endDate and reaches not-yet-implemented', async () => {
@@ -620,7 +823,7 @@ describe('BloomreachGeoAnalysesService', () => {
           analysisId: 'geo-1',
           endDate: '2025-01-31',
         }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide an endpoint');
     });
 
     it('accepts country granularity and reaches not-yet-implemented', async () => {
@@ -631,7 +834,7 @@ describe('BloomreachGeoAnalysesService', () => {
           analysisId: 'geo-1',
           granularity: 'country',
         }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide an endpoint');
     });
 
     it('accepts city granularity and reaches not-yet-implemented', async () => {
@@ -642,7 +845,7 @@ describe('BloomreachGeoAnalysesService', () => {
           analysisId: 'geo-1',
           granularity: 'city',
         }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide an endpoint');
     });
 
     it('rejects invalid calendar startDate', async () => {
@@ -682,7 +885,45 @@ describe('BloomreachGeoAnalysesService', () => {
       const service = new BloomreachGeoAnalysesService('test');
       await expect(
         service.viewGeoResults({ project: '  test  ', analysisId: '  geo-1  ' }),
-      ).rejects.toThrow('not yet implemented');
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachGeoAnalysesService('test', TEST_API_CONFIG);
+      await expect(
+        service.viewGeoResults({ project: 'test', analysisId: 'geo-1' }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error with apiConfig and full valid input', async () => {
+      const service = new BloomreachGeoAnalysesService('test', TEST_API_CONFIG);
+      await expect(
+        service.viewGeoResults({
+          project: 'test',
+          analysisId: 'geo-1',
+          startDate: '2025-01-01',
+          endDate: '2025-01-31',
+        }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error for same-day date range', async () => {
+      const service = new BloomreachGeoAnalysesService('test');
+      await expect(
+        service.viewGeoResults({
+          project: 'test',
+          analysisId: 'geo-1',
+          startDate: '2025-01-01',
+          endDate: '2025-01-01',
+        }),
+      ).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error for encoded-looking analysisId', async () => {
+      const service = new BloomreachGeoAnalysesService('test');
+      await expect(
+        service.viewGeoResults({ project: 'test', analysisId: 'geo%2Fencoded' }),
+      ).rejects.toThrow('does not provide an endpoint');
     });
   });
 

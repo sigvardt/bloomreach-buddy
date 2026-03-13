@@ -2450,12 +2450,14 @@ flows
 
 const geoAnalyses = program
   .command('geo-analyses')
-  .description('Manage Bloomreach Engagement geo analyses');
+  .description('Manage Bloomreach Engagement geo analyses (geographic distribution of customer events)');
 
 geoAnalyses
   .command('list')
-  .description('List all geo analyses in the project')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .description(
+    'List all geo analyses in the project (note: the Bloomreach API does not provide a geo analyses endpoint — requires browser automation)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; json?: boolean }) => {
     try {
@@ -2485,12 +2487,17 @@ geoAnalyses
 
 geoAnalyses
   .command('view-results')
-  .description('View geographic distribution data for a geo analysis')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--analysis-id <id>', 'Geo analysis ID')
-  .option('--start-date <date>', 'Start date (YYYY-MM-DD)')
-  .option('--end-date <date>', 'End date (YYYY-MM-DD)')
-  .option('--granularity <granularity>', 'Geographic granularity (country, region, city)')
+  .description(
+    'View geographic distribution data for a geo analysis (note: the Bloomreach API does not provide a geo analyses endpoint — requires browser automation)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption(
+    '--analysis-id <id>',
+    'Geo analysis ID (hex string from Bloomreach UI URL, e.g. "606488856f8cf6f848b20af8")',
+  )
+  .option('--start-date <date>', 'Start date in ISO-8601 format (YYYY-MM-DD)')
+  .option('--end-date <date>', 'End date in ISO-8601 format (YYYY-MM-DD)')
+  .option('--granularity <granularity>', 'Geographic granularity: country (default), region, or city')
   .option('--json', 'Output as JSON')
   .action(
     async (options: {
@@ -2538,17 +2545,26 @@ geoAnalyses
 
 geoAnalyses
   .command('create')
-  .description('Prepare creation of a new geo analysis (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--name <name>', 'Geo analysis name')
-  .requiredOption('--attribute <attribute>', 'Event or customer attribute for geographic mapping')
+  .description('Prepare creation of a new geo analysis (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--name <name>', 'Geo analysis name (max 200 characters)')
+  .requiredOption(
+    '--attribute <attribute>',
+    'Event or customer attribute for geographic mapping (e.g. "customer.country")',
+  )
   .option(
     '--granularity <granularity>',
-    'Geographic granularity (country, region, city)',
+    'Geographic granularity: country (default), region, or city',
     'country',
   )
-  .option('--customer-attributes <json>', 'JSON object of customer attribute filters')
-  .option('--event-properties <json>', 'JSON object of event property filters')
+  .option(
+    '--customer-attributes <json>',
+    'Customer attribute filters as JSON (e.g. \'{"segment":"vip","locale":"en_US"}\')',
+  )
+  .option(
+    '--event-properties <json>',
+    'Event property filters as JSON (e.g. \'{"currency":"USD"}\')',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -2604,9 +2620,12 @@ geoAnalyses
 
 geoAnalyses
   .command('clone')
-  .description('Prepare cloning a geo analysis (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--analysis-id <id>', 'Geo analysis ID to clone')
+  .description('Prepare cloning a geo analysis (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption(
+    '--analysis-id <id>',
+    'Geo analysis ID to clone (hex string from Bloomreach UI URL)',
+  )
   .option('--new-name <name>', 'Name for the cloned analysis')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
@@ -2648,9 +2667,12 @@ geoAnalyses
 
 geoAnalyses
   .command('archive')
-  .description('Prepare archiving a geo analysis (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--analysis-id <id>', 'Geo analysis ID')
+  .description('Prepare archiving a geo analysis (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption(
+    '--analysis-id <id>',
+    'Geo analysis ID (hex string from Bloomreach UI URL)',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(

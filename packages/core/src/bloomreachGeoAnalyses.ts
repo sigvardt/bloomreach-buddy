@@ -1,6 +1,7 @@
 import { validateProject } from './bloomreachDashboards.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const CREATE_GEO_ANALYSIS_ACTION_TYPE = 'geoanalyses.create_geo_analysis';
 export const CLONE_GEO_ANALYSIS_ACTION_TYPE = 'geoanalyses.clone_geo_analysis';
@@ -131,6 +132,21 @@ export function buildGeoAnalysesUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/analytics/geoanalyses`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 export interface GeoAnalysisActionExecutor {
   readonly actionType: string;
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -138,56 +154,78 @@ export interface GeoAnalysisActionExecutor {
 
 class CreateGeoAnalysisExecutor implements GeoAnalysisActionExecutor {
   readonly actionType = CREATE_GEO_ANALYSIS_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateGeoAnalysisExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateGeoAnalysisExecutor: not yet implemented. ' +
+        'Geo analysis creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CloneGeoAnalysisExecutor implements GeoAnalysisActionExecutor {
   readonly actionType = CLONE_GEO_ANALYSIS_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CloneGeoAnalysisExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CloneGeoAnalysisExecutor: not yet implemented. ' +
+        'Geo analysis cloning is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ArchiveGeoAnalysisExecutor implements GeoAnalysisActionExecutor {
   readonly actionType = ARCHIVE_GEO_ANALYSIS_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ArchiveGeoAnalysisExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ArchiveGeoAnalysisExecutor: not yet implemented. ' +
+        'Geo analysis archiving is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createGeoAnalysisActionExecutors(): Record<
-  string,
-  GeoAnalysisActionExecutor
-> {
+export function createGeoAnalysisActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, GeoAnalysisActionExecutor> {
   return {
-    [CREATE_GEO_ANALYSIS_ACTION_TYPE]: new CreateGeoAnalysisExecutor(),
-    [CLONE_GEO_ANALYSIS_ACTION_TYPE]: new CloneGeoAnalysisExecutor(),
-    [ARCHIVE_GEO_ANALYSIS_ACTION_TYPE]: new ArchiveGeoAnalysisExecutor(),
+    [CREATE_GEO_ANALYSIS_ACTION_TYPE]: new CreateGeoAnalysisExecutor(apiConfig),
+    [CLONE_GEO_ANALYSIS_ACTION_TYPE]: new CloneGeoAnalysisExecutor(apiConfig),
+    [ARCHIVE_GEO_ANALYSIS_ACTION_TYPE]: new ArchiveGeoAnalysisExecutor(apiConfig),
   };
 }
 
 export class BloomreachGeoAnalysesService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildGeoAnalysesUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get geoAnalysesUrl(): string {
@@ -197,16 +235,20 @@ export class BloomreachGeoAnalysesService {
   async listGeoAnalyses(
     input?: ListGeoAnalysesInput,
   ): Promise<BloomreachGeoAnalysis[]> {
+    void this.apiConfig;
     if (input !== undefined) {
       validateProject(input.project);
     }
 
     throw new Error(
-      'listGeoAnalyses: not yet implemented. Requires browser automation infrastructure.',
+      'listGeoAnalyses: the Bloomreach API does not provide an endpoint for geo analyses. ' +
+        'Geo analysis data must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Analytics > Geo Analyses in your project).',
     );
   }
 
   async viewGeoResults(input: ViewGeoResultsInput): Promise<GeoResults> {
+    void this.apiConfig;
     validateProject(input.project);
     validateGeoAnalysisId(input.analysisId);
 
@@ -223,7 +265,9 @@ export class BloomreachGeoAnalysesService {
     }
 
     throw new Error(
-      'viewGeoResults: not yet implemented. Requires browser automation infrastructure.',
+      'viewGeoResults: the Bloomreach API does not provide an endpoint for geo analysis results. ' +
+        'Geo results must be viewed in the Bloomreach Engagement UI ' +
+        '(navigate to Analytics > Geo Analyses and open the analysis).',
     );
   }
 
