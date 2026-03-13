@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const CREATE_SQL_REPORT_ACTION_TYPE = 'sql_reports.create_report';
 export const EXECUTE_SQL_REPORT_ACTION_TYPE = 'sql_reports.execute_report';
@@ -158,6 +159,21 @@ export function buildSqlReportsUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/analytics/sqlreports`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 export interface SqlReportActionExecutor {
   readonly actionType: string;
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -165,82 +181,121 @@ export interface SqlReportActionExecutor {
 
 class CreateSqlReportExecutor implements SqlReportActionExecutor {
   readonly actionType = CREATE_SQL_REPORT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateSqlReportExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateSqlReportExecutor: not yet implemented. ' +
+        'SQL report creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ExecuteSqlReportExecutor implements SqlReportActionExecutor {
   readonly actionType = EXECUTE_SQL_REPORT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ExecuteSqlReportExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ExecuteSqlReportExecutor: not yet implemented. ' +
+        'SQL report execution is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ExportSqlReportResultsExecutor implements SqlReportActionExecutor {
   readonly actionType = EXPORT_SQL_REPORT_RESULTS_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ExportSqlReportResultsExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ExportSqlReportResultsExecutor: not yet implemented. ' +
+        'SQL report results export is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class CloneSqlReportExecutor implements SqlReportActionExecutor {
   readonly actionType = CLONE_SQL_REPORT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CloneSqlReportExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CloneSqlReportExecutor: not yet implemented. ' +
+        'SQL report cloning is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class ArchiveSqlReportExecutor implements SqlReportActionExecutor {
   readonly actionType = ARCHIVE_SQL_REPORT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'ArchiveSqlReportExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'ArchiveSqlReportExecutor: not yet implemented. ' +
+        'SQL report archiving is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createSqlReportActionExecutors(): Record<
+export function createSqlReportActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<
   string,
   SqlReportActionExecutor
 > {
   return {
-    [CREATE_SQL_REPORT_ACTION_TYPE]: new CreateSqlReportExecutor(),
-    [EXECUTE_SQL_REPORT_ACTION_TYPE]: new ExecuteSqlReportExecutor(),
-    [EXPORT_SQL_REPORT_RESULTS_ACTION_TYPE]: new ExportSqlReportResultsExecutor(),
-    [CLONE_SQL_REPORT_ACTION_TYPE]: new CloneSqlReportExecutor(),
-    [ARCHIVE_SQL_REPORT_ACTION_TYPE]: new ArchiveSqlReportExecutor(),
+    [CREATE_SQL_REPORT_ACTION_TYPE]: new CreateSqlReportExecutor(apiConfig),
+    [EXECUTE_SQL_REPORT_ACTION_TYPE]: new ExecuteSqlReportExecutor(apiConfig),
+    [EXPORT_SQL_REPORT_RESULTS_ACTION_TYPE]: new ExportSqlReportResultsExecutor(apiConfig),
+    [CLONE_SQL_REPORT_ACTION_TYPE]: new CloneSqlReportExecutor(apiConfig),
+    [ARCHIVE_SQL_REPORT_ACTION_TYPE]: new ArchiveSqlReportExecutor(apiConfig),
   };
 }
 
 export class BloomreachSqlReportsService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildSqlReportsUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get sqlReportsUrl(): string {
@@ -248,6 +303,7 @@ export class BloomreachSqlReportsService {
   }
 
   async listSqlReports(input?: ListSqlReportsInput): Promise<BloomreachSqlReport[]> {
+    void this.apiConfig;
     if (input !== undefined) {
       validateProject(input.project);
       if (input.status !== undefined) {
@@ -256,16 +312,21 @@ export class BloomreachSqlReportsService {
     }
 
     throw new Error(
-      'listSqlReports: not yet implemented. Requires browser automation infrastructure.',
+      'listSqlReports: the Bloomreach API does not provide an endpoint for SQL reports. ' +
+        'SQL report data must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Analytics > SQL Reports in your project).',
     );
   }
 
   async viewSqlReport(input: ViewSqlReportInput): Promise<BloomreachSqlReport> {
+    void this.apiConfig;
     validateProject(input.project);
     validateSqlReportId(input.reportId);
 
     throw new Error(
-      'viewSqlReport: not yet implemented. Requires browser automation infrastructure.',
+      'viewSqlReport: the Bloomreach API does not provide an endpoint for SQL report details. ' +
+        'SQL report details must be viewed in the Bloomreach Engagement UI ' +
+        '(navigate to Analytics > SQL Reports and open the report).',
     );
   }
 

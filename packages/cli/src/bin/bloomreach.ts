@@ -9566,9 +9566,11 @@ const sqlReports = program
 
 sqlReports
   .command('list')
-  .description('List all SQL reports in the project')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .option('--status <status>', 'Filter by status (saved, running, completed, failed, archived)')
+  .description(
+    'List all SQL reports in the project (note: the Bloomreach API does not provide a SQL reports endpoint — requires browser automation)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .option('--status <status>', 'Filter by report status: saved, running, completed, failed, archived')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; status?: string; json?: boolean }) => {
     try {
@@ -9603,9 +9605,11 @@ sqlReports
 
 sqlReports
   .command('view')
-  .description('View details of a specific SQL report')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--report-id <id>', 'SQL report ID')
+  .description(
+    'View details of a specific SQL report (note: the Bloomreach API does not provide a SQL reports endpoint — requires browser automation)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--report-id <id>', 'SQL report ID (identifier from Bloomreach UI URL)')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; reportId: string; json?: boolean }) => {
     try {
@@ -9632,11 +9636,14 @@ sqlReports
 
 sqlReports
   .command('create')
-  .description('Prepare creation of a new SQL report (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--name <name>', 'Report name')
-  .requiredOption('--query <sql>', 'SQL query string')
-  .option('--parameters <json>', 'JSON object of query parameters')
+  .description('Prepare creation of a new SQL report (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--name <name>', 'Report name (max 200 characters)')
+  .requiredOption('--query <sql>', 'SQL query string (e.g. "SELECT customer_id, email FROM customers LIMIT 100")')
+  .option(
+    '--parameters <json>',
+    'Query parameters as JSON (e.g. \'{"start_date":"2026-01-01","end_date":"2026-01-31"}\')',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -9682,10 +9689,16 @@ sqlReports
 
 sqlReports
   .command('execute')
-  .description('Prepare execution of a SQL report (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--report-id <id>', 'SQL report ID')
-  .option('--parameters <json>', 'JSON object of query parameters')
+  .description('Prepare execution of a SQL report (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption(
+    '--report-id <id>',
+    'SQL report ID to execute (identifier from Bloomreach UI URL)',
+  )
+  .option(
+    '--parameters <json>',
+    'Query parameters as JSON (e.g. \'{"start_date":"2026-01-01","end_date":"2026-01-31"}\')',
+  )
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -9729,10 +9742,13 @@ sqlReports
 
 sqlReports
   .command('export-results')
-  .description('Prepare export of SQL report results (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--report-id <id>', 'SQL report ID')
-  .option('--format <format>', 'Export format (json, csv)', 'json')
+  .description('Prepare export of SQL report results (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption(
+    '--report-id <id>',
+    'SQL report ID whose results to export (identifier from Bloomreach UI URL)',
+  )
+  .option('--format <format>', 'Export format: json or csv (default: json)', 'json')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -9773,9 +9789,9 @@ sqlReports
 
 sqlReports
   .command('clone')
-  .description('Prepare cloning a SQL report (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--report-id <id>', 'SQL report ID to clone')
+  .description('Prepare cloning a SQL report (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--report-id <id>', 'SQL report ID to clone (identifier from Bloomreach UI URL)')
   .option('--new-name <name>', 'Name for the cloned report')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
@@ -9817,9 +9833,9 @@ sqlReports
 
 sqlReports
   .command('archive')
-  .description('Prepare archiving a SQL report (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--report-id <id>', 'SQL report ID')
+  .description('Prepare archiving a SQL report (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--report-id <id>', 'SQL report ID (identifier from Bloomreach UI URL)')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; reportId: string; note?: string; json?: boolean }) => {
