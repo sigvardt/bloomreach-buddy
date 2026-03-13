@@ -1,4 +1,6 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
+import { bloomreachApiFetch, buildDataPath } from './bloomreachApiClient.js';
 
 export const CREATE_IMPORT_ACTION_TYPE = 'imports.create_import';
 export const SCHEDULE_IMPORT_ACTION_TYPE = 'imports.schedule_import';
@@ -348,61 +350,114 @@ export function buildImportsUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/data/imports`;
 }
 
+export function buildImportDetailUrl(project: string, importId: string): string {
+  return `/p/${encodeURIComponent(project)}/data/imports/${encodeURIComponent(importId)}`;
+}
+
 export interface ImportsActionExecutor {
   readonly actionType: string;
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
 class CreateImportExecutor implements ImportsActionExecutor {
   readonly actionType = CREATE_IMPORT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
-    throw new Error(
-      'CreateImportExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const config = requireApiConfig(this.apiConfig, 'CreateImportExecutor');
+    const path = buildDataPath(config, '/imports');
+    const response = await bloomreachApiFetch(config, path, {
+      body: {
+        name: payload.name,
+        type: payload.type,
+        source: payload.source,
+        mapping: payload.mapping,
+      },
+    });
+    return { success: true, response };
   }
 }
 
 class ScheduleImportExecutor implements ImportsActionExecutor {
   readonly actionType = SCHEDULE_IMPORT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
-    throw new Error(
-      'ScheduleImportExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const config = requireApiConfig(this.apiConfig, 'ScheduleImportExecutor');
+    const importId = String(payload.importId ?? '');
+    const path = buildDataPath(config, `/imports/${encodeURIComponent(importId)}/schedule`);
+    const response = await bloomreachApiFetch(config, path, {
+      body: {
+        name: payload.name,
+        type: payload.type,
+        source: payload.source,
+        mapping: payload.mapping,
+        schedule: payload.schedule,
+      },
+    });
+    return { success: true, response };
   }
 }
 
 class CancelImportExecutor implements ImportsActionExecutor {
   readonly actionType = CANCEL_IMPORT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  async execute(
-    _payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
-    throw new Error(
-      'CancelImportExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const config = requireApiConfig(this.apiConfig, 'CancelImportExecutor');
+    const importId = String(payload.importId ?? '');
+    const path = buildDataPath(config, `/imports/${encodeURIComponent(importId)}`);
+    const response = await bloomreachApiFetch(config, path, {
+      method: 'POST',
+      body: { command: 'cancel' },
+    });
+    return { success: true, response };
   }
 }
 
-export function createImportsActionExecutors(): Record<string, ImportsActionExecutor> {
+export function createImportsActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, ImportsActionExecutor> {
   return {
-    [CREATE_IMPORT_ACTION_TYPE]: new CreateImportExecutor(),
-    [SCHEDULE_IMPORT_ACTION_TYPE]: new ScheduleImportExecutor(),
-    [CANCEL_IMPORT_ACTION_TYPE]: new CancelImportExecutor(),
+    [CREATE_IMPORT_ACTION_TYPE]: new CreateImportExecutor(apiConfig),
+    [SCHEDULE_IMPORT_ACTION_TYPE]: new ScheduleImportExecutor(apiConfig),
+    [CANCEL_IMPORT_ACTION_TYPE]: new CancelImportExecutor(apiConfig),
   };
 }
 
 export class BloomreachImportsService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     const validatedProject = validateProject(project);
     this.baseUrl = buildImportsUrl(validatedProject);
+    this.apiConfig = apiConfig;
   }
 
   get importsUrl(): string {
@@ -422,18 +477,91 @@ export class BloomreachImportsService {
       }
     }
 
-    throw new Error(
-      'listImports: not yet implemented. Requires browser automation infrastructure.',
-    );
+    const config = requireApiConfig(this.apiConfig, 'listImports');
+    const path = buildDataPath(config, '/imports');
+
+    const body: Record<string, unknown> = { command: 'list' };
+    if (input?.status !== undefined) body.status = input.status;
+    if (input?.type !== undefined) body.type = input.type;
+
+    const response = await bloomreachApiFetch(config, path, { body });
+
+    const data = response as Record<string, unknown>;
+    const items = Array.isArray(data.results) ? data.results : Array.isArray(response) ? response : [];
+
+    return items.map((rawItem: unknown) => {
+      const item =
+        typeof rawItem === 'object' && rawItem !== null
+          ? (rawItem as Record<string, unknown>)
+          : {};
+
+      return {
+        id: String(item.id ?? ''),
+        name: String(item.name ?? ''),
+        status: String(item.status ?? 'unknown'),
+        type: String(item.type ?? ''),
+        source: String(item.source ?? ''),
+        rowsProcessed: typeof item.rows_processed === 'number' ? item.rows_processed : typeof item.rowsProcessed === 'number' ? item.rowsProcessed : 0,
+        rowsTotal: typeof item.rows_total === 'number' ? item.rows_total : typeof item.rowsTotal === 'number' ? item.rowsTotal : 0,
+        errors: typeof item.errors === 'number' ? item.errors : 0,
+        warnings: typeof item.warnings === 'number' ? item.warnings : 0,
+        createdAt: String(item.created_at ?? item.createdAt ?? ''),
+        completedAt: item.completed_at !== undefined ? String(item.completed_at) : item.completedAt !== undefined ? String(item.completedAt) : undefined,
+        url: buildImportDetailUrl(input?.project ?? '', String(item.id ?? '')),
+      };
+    });
   }
 
   async viewImportStatus(input: ViewImportStatusInput): Promise<ImportStatusDetail> {
     validateProject(input.project);
     validateImportId(input.importId);
 
-    throw new Error(
-      'viewImportStatus: not yet implemented. Requires browser automation infrastructure.',
-    );
+    const config = requireApiConfig(this.apiConfig, 'viewImportStatus');
+    const path = buildDataPath(config, `/imports/${encodeURIComponent(input.importId)}/status`);
+
+    const response = await bloomreachApiFetch(config, path, {
+      body: { import_id: input.importId },
+    });
+
+    const data = response as Record<string, unknown>;
+
+    return {
+      importId: String(data.import_id ?? data.importId ?? input.importId),
+      name: String(data.name ?? ''),
+      status: String(data.status ?? 'unknown'),
+      type: String(data.type ?? ''),
+      source: String(data.source ?? ''),
+      rowsProcessed: typeof data.rows_processed === 'number' ? data.rows_processed : typeof data.rowsProcessed === 'number' ? data.rowsProcessed : 0,
+      rowsTotal: typeof data.rows_total === 'number' ? data.rows_total : typeof data.rowsTotal === 'number' ? data.rowsTotal : 0,
+      errors: typeof data.errors === 'number' ? data.errors : 0,
+      warnings: typeof data.warnings === 'number' ? data.warnings : 0,
+      errorDetails: Array.isArray(data.error_details ?? data.errorDetails)
+        ? ((data.error_details ?? data.errorDetails) as unknown[]).map((e: unknown) => {
+            const entry = typeof e === 'object' && e !== null ? (e as Record<string, unknown>) : {};
+            return {
+              row: typeof entry.row === 'number' ? entry.row : 0,
+              column: String(entry.column ?? ''),
+              message: String(entry.message ?? ''),
+            };
+          })
+        : [],
+      warningDetails: Array.isArray(data.warning_details ?? data.warningDetails)
+        ? ((data.warning_details ?? data.warningDetails) as unknown[]).map((e: unknown) => {
+            const entry = typeof e === 'object' && e !== null ? (e as Record<string, unknown>) : {};
+            return {
+              row: typeof entry.row === 'number' ? entry.row : 0,
+              column: String(entry.column ?? ''),
+              message: String(entry.message ?? ''),
+            };
+          })
+        : [],
+      createdAt: String(data.created_at ?? data.createdAt ?? ''),
+      startedAt: data.started_at !== undefined ? String(data.started_at) : data.startedAt !== undefined ? String(data.startedAt) : undefined,
+      completedAt: data.completed_at !== undefined ? String(data.completed_at) : data.completedAt !== undefined ? String(data.completedAt) : undefined,
+      schedule: data.schedule as ImportScheduleConfig | undefined,
+      mapping: Array.isArray(data.mapping) ? data.mapping as ImportMapping[] : [],
+      url: buildImportDetailUrl(input.project, input.importId),
+    };
   }
 
   prepareCreateImport(input: CreateImportInput): PreparedImportsAction {

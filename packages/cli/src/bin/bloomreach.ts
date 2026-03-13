@@ -10164,7 +10164,8 @@ imports
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; status?: string; type?: string; json?: boolean }) => {
     try {
-      const service = new BloomreachImportsService(options.project);
+      const apiConfig = tryResolveApiConfig(options.project);
+      const service = new BloomreachImportsService(options.project, apiConfig);
       const input: { project: string; status?: string; type?: string } = {
         project: options.project,
       };
@@ -10206,7 +10207,8 @@ imports
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; importId: string; json?: boolean }) => {
     try {
-      const service = new BloomreachImportsService(options.project);
+      const apiConfig = tryResolveApiConfig(options.project);
+      const service = new BloomreachImportsService(options.project, apiConfig);
       const result = await service.viewImportStatus({
         project: options.project,
         importId: options.importId,
@@ -10267,7 +10269,8 @@ imports
       try {
         const mapping = JSON.parse(options.mapping) as ImportMapping[];
 
-        const service = new BloomreachImportsService(options.project);
+        const apiConfig = tryResolveApiConfig(options.project);
+        const service = new BloomreachImportsService(options.project, apiConfig);
         const result = service.prepareCreateImport({
           project: options.project,
           name: options.name,
@@ -10335,7 +10338,8 @@ imports
           isActive: true,
         };
 
-        const service = new BloomreachImportsService(options.project);
+        const apiConfig = tryResolveApiConfig(options.project);
+        const service = new BloomreachImportsService(options.project, apiConfig);
         const result = service.prepareScheduleImport({
           project: options.project,
           name: options.name,
@@ -10378,7 +10382,8 @@ imports
   .action(
     async (options: { project: string; importId: string; note?: string; json?: boolean }) => {
       try {
-        const service = new BloomreachImportsService(options.project);
+        const apiConfig = tryResolveApiConfig(options.project);
+        const service = new BloomreachImportsService(options.project, apiConfig);
         const result = service.prepareCancelImport({
           project: options.project,
           importId: options.importId,
