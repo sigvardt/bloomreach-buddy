@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import {
   validateListLimit as validateVoucherListLimit,
   validateListOffset as validateVoucherListOffset,
@@ -228,6 +229,21 @@ export function buildVouchersUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/crm/vouchers`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 /**
  * Executor for a confirmed voucher mutation.
  * Execute methods require browser automation infrastructure (not yet built).
@@ -239,48 +255,71 @@ export interface VoucherActionExecutor {
 
 class CreateVoucherPoolExecutor implements VoucherActionExecutor {
   readonly actionType = CREATE_VOUCHER_POOL_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateVoucherPoolExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateVoucherPoolExecutor: not yet implemented. ' +
+        'Voucher pool creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class AddVouchersExecutor implements VoucherActionExecutor {
   readonly actionType = ADD_VOUCHERS_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'AddVouchersExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'AddVouchersExecutor: not yet implemented. ' +
+        'Adding vouchers to a pool is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class DeleteVoucherPoolExecutor implements VoucherActionExecutor {
   readonly actionType = DELETE_VOUCHER_POOL_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'DeleteVoucherPoolExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DeleteVoucherPoolExecutor: not yet implemented. ' +
+        'Voucher pool deletion is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
-export function createVoucherActionExecutors(): Record<
+export function createVoucherActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<
   string,
   VoucherActionExecutor
 > {
   return {
-    [CREATE_VOUCHER_POOL_ACTION_TYPE]: new CreateVoucherPoolExecutor(),
-    [ADD_VOUCHERS_ACTION_TYPE]: new AddVouchersExecutor(),
-    [DELETE_VOUCHER_POOL_ACTION_TYPE]: new DeleteVoucherPoolExecutor(),
+    [CREATE_VOUCHER_POOL_ACTION_TYPE]: new CreateVoucherPoolExecutor(apiConfig),
+    [ADD_VOUCHERS_ACTION_TYPE]: new AddVouchersExecutor(apiConfig),
+    [DELETE_VOUCHER_POOL_ACTION_TYPE]: new DeleteVoucherPoolExecutor(apiConfig),
   };
 }
 
@@ -291,9 +330,11 @@ export function createVoucherActionExecutors(): Record<
  */
 export class BloomreachVouchersService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildVouchersUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   get vouchersUrl(): string {
@@ -308,8 +349,10 @@ export class BloomreachVouchersService {
       validateVoucherListOffset(input.offset);
     }
 
+    void this.apiConfig;
     throw new Error(
-      'listVoucherPools: not yet implemented. Requires browser automation infrastructure.',
+      'listVoucherPools: the Bloomreach API does not provide a voucher pool listing endpoint. ' +
+        'Voucher pool management is only available through the Bloomreach Engagement UI.',
     );
   }
 
@@ -318,8 +361,10 @@ export class BloomreachVouchersService {
     validateProject(input.project);
     validatePoolId(input.poolId);
 
+    void this.apiConfig;
     throw new Error(
-      'viewVoucherStatus: not yet implemented. Requires browser automation infrastructure.',
+      'viewVoucherStatus: the Bloomreach API does not provide a voucher status endpoint. ' +
+        'Voucher pool management is only available through the Bloomreach Engagement UI.',
     );
   }
 
