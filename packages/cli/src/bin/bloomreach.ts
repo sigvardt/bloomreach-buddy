@@ -20,6 +20,7 @@ import {
   BloomreachGeoAnalysesService,
   BloomreachMetricsService,
   BloomreachPerformanceService,
+  BloomreachReportsService,
   BloomreachRetentionsService,
   BloomreachScenariosService,
   BloomreachSecuritySettingsService,
@@ -48,6 +49,10 @@ import type {
   MetricAggregation,
   MetricFilter,
   RedemptionRules,
+  ReportDateRange,
+  ReportFilter,
+  ReportGrouping,
+  ReportSortConfig,
   RetentionFilter,
   SurveyDisplayConditions,
   SurveyQuestion,
@@ -8705,6 +8710,381 @@ weblayers
           console.log(`  Weblayer: ${options.weblayerId}`);
           console.log(`  Token:    ${result.confirmToken}`);
           console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+const reports = program
+  .command('reports')
+  .description('Manage Bloomreach Engagement reports');
+
+reports
+  .command('list')
+  .description('List all reports in the project')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachReportsService(options.project);
+        const result = await service.listReports({ project: options.project });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          if (result.length === 0) {
+            console.log('No reports found.');
+            return;
+          }
+          for (const report of result) {
+            console.log(`  ${report.name}`);
+            console.log(`    Metrics:    ${report.metrics.join(', ')}`);
+            console.log(`    Dimensions: ${report.dimensions.join(', ')}`);
+            console.log(`    ID:         ${report.id}`);
+            console.log(`    URL:        ${report.url}`);
+          }
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+reports
+  .command('view-results')
+  .description('View results of a specific report')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--report-id <id>', 'Report ID')
+  .option('--start-date <date>', 'Start date (ISO-8601)')
+  .option('--end-date <date>', 'End date (ISO-8601)')
+  .option('--sort-column <column>', 'Column to sort by')
+  .option('--sort-order <order>', 'Sort order (asc or desc)')
+  .option('--limit <n>', 'Maximum rows to return')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      reportId: string;
+      startDate?: string;
+      endDate?: string;
+      sortColumn?: string;
+      sortOrder?: string;
+      limit?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachReportsService(options.project);
+        const input: {
+          project: string;
+          reportId: string;
+          dateRange?: ReportDateRange;
+          sort?: ReportSortConfig;
+          limit?: number;
+        } = {
+          project: options.project,
+          reportId: options.reportId,
+        };
+
+        if (options.startDate || options.endDate) {
+          input.dateRange = {
+            startDate: options.startDate,
+            endDate: options.endDate,
+          };
+        }
+
+        if (options.sortColumn && options.sortOrder) {
+          input.sort = {
+            column: options.sortColumn,
+            order: options.sortOrder as 'asc' | 'desc',
+          };
+        }
+
+        if (options.limit) {
+          input.limit = parseInt(options.limit, 10);
+        }
+
+        const result = await service.viewReportResults(input);
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log(`Report: ${result.reportName}`);
+          console.log(`  Columns: ${result.columns.join(', ')}`);
+          console.log(`  Rows:    ${result.rows.length} (total: ${result.totalRows})`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+reports
+  .command('create')
+  .description('Prepare creation of a new report (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--name <name>', 'Report name')
+  .requiredOption('--metrics <csv>', 'Metrics (comma-separated)')
+  .option('--dimensions <csv>', 'Dimensions (comma-separated)')
+  .option('--start-date <date>', 'Start date (ISO-8601)')
+  .option('--end-date <date>', 'End date (ISO-8601)')
+  .option('--filters <json>', 'JSON array of filters')
+  .option('--sort-column <column>', 'Column to sort by')
+  .option('--sort-order <order>', 'Sort order (asc or desc)')
+  .option('--grouping <json>', 'JSON array of grouping configs')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      name: string;
+      metrics: string;
+      dimensions?: string;
+      startDate?: string;
+      endDate?: string;
+      filters?: string;
+      sortColumn?: string;
+      sortOrder?: string;
+      grouping?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachReportsService(options.project);
+        const input: {
+          project: string;
+          name: string;
+          metrics: string[];
+          dimensions?: string[];
+          dateRange?: ReportDateRange;
+          filters?: ReportFilter[];
+          sort?: ReportSortConfig;
+          grouping?: ReportGrouping[];
+          operatorNote?: string;
+        } = {
+          project: options.project,
+          name: options.name,
+          metrics: options.metrics.split(',').map(m => m.trim()),
+        };
+
+        if (options.dimensions) {
+          input.dimensions = options.dimensions.split(',').map(d => d.trim());
+        }
+
+        if (options.startDate || options.endDate) {
+          input.dateRange = {
+            startDate: options.startDate,
+            endDate: options.endDate,
+          };
+        }
+
+        if (options.filters) {
+          input.filters = JSON.parse(options.filters);
+        }
+
+        if (options.sortColumn && options.sortOrder) {
+          input.sort = {
+            column: options.sortColumn,
+            order: options.sortOrder as 'asc' | 'desc',
+          };
+        }
+
+        if (options.grouping) {
+          input.grouping = JSON.parse(options.grouping);
+        }
+
+        if (options.note) {
+          input.operatorNote = options.note;
+        }
+
+        const result = service.prepareCreateReport(input);
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Report creation prepared.');
+          console.log(`  Name:    ${options.name}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+reports
+  .command('export')
+  .description('Prepare export of a report (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--report-id <id>', 'Report ID')
+  .requiredOption('--format <format>', 'Export format (csv or xlsx)')
+  .option('--start-date <date>', 'Start date (ISO-8601)')
+  .option('--end-date <date>', 'End date (ISO-8601)')
+  .option('--filters <json>', 'JSON array of filters')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      reportId: string;
+      format: string;
+      startDate?: string;
+      endDate?: string;
+      filters?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachReportsService(options.project);
+        const input: {
+          project: string;
+          reportId: string;
+          format: string;
+          dateRange?: ReportDateRange;
+          filters?: ReportFilter[];
+          operatorNote?: string;
+        } = {
+          project: options.project,
+          reportId: options.reportId,
+          format: options.format,
+        };
+
+        if (options.startDate || options.endDate) {
+          input.dateRange = {
+            startDate: options.startDate,
+            endDate: options.endDate,
+          };
+        }
+
+        if (options.filters) {
+          input.filters = JSON.parse(options.filters);
+        }
+
+        if (options.note) {
+          input.operatorNote = options.note;
+        }
+
+        const result = service.prepareExportReport(input);
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Report export prepared.');
+          console.log(`  Format:  ${options.format}`);
+          console.log(`  Token:   ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+reports
+  .command('clone')
+  .description('Prepare cloning of a report (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--report-id <id>', 'Report ID')
+  .option('--new-name <name>', 'Name for the cloned report')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      reportId: string;
+      newName?: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachReportsService(options.project);
+        const result = service.prepareCloneReport({
+          project: options.project,
+          reportId: options.reportId,
+          newName: options.newName,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Report clone prepared.');
+          console.log(`  Source:   ${options.reportId}`);
+          console.log(`  New name: ${options.newName || '(auto-generated)'}`);
+          console.log(`  Token:    ${result.confirmToken}`);
+          console.log(`  Expires:  ${new Date(result.expiresAtMs).toISOString()}`);
+          console.log('');
+          console.log('To confirm, run:');
+          console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        process.exit(1);
+      }
+    },
+  );
+
+reports
+  .command('archive')
+  .description('Prepare archiving of a report (two-phase commit)')
+  .requiredOption('--project <project>', 'Bloomreach project identifier')
+  .requiredOption('--report-id <id>', 'Report ID')
+  .option('--note <note>', 'Operator note for audit trail')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      project: string;
+      reportId: string;
+      note?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const service = new BloomreachReportsService(options.project);
+        const result = service.prepareArchiveReport({
+          project: options.project,
+          reportId: options.reportId,
+          operatorNote: options.note,
+        });
+
+        if (options.json) {
+          printJson(result);
+        } else {
+          console.log('Report archive prepared.');
+          console.log(`  Report: ${options.reportId}`);
+          console.log(`  Token:  ${result.confirmToken}`);
+          console.log(`  Expires: ${new Date(result.expiresAtMs).toISOString()}`);
           console.log('');
           console.log('To confirm, run:');
           console.log(`  bloomreach actions confirm --token ${result.confirmToken}`);
