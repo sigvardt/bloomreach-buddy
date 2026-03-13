@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 /** Action type for creating a managed tag. */
 export const CREATE_TAG_ACTION_TYPE = 'tag_manager.create_tag';
@@ -304,6 +305,21 @@ export function buildManagedTagsUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/data/managed-tags`;
 }
 
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
+}
+
+void requireApiConfig;
+
 /**
  * Executor for a confirmed tag manager mutation.
  * Execute methods require browser automation infrastructure (not yet built).
@@ -315,62 +331,99 @@ export interface TagManagerActionExecutor {
 
 class CreateTagExecutor implements TagManagerActionExecutor {
   readonly actionType = CREATE_TAG_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'CreateTagExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'CreateTagExecutor: not yet implemented. ' +
+        'Tag creation is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class EnableTagExecutor implements TagManagerActionExecutor {
   readonly actionType = ENABLE_TAG_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'EnableTagExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'EnableTagExecutor: not yet implemented. ' +
+        'Tag enabling is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class DisableTagExecutor implements TagManagerActionExecutor {
   readonly actionType = DISABLE_TAG_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'DisableTagExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DisableTagExecutor: not yet implemented. ' +
+        'Tag disabling is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class EditTagExecutor implements TagManagerActionExecutor {
   readonly actionType = EDIT_TAG_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'EditTagExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'EditTagExecutor: not yet implemented. ' +
+        'Tag editing is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 class DeleteTagExecutor implements TagManagerActionExecutor {
   readonly actionType = DELETE_TAG_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    void this.apiConfig;
     throw new Error(
-      'DeleteTagExecutor: not yet implemented. Requires browser automation infrastructure.',
+      'DeleteTagExecutor: not yet implemented. ' +
+        'Tag deletion is only available through the Bloomreach Engagement UI.',
     );
   }
 }
 
 /** Creates all tag manager action executors keyed by action type. */
-export function createTagManagerActionExecutors(): Record<string, TagManagerActionExecutor> {
+export function createTagManagerActionExecutors(
+  apiConfig?: BloomreachApiConfig,
+): Record<string, TagManagerActionExecutor> {
   return {
-    [CREATE_TAG_ACTION_TYPE]: new CreateTagExecutor(),
-    [ENABLE_TAG_ACTION_TYPE]: new EnableTagExecutor(),
-    [DISABLE_TAG_ACTION_TYPE]: new DisableTagExecutor(),
-    [EDIT_TAG_ACTION_TYPE]: new EditTagExecutor(),
-    [DELETE_TAG_ACTION_TYPE]: new DeleteTagExecutor(),
+    [CREATE_TAG_ACTION_TYPE]: new CreateTagExecutor(apiConfig),
+    [ENABLE_TAG_ACTION_TYPE]: new EnableTagExecutor(apiConfig),
+    [DISABLE_TAG_ACTION_TYPE]: new DisableTagExecutor(apiConfig),
+    [EDIT_TAG_ACTION_TYPE]: new EditTagExecutor(apiConfig),
+    [DELETE_TAG_ACTION_TYPE]: new DeleteTagExecutor(apiConfig),
   };
 }
 
@@ -381,9 +434,11 @@ export function createTagManagerActionExecutors(): Record<string, TagManagerActi
  */
 export class BloomreachTagManagerService {
   private readonly baseUrl: string;
+  private readonly apiConfig?: BloomreachApiConfig;
 
-  constructor(project: string) {
+  constructor(project: string, apiConfig?: BloomreachApiConfig) {
     this.baseUrl = buildManagedTagsUrl(validateProject(project));
+    this.apiConfig = apiConfig;
   }
 
   /** URL to the managed tags page for this service project. */
@@ -391,8 +446,9 @@ export class BloomreachTagManagerService {
     return this.baseUrl;
   }
 
-  /** @throws {Error} Browser automation not yet available. */
+  /** @throws {Error} Bloomreach API does not expose managed tags. */
   async listTags(input?: ListTagsInput): Promise<BloomreachManagedTag[]> {
+    void this.apiConfig;
     if (input !== undefined) {
       validateProject(input.project);
       if (input.status !== undefined) {
@@ -401,17 +457,22 @@ export class BloomreachTagManagerService {
     }
 
     throw new Error(
-      'listTags: not yet implemented. Requires browser automation infrastructure.',
+      'listTags: the Bloomreach API does not provide an endpoint for managed tags. ' +
+        'Managed tag data must be obtained from the Bloomreach Engagement UI ' +
+        '(navigate to Data & Assets > Managed Tags in your project).',
     );
   }
 
-  /** @throws {Error} Browser automation not yet available. */
+  /** @throws {Error} Bloomreach API does not expose managed tag details. */
   async viewTag(input: ViewTagInput): Promise<BloomreachManagedTag> {
+    void this.apiConfig;
     validateProject(input.project);
     validateTagId(input.tagId);
 
     throw new Error(
-      'viewTag: not yet implemented. Requires browser automation infrastructure.',
+      'viewTag: the Bloomreach API does not provide an endpoint for managed tag details. ' +
+        'Managed tag details must be viewed in the Bloomreach Engagement UI ' +
+        '(navigate to Data & Assets > Managed Tags and open the tag).',
     );
   }
 

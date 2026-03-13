@@ -3888,9 +3888,11 @@ const tagManager = program
 
 tagManager
   .command('list')
-  .description('List all managed JavaScript tags')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .option('--status <status>', 'Filter by status (enabled, disabled)')
+  .description(
+    'List all managed JavaScript tags (note: the Bloomreach API does not provide a managed tags endpoint — requires browser automation)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .option('--status <status>', 'Filter by tag status: enabled, disabled')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; status?: string; json?: boolean }) => {
     try {
@@ -3926,9 +3928,11 @@ tagManager
 
 tagManager
   .command('view')
-  .description('View details of a specific managed tag')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--tag-id <id>', 'Tag ID')
+  .description(
+    'View details of a specific managed tag (note: the Bloomreach API does not provide a managed tags endpoint — requires browser automation)',
+  )
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--tag-id <id>', 'Tag ID (identifier from Bloomreach UI URL)')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; tagId: string; json?: boolean }) => {
     try {
@@ -3958,14 +3962,20 @@ tagManager
 
 tagManager
   .command('create')
-  .description('Prepare creation of a new managed JavaScript tag (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--name <name>', 'Tag name')
-  .requiredOption('--js-code <code>', 'JavaScript code for the tag')
-  .option('--page-url <url>', 'Page URL pattern for trigger condition')
-  .option('--events <csv>', 'Trigger event names (comma-separated)')
-  .option('--customer-attributes <json>', 'Customer attribute conditions as JSON object')
-  .option('--priority <n>', 'Execution priority (positive integer, lower = higher)')
+  .description('Prepare creation of a new managed JavaScript tag (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--name <name>', 'Tag name (max 200 characters)')
+  .requiredOption(
+    '--js-code <code>',
+    'JavaScript code for the tag (e.g. "window.__track = true;")',
+  )
+  .option('--page-url <url>', 'Page URL pattern for trigger condition (glob or regex)')
+  .option('--events <csv>', 'Trigger event names, comma-separated (e.g. "page_view,checkout_started")')
+  .option(
+    '--customer-attributes <json>',
+    'Customer attribute conditions as JSON (e.g. \'{"tier":"premium","region":"eu"}\')',
+  )
+  .option('--priority <n>', 'Execution priority: positive integer 1-1000 (lower = higher priority)')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -4022,9 +4032,9 @@ tagManager
 
 tagManager
   .command('enable')
-  .description('Prepare enabling a managed tag (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--tag-id <id>', 'Tag ID to enable')
+  .description('Prepare enabling a managed tag (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--tag-id <id>', 'Tag ID to enable (identifier from Bloomreach UI URL)')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; tagId: string; note?: string; json?: boolean }) => {
@@ -4055,9 +4065,9 @@ tagManager
 
 tagManager
   .command('disable')
-  .description('Prepare disabling a managed tag (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--tag-id <id>', 'Tag ID to disable')
+  .description('Prepare disabling a managed tag (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--tag-id <id>', 'Tag ID to disable (identifier from Bloomreach UI URL)')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; tagId: string; note?: string; json?: boolean }) => {
@@ -4088,15 +4098,18 @@ tagManager
 
 tagManager
   .command('edit')
-  .description('Prepare editing a managed tag (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--tag-id <id>', 'Tag ID to edit')
-  .option('--name <name>', 'New tag name')
-  .option('--js-code <code>', 'New JavaScript code')
-  .option('--page-url <url>', 'New page URL pattern for trigger condition')
-  .option('--events <csv>', 'New trigger event names (comma-separated)')
-  .option('--customer-attributes <json>', 'New customer attribute conditions as JSON object')
-  .option('--priority <n>', 'New execution priority')
+  .description('Prepare editing a managed tag (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--tag-id <id>', 'Tag ID to edit (identifier from Bloomreach UI URL)')
+  .option('--name <name>', 'New tag name (max 200 characters)')
+  .option('--js-code <code>', 'New JavaScript code for the tag')
+  .option('--page-url <url>', 'New page URL pattern for trigger condition (glob or regex)')
+  .option('--events <csv>', 'New trigger event names, comma-separated (e.g. "page_view,checkout_started")')
+  .option(
+    '--customer-attributes <json>',
+    'New customer attribute conditions as JSON (e.g. \'{"tier":"premium"}\')',
+  )
+  .option('--priority <n>', 'New execution priority: positive integer 1-1000 (lower = higher priority)')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(
@@ -4155,9 +4168,9 @@ tagManager
 
 tagManager
   .command('delete')
-  .description('Prepare deletion of a managed tag (two-phase commit)')
-  .requiredOption('--project <project>', 'Bloomreach project identifier')
-  .requiredOption('--tag-id <id>', 'Tag ID to delete')
+  .description('Prepare deletion of a managed tag (two-phase commit, UI-only)')
+  .requiredOption('--project <project>', 'Bloomreach project token (UUID from Settings > Project)')
+  .requiredOption('--tag-id <id>', 'Tag ID to delete (identifier from Bloomreach UI URL)')
   .option('--note <note>', 'Operator note for audit trail')
   .option('--json', 'Output as JSON')
   .action(async (options: { project: string; tagId: string; note?: string; json?: boolean }) => {

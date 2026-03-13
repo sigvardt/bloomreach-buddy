@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
 import * as core from '../index.js';
 
 interface ServiceTriggerConditions {
@@ -38,13 +39,17 @@ interface TagManagerServiceInstance {
     tagId: string;
     name?: string;
     jsCode?: string;
+    triggerConditions?: ServiceTriggerConditions;
     priority?: number;
     operatorNote?: string;
   }): ServicePreparedAction;
   prepareDeleteTag(input: { project: string; tagId: string; operatorNote?: string }): ServicePreparedAction;
 }
 
-type TagManagerServiceConstructor = new (project: string) => TagManagerServiceInstance;
+type TagManagerServiceConstructor = new (
+  project: string,
+  apiConfig?: BloomreachApiConfig,
+) => TagManagerServiceInstance;
 type TagActionExecutor = { actionType: string; execute(input: Record<string, unknown>): Promise<unknown> };
 const exported = core as unknown as Record<string, unknown>;
 
@@ -71,13 +76,23 @@ const validateTriggerConditions = exported['validateTriggerConditions'] as (
 ) => ServiceTriggerConditions;
 const validatePriority = exported['validatePriority'] as (priority: number) => number;
 const buildManagedTagsUrl = exported['buildManagedTagsUrl'] as (project: string) => string;
-const createTagManagerActionExecutors = exported['createTagManagerActionExecutors'] as () => Record<
-  string,
-  TagActionExecutor
->;
+const createTagManagerActionExecutors = exported['createTagManagerActionExecutors'] as (
+  apiConfig?: BloomreachApiConfig,
+) => Record<string, TagActionExecutor>;
 const BloomreachTagManagerService = exported[
   'BloomreachTagManagerService'
 ] as TagManagerServiceConstructor;
+
+const TEST_API_CONFIG: BloomreachApiConfig = {
+  projectToken: 'test-token-123',
+  apiKeyId: 'key-id',
+  apiSecret: 'key-secret',
+  baseUrl: 'https://api.test.com',
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('action type constants', () => {
   it('exports CREATE_TAG_ACTION_TYPE', () => {
@@ -139,6 +154,22 @@ describe('validateTagName', () => {
   it('accepts name at exactly 200 characters', () => {
     expect(validateTagName('x'.repeat(200))).toBe('x'.repeat(200));
   });
+
+  it('accepts mixed whitespace around valid name', () => {
+    expect(validateTagName(' \t  Product Viewed \n ')).toBe('Product Viewed');
+  });
+
+  it('preserves internal spacing in valid name', () => {
+    expect(validateTagName('Product   Viewed')).toBe('Product   Viewed');
+  });
+
+  it('accepts punctuation-heavy name after trim', () => {
+    expect(validateTagName('  [GA4] Checkout Tag (v2)  ')).toBe('[GA4] Checkout Tag (v2)');
+  });
+
+  it('throws for too-long name even with surrounding whitespace', () => {
+    expect(() => validateTagName(`  ${'x'.repeat(201)}  `)).toThrow('must not exceed 200 characters');
+  });
 });
 
 describe('validateTagId', () => {
@@ -156,6 +187,30 @@ describe('validateTagId', () => {
 
   it('throws for ID exceeding 500 characters', () => {
     expect(() => validateTagId('x'.repeat(501))).toThrow('must not exceed 500 characters');
+  });
+
+  it('returns ID containing dots and dashes', () => {
+    expect(validateTagId('tag.v2-alpha')).toBe('tag.v2-alpha');
+  });
+
+  it('returns ID containing colons', () => {
+    expect(validateTagId('tag:daily:1')).toBe('tag:daily:1');
+  });
+
+  it('returns trimmed ID with mixed whitespace', () => {
+    expect(validateTagId(' \n\ttag-789\t ')).toBe('tag-789');
+  });
+
+  it('returns unicode ID', () => {
+    expect(validateTagId('tag-åäö')).toBe('tag-åäö');
+  });
+
+  it('throws for tab-only string', () => {
+    expect(() => validateTagId('\t')).toThrow('must not be empty');
+  });
+
+  it('throws for mixed-whitespace-only string', () => {
+    expect(() => validateTagId(' \n\t ')).toThrow('must not be empty');
   });
 });
 
@@ -175,6 +230,22 @@ describe('validateJsCode', () => {
 
   it('throws for code exceeding 100000 characters', () => {
     expect(() => validateJsCode('x'.repeat(100_001))).toThrow('must not exceed 100000 characters');
+  });
+
+  it('returns mixed-whitespace wrapped valid code as-is', () => {
+    const code = ' \t  console.log("hi") \n ';
+    expect(validateJsCode(code)).toBe(code);
+  });
+
+  it('preserves internal whitespace and newlines in code', () => {
+    const code = 'function run() {\n  const value = 1;\n\n  return value;\n}';
+    expect(validateJsCode(code)).toBe(code);
+  });
+
+  it('throws for too-long code even with surrounding whitespace', () => {
+    expect(() => validateJsCode(`  ${'x'.repeat(100_001)}  `)).toThrow(
+      'must not exceed 100000 characters',
+    );
   });
 });
 
@@ -203,6 +274,18 @@ describe('validatePageUrl', () => {
 
   it('throws for URL exceeding 2000 characters', () => {
     expect(() => validatePageUrl('x'.repeat(2001))).toThrow('must not exceed 2000 characters');
+  });
+
+  it('accepts URL with query params', () => {
+    expect(validatePageUrl('/checkout?step=1')).toBe('/checkout?step=1');
+  });
+
+  it('accepts URL with hash', () => {
+    expect(validatePageUrl('/page#section')).toBe('/page#section');
+  });
+
+  it('returns trimmed URL for mixed-whitespace input', () => {
+    expect(validatePageUrl(' \t /checkout \n ')).toBe('/checkout');
   });
 });
 
@@ -233,6 +316,18 @@ describe('validateEvents', () => {
 
   it('throws for duplicate events', () => {
     expect(() => validateEvents(['purchase', 'purchase'])).toThrow('must be unique');
+  });
+
+  it('returns single event', () => {
+    expect(validateEvents(['page_view'])).toEqual(['page_view']);
+  });
+
+  it('returns trimmed event with mixed whitespace', () => {
+    expect(validateEvents([' \t page_view \n '])).toEqual(['page_view']);
+  });
+
+  it('throws for whitespace-only event', () => {
+    expect(() => validateEvents([' \n\t '])).toThrow('must not be empty');
   });
 });
 
@@ -273,6 +368,16 @@ describe('validateCustomerAttributes', () => {
     expect(() => validateCustomerAttributes({ key: 'x'.repeat(501) })).toThrow(
       'must not exceed 500 characters',
     );
+  });
+
+  it('returns single attribute pair', () => {
+    expect(validateCustomerAttributes({ tier: 'premium' })).toEqual({ tier: 'premium' });
+  });
+
+  it('returns trimmed mixed-whitespace key/value pair', () => {
+    expect(validateCustomerAttributes({ ' \t tier \n ': ' \t premium \n ' })).toEqual({
+      tier: 'premium',
+    });
   });
 });
 
@@ -320,6 +425,18 @@ describe('validatePriority', () => {
   it('accepts value at exactly 1000', () => {
     expect(validatePriority(1000)).toBe(1000);
   });
+
+  it('accepts priority of exactly 1', () => {
+    expect(validatePriority(1)).toBe(1);
+  });
+
+  it('throws for NaN', () => {
+    expect(() => validatePriority(Number.NaN)).toThrow('positive integer');
+  });
+
+  it('throws for Infinity', () => {
+    expect(() => validatePriority(Number.POSITIVE_INFINITY)).toThrow('positive integer');
+  });
 });
 
 describe('buildManagedTagsUrl', () => {
@@ -333,6 +450,18 @@ describe('buildManagedTagsUrl', () => {
 
   it('encodes slashes in project name', () => {
     expect(buildManagedTagsUrl('org/project')).toBe('/p/org%2Fproject/data/managed-tags');
+  });
+
+  it('encodes unicode project name', () => {
+    expect(buildManagedTagsUrl('projekt åäö')).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/data/managed-tags');
+  });
+
+  it('encodes hash in project name', () => {
+    expect(buildManagedTagsUrl('my#project')).toBe('/p/my%23project/data/managed-tags');
+  });
+
+  it('encodes plus sign in project name', () => {
+    expect(buildManagedTagsUrl('project+beta')).toBe('/p/project%2Bbeta/data/managed-tags');
   });
 });
 
@@ -360,6 +489,122 @@ describe('createTagManagerActionExecutors', () => {
       await expect(executor.execute({})).rejects.toThrow('not yet implemented');
     }
   });
+
+  it('create executor mentions UI-only in error', async () => {
+    const executors = createTagManagerActionExecutors();
+    await expect(executors[CREATE_TAG_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('enable executor mentions UI-only in error', async () => {
+    const executors = createTagManagerActionExecutors();
+    await expect(executors[ENABLE_TAG_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('disable executor mentions UI-only in error', async () => {
+    const executors = createTagManagerActionExecutors();
+    await expect(executors[DISABLE_TAG_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('edit executor mentions UI-only in error', async () => {
+    const executors = createTagManagerActionExecutors();
+    await expect(executors[EDIT_TAG_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('delete executor mentions UI-only in error', async () => {
+    const executors = createTagManagerActionExecutors();
+    await expect(executors[DELETE_TAG_ACTION_TYPE].execute({})).rejects.toThrow(
+      'only available through the Bloomreach Engagement UI',
+    );
+  });
+
+  it('accepts optional apiConfig parameter', () => {
+    const executors = createTagManagerActionExecutors(TEST_API_CONFIG);
+    expect(Object.keys(executors)).toHaveLength(5);
+  });
+
+  it('executors still throw not-yet-implemented with apiConfig', async () => {
+    const executors = createTagManagerActionExecutors(TEST_API_CONFIG);
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+    }
+  });
+
+  it('returns identical action keys with or without apiConfig', () => {
+    const withoutConfig = Object.keys(createTagManagerActionExecutors()).sort();
+    const withConfig = Object.keys(createTagManagerActionExecutors(TEST_API_CONFIG)).sort();
+    expect(withConfig).toEqual(withoutConfig);
+  });
+
+  it('preserves actionType mapping with apiConfig', () => {
+    const executors = createTagManagerActionExecutors(TEST_API_CONFIG);
+    for (const [key, executor] of Object.entries(executors)) {
+      expect(executor.actionType).toBe(key);
+    }
+  });
+
+  it('returns expected action keys', () => {
+    const keys = Object.keys(createTagManagerActionExecutors()).sort();
+    expect(keys).toEqual(
+      [
+        CREATE_TAG_ACTION_TYPE,
+        ENABLE_TAG_ACTION_TYPE,
+        DISABLE_TAG_ACTION_TYPE,
+        EDIT_TAG_ACTION_TYPE,
+        DELETE_TAG_ACTION_TYPE,
+      ].sort(),
+    );
+  });
+
+  it('returns new executor instances on each call', () => {
+    const first = createTagManagerActionExecutors(TEST_API_CONFIG);
+    const second = createTagManagerActionExecutors(TEST_API_CONFIG);
+    expect(first[CREATE_TAG_ACTION_TYPE]).not.toBe(second[CREATE_TAG_ACTION_TYPE]);
+    expect(first[ENABLE_TAG_ACTION_TYPE]).not.toBe(second[ENABLE_TAG_ACTION_TYPE]);
+    expect(first[DISABLE_TAG_ACTION_TYPE]).not.toBe(second[DISABLE_TAG_ACTION_TYPE]);
+    expect(first[EDIT_TAG_ACTION_TYPE]).not.toBe(second[EDIT_TAG_ACTION_TYPE]);
+    expect(first[DELETE_TAG_ACTION_TYPE]).not.toBe(second[DELETE_TAG_ACTION_TYPE]);
+  });
+
+  it('all executors mention UI-only guidance with apiConfig', async () => {
+    const executors = createTagManagerActionExecutors(TEST_API_CONFIG);
+    for (const executor of Object.values(executors)) {
+      await expect(executor.execute({})).rejects.toThrow(
+        'only available through the Bloomreach Engagement UI',
+      );
+    }
+  });
+
+  it('uses independent executor maps for configured and unconfigured calls', () => {
+    const withoutConfig = createTagManagerActionExecutors();
+    const withConfig = createTagManagerActionExecutors(TEST_API_CONFIG);
+    expect(withoutConfig).not.toBe(withConfig);
+  });
+
+  it('supports custom apiConfig values without changing key set', () => {
+    const executors = createTagManagerActionExecutors({
+      ...TEST_API_CONFIG,
+      baseUrl: 'https://api-alt.test.com',
+      projectToken: 'another-token',
+    });
+
+    expect(Object.keys(executors).sort()).toEqual(
+      [
+        CREATE_TAG_ACTION_TYPE,
+        ENABLE_TAG_ACTION_TYPE,
+        DISABLE_TAG_ACTION_TYPE,
+        EDIT_TAG_ACTION_TYPE,
+        DELETE_TAG_ACTION_TYPE,
+      ].sort(),
+    );
+  });
 });
 
 describe('BloomreachTagManagerService', () => {
@@ -382,12 +627,74 @@ describe('BloomreachTagManagerService', () => {
     it('throws for empty project', () => {
       expect(() => new BloomreachTagManagerService('')).toThrow('must not be empty');
     });
+
+    it('accepts apiConfig as second parameter', () => {
+      const service = new BloomreachTagManagerService('test', TEST_API_CONFIG);
+      expect(service).toBeInstanceOf(BloomreachTagManagerService);
+    });
+
+    it('exposes managedTagsUrl when constructed with apiConfig', () => {
+      const service = new BloomreachTagManagerService('test', TEST_API_CONFIG);
+      expect(service.managedTagsUrl).toBe('/p/test/data/managed-tags');
+    });
+
+    it('encodes unicode project name in constructor URL', () => {
+      const service = new BloomreachTagManagerService('projekt åäö');
+      expect(service.managedTagsUrl).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/data/managed-tags');
+    });
+
+    it('encodes hash in constructor URL', () => {
+      const service = new BloomreachTagManagerService('my#project');
+      expect(service.managedTagsUrl).toBe('/p/my%23project/data/managed-tags');
+    });
+
+    it('trims and encodes unicode project in constructor URL', () => {
+      const service = new BloomreachTagManagerService('  projekt åäö  ');
+      expect(service.managedTagsUrl).toBe('/p/projekt%20%C3%A5%C3%A4%C3%B6/data/managed-tags');
+    });
+
+    it('encodes plus sign in constructor URL', () => {
+      const service = new BloomreachTagManagerService('project+beta');
+      expect(service.managedTagsUrl).toBe('/p/project%2Bbeta/data/managed-tags');
+    });
+
+    it('returns stable managedTagsUrl with apiConfig across reads', () => {
+      const service = new BloomreachTagManagerService('alpha', TEST_API_CONFIG);
+      expect(service.managedTagsUrl).toBe('/p/alpha/data/managed-tags');
+      expect(service.managedTagsUrl).toBe('/p/alpha/data/managed-tags');
+    });
   });
 
   describe('listTags', () => {
-    it('throws not-yet-implemented error', async () => {
+    it('throws no-API-endpoint error', async () => {
       const service = new BloomreachTagManagerService('test');
-      await expect(service.listTags()).rejects.toThrow('not yet implemented');
+      await expect(service.listTags()).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachTagManagerService('test', TEST_API_CONFIG);
+      await expect(service.listTags()).rejects.toThrow('does not provide an endpoint');
+    });
+
+    it('throws no-API-endpoint error for unicode project override', async () => {
+      const service = new BloomreachTagManagerService('test');
+      await expect(service.listTags({ project: 'projekt åäö' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error for valid project override', async () => {
+      const service = new BloomreachTagManagerService('test');
+      await expect(service.listTags({ project: 'kingdom-of-joakim' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error for trimmed project override', async () => {
+      const service = new BloomreachTagManagerService('test');
+      await expect(service.listTags({ project: '  kingdom-of-joakim  ' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
     });
 
     it('validates status when input is provided', async () => {
@@ -406,10 +713,38 @@ describe('BloomreachTagManagerService', () => {
   });
 
   describe('viewTag', () => {
-    it('throws not-yet-implemented error with valid input', async () => {
+    it('throws no-API-endpoint error with valid input', async () => {
       const service = new BloomreachTagManagerService('test');
       await expect(service.viewTag({ project: 'test', tagId: 'tag-1' })).rejects.toThrow(
-        'not yet implemented',
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error when service has apiConfig', async () => {
+      const service = new BloomreachTagManagerService('test', TEST_API_CONFIG);
+      await expect(service.viewTag({ project: 'test', tagId: 'tag-1' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error with trimmed project and tagId', async () => {
+      const service = new BloomreachTagManagerService('test');
+      await expect(service.viewTag({ project: '  test  ', tagId: '  tag-1  ' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('throws no-API-endpoint error for encoded-looking tagId', async () => {
+      const service = new BloomreachTagManagerService('test');
+      await expect(service.viewTag({ project: 'test', tagId: 'tag%2Fencoded' })).rejects.toThrow(
+        'does not provide an endpoint',
+      );
+    });
+
+    it('accepts trimmed tagId and reaches no-API-endpoint error', async () => {
+      const service = new BloomreachTagManagerService('test');
+      await expect(service.viewTag({ project: 'test', tagId: '  tag-99  ' })).rejects.toThrow(
+        'does not provide an endpoint',
       );
     });
 
@@ -520,6 +855,48 @@ describe('BloomreachTagManagerService', () => {
         }),
       ).toThrow('Events must not be empty');
     });
+
+    it('returns prepared action without optional fields', () => {
+      const service = new BloomreachTagManagerService('test');
+      const result = service.prepareCreateTag({
+        project: 'test',
+        name: 'Checkout Tag',
+        jsCode: 'window.__track = true;',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'tag_manager.create_tag',
+          project: 'test',
+          name: 'Checkout Tag',
+          jsCode: 'window.__track = true;',
+          triggerConditions: undefined,
+          priority: undefined,
+          operatorNote: undefined,
+        }),
+      );
+    });
+
+    it('handles minimal valid input', () => {
+      const service = new BloomreachTagManagerService('test');
+      const result = service.prepareCreateTag({
+        project: 'test',
+        name: 'A',
+        jsCode: 'x',
+      });
+
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.confirmToken).toMatch(/^ct_stub_/);
+      expect(result.expiresAtMs).toBeGreaterThan(Date.now());
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'tag_manager.create_tag',
+          project: 'test',
+          name: 'A',
+          jsCode: 'x',
+        }),
+      );
+    });
   });
 
   describe('prepareEnableTag', () => {
@@ -563,6 +940,35 @@ describe('BloomreachTagManagerService', () => {
         }),
       ).toThrow('must not be empty');
     });
+
+    it('returns prepared action without operatorNote', () => {
+      const service = new BloomreachTagManagerService('test');
+      const result = service.prepareEnableTag({
+        project: 'test',
+        tagId: 'tag-100',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'tag_manager.enable_tag',
+          project: 'test',
+          tagId: 'tag-100',
+          operatorNote: undefined,
+        }),
+      );
+    });
+
+    it('includes expected preview fields for enable action', () => {
+      const service = new BloomreachTagManagerService('test');
+      const result = service.prepareEnableTag({
+        project: 'test',
+        tagId: 'tag-101',
+      });
+
+      expect(Object.keys(result.preview as Record<string, unknown>).sort()).toEqual(
+        ['action', 'operatorNote', 'project', 'tagId'].sort(),
+      );
+    });
   });
 
   describe('prepareDisableTag', () => {
@@ -605,6 +1011,35 @@ describe('BloomreachTagManagerService', () => {
           tagId: 'tag-200',
         }),
       ).toThrow('must not be empty');
+    });
+
+    it('returns prepared action without operatorNote', () => {
+      const service = new BloomreachTagManagerService('test');
+      const result = service.prepareDisableTag({
+        project: 'test',
+        tagId: 'tag-200',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'tag_manager.disable_tag',
+          project: 'test',
+          tagId: 'tag-200',
+          operatorNote: undefined,
+        }),
+      );
+    });
+
+    it('includes expected preview fields for disable action', () => {
+      const service = new BloomreachTagManagerService('test');
+      const result = service.prepareDisableTag({
+        project: 'test',
+        tagId: 'tag-201',
+      });
+
+      expect(Object.keys(result.preview as Record<string, unknown>).sort()).toEqual(
+        ['action', 'operatorNote', 'project', 'tagId'].sort(),
+      );
     });
   });
 
@@ -688,6 +1123,38 @@ describe('BloomreachTagManagerService', () => {
         }),
       ).toThrow('must not exceed 1000');
     });
+
+    it('returns prepared action with only tagId', () => {
+      const service = new BloomreachTagManagerService('test');
+      const result = service.prepareEditTag({
+        project: 'test',
+        tagId: 'tag-300',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'tag_manager.edit_tag',
+          project: 'test',
+          tagId: 'tag-300',
+          name: undefined,
+          jsCode: undefined,
+          triggerConditions: undefined,
+          priority: undefined,
+          operatorNote: undefined,
+        }),
+      );
+    });
+
+    it('validates triggerConditions in edit', () => {
+      const service = new BloomreachTagManagerService('test');
+      expect(() =>
+        service.prepareEditTag({
+          project: 'test',
+          tagId: 'tag-300',
+          triggerConditions: { events: [] },
+        }),
+      ).toThrow('Events must not be empty');
+    });
   });
 
   describe('prepareDeleteTag', () => {
@@ -730,6 +1197,35 @@ describe('BloomreachTagManagerService', () => {
           tagId: 'tag-400',
         }),
       ).toThrow('must not be empty');
+    });
+
+    it('returns prepared action without operatorNote', () => {
+      const service = new BloomreachTagManagerService('test');
+      const result = service.prepareDeleteTag({
+        project: 'test',
+        tagId: 'tag-400',
+      });
+
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'tag_manager.delete_tag',
+          project: 'test',
+          tagId: 'tag-400',
+          operatorNote: undefined,
+        }),
+      );
+    });
+
+    it('includes expected preview fields for delete action', () => {
+      const service = new BloomreachTagManagerService('test');
+      const result = service.prepareDeleteTag({
+        project: 'test',
+        tagId: 'tag-401',
+      });
+
+      expect(Object.keys(result.preview as Record<string, unknown>).sort()).toEqual(
+        ['action', 'operatorNote', 'project', 'tagId'].sort(),
+      );
     });
   });
 });
