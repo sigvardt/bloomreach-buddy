@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 // ---------------------------------------------------------------------------
@@ -157,12 +158,10 @@ const MIN_INTEGRATION_NAME_LENGTH = 1;
 export function validateIntegrationName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_INTEGRATION_NAME_LENGTH) {
-    throw new Error('Integration name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Integration name must not be empty.');
   }
   if (trimmed.length > MAX_INTEGRATION_NAME_LENGTH) {
-    throw new Error(
-      `Integration name must not exceed ${MAX_INTEGRATION_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Integration name must not exceed ${MAX_INTEGRATION_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -171,7 +170,7 @@ export function validateIntegrationName(name: string): string {
 export function validateIntegrationProject(project: string): string {
   const trimmed = project.trim();
   if (trimmed.length === 0) {
-    throw new Error('Project identifier must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Project identifier must not be empty.');
   }
   return trimmed;
 }
@@ -180,7 +179,7 @@ export function validateIntegrationProject(project: string): string {
 export function validateIntegrationId(integrationId: string): string {
   const trimmed = integrationId.trim();
   if (trimmed.length === 0) {
-    throw new Error('Integration ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Integration ID must not be empty.');
   }
   return trimmed;
 }
@@ -188,9 +187,7 @@ export function validateIntegrationId(integrationId: string): string {
 /** @throws {Error} If type is not a valid integration type. */
 export function validateIntegrationType(type: string): IntegrationType {
   if (!INTEGRATION_TYPES.includes(type as IntegrationType)) {
-    throw new Error(
-      `Invalid integration type '${type}'. Must be one of: ${INTEGRATION_TYPES.join(', ')}.`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Invalid integration type '${type}'. Must be one of: ${INTEGRATION_TYPES.join(', ')}.`);
   }
   return type as IntegrationType;
 }
@@ -198,9 +195,7 @@ export function validateIntegrationType(type: string): IntegrationType {
 /** @throws {Error} If status is not a valid integration status. */
 export function validateIntegrationStatus(status: string): IntegrationStatus {
   if (!INTEGRATION_STATUSES.includes(status as IntegrationStatus)) {
-    throw new Error(
-      `Invalid integration status '${status}'. Must be one of: ${INTEGRATION_STATUSES.join(', ')}.`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Invalid integration status '${status}'. Must be one of: ${INTEGRATION_STATUSES.join(', ')}.`);
   }
   return status as IntegrationStatus;
 }
@@ -209,7 +204,7 @@ export function validateIntegrationStatus(status: string): IntegrationStatus {
 export function validateProvider(provider: string): string {
   const trimmed = provider.trim();
   if (trimmed.length === 0) {
-    throw new Error('Provider must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Provider must not be empty.');
   }
   return trimmed;
 }
@@ -227,9 +222,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -260,9 +255,7 @@ class CreateIntegrationExecutor implements IntegrationActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateIntegrationExecutor: not yet implemented. Integration creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateIntegrationExecutor: not yet implemented. Integration creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -276,9 +269,7 @@ class ConfigureIntegrationExecutor implements IntegrationActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ConfigureIntegrationExecutor: not yet implemented. Integration configuration is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ConfigureIntegrationExecutor: not yet implemented. Integration configuration is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -292,9 +283,7 @@ class EnableIntegrationExecutor implements IntegrationActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'EnableIntegrationExecutor: not yet implemented. Integration management is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'EnableIntegrationExecutor: not yet implemented. Integration management is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -308,9 +297,7 @@ class DisableIntegrationExecutor implements IntegrationActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DisableIntegrationExecutor: not yet implemented. Integration management is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DisableIntegrationExecutor: not yet implemented. Integration management is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -324,9 +311,7 @@ class DeleteIntegrationExecutor implements IntegrationActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DeleteIntegrationExecutor: not yet implemented. Integration deletion is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeleteIntegrationExecutor: not yet implemented. Integration deletion is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -340,9 +325,7 @@ class TestIntegrationExecutor implements IntegrationActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'TestIntegrationExecutor: not yet implemented. Integration testing is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'TestIntegrationExecutor: not yet implemented. Integration testing is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -391,9 +374,7 @@ export class BloomreachIntegrationsService {
         validateIntegrationStatus(input.status);
       }
     }
-    throw new Error(
-      'listIntegrations: not yet implemented. The Bloomreach API does not provide an endpoint for integrations. Integrations must be managed through the Bloomreach Engagement UI (navigate to Data & Assets > Integrations).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listIntegrations: not yet implemented. The Bloomreach API does not provide an endpoint for integrations. Integrations must be managed through the Bloomreach Engagement UI (navigate to Data & Assets > Integrations).', { not_implemented: true });
   }
 
   /** @throws {Error} Browser automation not yet available. */
@@ -401,9 +382,7 @@ export class BloomreachIntegrationsService {
     void this.apiConfig;
     validateProject(input.project);
     validateIntegrationId(input.integrationId);
-    throw new Error(
-      'viewIntegration: not yet implemented. The Bloomreach API does not provide an endpoint for integration details. Integrations must be managed through the Bloomreach Engagement UI (navigate to Data & Assets > Integrations).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewIntegration: not yet implemented. The Bloomreach API does not provide an endpoint for integration details. Integrations must be managed through the Bloomreach Engagement UI (navigate to Data & Assets > Integrations).', { not_implemented: true });
   }
 
   /** @throws {Error} If input validation fails. */

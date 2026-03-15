@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 
 // ---------------------------------------------------------------------------
 // Action type constants
@@ -157,12 +158,10 @@ const MAX_SENDER_NUMBER_LENGTH = 30;
 export function validateDomain(domain: string): string {
   const trimmed = domain.trim();
   if (trimmed.length === 0) {
-    throw new Error('Domain must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Domain must not be empty.');
   }
   if (trimmed.length > MAX_DOMAIN_LENGTH) {
-    throw new Error(
-      `Domain must not exceed ${MAX_DOMAIN_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Domain must not exceed ${MAX_DOMAIN_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -170,12 +169,10 @@ export function validateDomain(domain: string): string {
 export function validateProviderName(provider: string): string {
   const trimmed = provider.trim();
   if (trimmed.length === 0) {
-    throw new Error('Provider name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Provider name must not be empty.');
   }
   if (trimmed.length > MAX_PROVIDER_NAME_LENGTH) {
-    throw new Error(
-      `Provider name must not exceed ${MAX_PROVIDER_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Provider name must not exceed ${MAX_PROVIDER_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -183,12 +180,10 @@ export function validateProviderName(provider: string): string {
 export function validateSenderNumber(number: string): string {
   const trimmed = number.trim();
   if (trimmed.length === 0) {
-    throw new Error('Sender number must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Sender number must not be empty.');
   }
   if (trimmed.length > MAX_SENDER_NUMBER_LENGTH) {
-    throw new Error(
-      `Sender number must not exceed ${MAX_SENDER_NUMBER_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Sender number must not exceed ${MAX_SENDER_NUMBER_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -196,7 +191,7 @@ export function validateSenderNumber(number: string): string {
 export function validatePageId(pageId: string): string {
   const trimmed = pageId.trim();
   if (trimmed.length === 0) {
-    throw new Error('Page ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Page ID must not be empty.');
   }
   return trimmed;
 }
@@ -242,9 +237,7 @@ class ConfigureEmailDomainExecutor implements ChannelSettingsActionExecutor {
   readonly actionType = CONFIGURE_EMAIL_DOMAIN_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'ConfigureEmailDomainExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ConfigureEmailDomainExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -252,9 +245,7 @@ class ConfigurePushProviderExecutor implements ChannelSettingsActionExecutor {
   readonly actionType = CONFIGURE_PUSH_PROVIDER_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'ConfigurePushProviderExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ConfigurePushProviderExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -262,9 +253,7 @@ class ConfigureSmsProviderExecutor implements ChannelSettingsActionExecutor {
   readonly actionType = CONFIGURE_SMS_PROVIDER_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'ConfigureSmsProviderExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ConfigureSmsProviderExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -272,9 +261,7 @@ class ConfigureMobileMessagingExecutor implements ChannelSettingsActionExecutor 
   readonly actionType = CONFIGURE_MOBILE_MESSAGING_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'ConfigureMobileMessagingExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ConfigureMobileMessagingExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -282,9 +269,7 @@ class ConfigurePaymentTrackingExecutor implements ChannelSettingsActionExecutor 
   readonly actionType = CONFIGURE_PAYMENT_TRACKING_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'ConfigurePaymentTrackingExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ConfigurePaymentTrackingExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -292,9 +277,7 @@ class ConfigureFacebookMessagingExecutor implements ChannelSettingsActionExecuto
   readonly actionType = CONFIGURE_FACEBOOK_MESSAGING_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'ConfigureFacebookMessagingExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ConfigureFacebookMessagingExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -356,47 +339,35 @@ export class BloomreachChannelSettingsService {
   }
 
   async viewEmailSettings(_input?: ViewEmailSettingsInput): Promise<BloomreachEmailSettings> {
-    throw new Error(
-      'viewEmailSettings: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewEmailSettings: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 
   async viewPushNotificationSettings(
     _input?: ViewPushNotificationSettingsInput,
   ): Promise<BloomreachPushNotificationSettings> {
-    throw new Error(
-      'viewPushNotificationSettings: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewPushNotificationSettings: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 
   async viewSmsSettings(_input?: ViewSmsSettingsInput): Promise<BloomreachSmsSettings> {
-    throw new Error(
-      'viewSmsSettings: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewSmsSettings: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 
   async viewMobileMessagingSettings(
     _input?: ViewMobileMessagingSettingsInput,
   ): Promise<BloomreachMobileMessagingSettings> {
-    throw new Error(
-      'viewMobileMessagingSettings: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewMobileMessagingSettings: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 
   async viewPaymentTrackingSettings(
     _input?: ViewPaymentTrackingSettingsInput,
   ): Promise<BloomreachPaymentTrackingSettings> {
-    throw new Error(
-      'viewPaymentTrackingSettings: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewPaymentTrackingSettings: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 
   async viewFacebookMessagingSettings(
     _input?: ViewFacebookMessagingSettingsInput,
   ): Promise<BloomreachFacebookMessagingSettings> {
-    throw new Error(
-      'viewFacebookMessagingSettings: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewFacebookMessagingSettings: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 
   prepareConfigureEmailDomain(input: ConfigureEmailDomainInput): PreparedChannelSettingsAction {

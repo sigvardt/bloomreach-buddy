@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 
 // ---------------------------------------------------------------------------
 // Action type constants
@@ -207,12 +208,10 @@ const MIN_CUSTOM_URL_LENGTH = 1;
 export function validateProjectName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_PROJECT_NAME_LENGTH) {
-    throw new Error('Project name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Project name must not be empty.');
   }
   if (trimmed.length > MAX_PROJECT_NAME_LENGTH) {
-    throw new Error(
-      `Project name must not exceed ${MAX_PROJECT_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Project name must not exceed ${MAX_PROJECT_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -221,12 +220,10 @@ export function validateProjectName(name: string): string {
 export function validateCustomTagName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_TAG_NAME_LENGTH) {
-    throw new Error('Tag name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Tag name must not be empty.');
   }
   if (trimmed.length > MAX_TAG_NAME_LENGTH) {
-    throw new Error(
-      `Tag name must not exceed ${MAX_TAG_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Tag name must not exceed ${MAX_TAG_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -235,7 +232,7 @@ export function validateCustomTagName(name: string): string {
 export function validateCustomTagId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Tag ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Tag ID must not be empty.');
   }
   return trimmed;
 }
@@ -244,9 +241,7 @@ export function validateCustomTagId(id: string): string {
 export function validateTagColor(color: string): string {
   const trimmed = color.trim();
   if (!/^#[0-9a-fA-F]{6}$/.test(trimmed)) {
-    throw new Error(
-      `Tag color must be a valid hex color code (e.g. "#FF5733"), got "${trimmed}".`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Tag color must be a valid hex color code (e.g. "#FF5733"), got "${trimmed}".`);
   }
   return trimmed;
 }
@@ -255,12 +250,10 @@ export function validateTagColor(color: string): string {
 export function validateVariableName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_VARIABLE_NAME_LENGTH) {
-    throw new Error('Variable name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Variable name must not be empty.');
   }
   if (trimmed.length > MAX_VARIABLE_NAME_LENGTH) {
-    throw new Error(
-      `Variable name must not exceed ${MAX_VARIABLE_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Variable name must not exceed ${MAX_VARIABLE_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -268,9 +261,7 @@ export function validateVariableName(name: string): string {
 /** @throws {Error} If variable value exceeds 5000 characters. */
 export function validateVariableValue(value: string): string {
   if (value.length > MAX_VARIABLE_VALUE_LENGTH) {
-    throw new Error(
-      `Variable value must not exceed ${MAX_VARIABLE_VALUE_LENGTH} characters (got ${value.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Variable value must not exceed ${MAX_VARIABLE_VALUE_LENGTH} characters (got ${value.length}).`);
   }
   return value;
 }
@@ -279,12 +270,10 @@ export function validateVariableValue(value: string): string {
 export function validateCustomUrl(url: string): string {
   const trimmed = url.trim();
   if (trimmed.length < MIN_CUSTOM_URL_LENGTH) {
-    throw new Error('Custom URL must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Custom URL must not be empty.');
   }
   if (trimmed.length > MAX_CUSTOM_URL_LENGTH) {
-    throw new Error(
-      `Custom URL must not exceed ${MAX_CUSTOM_URL_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Custom URL must not exceed ${MAX_CUSTOM_URL_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -338,10 +327,8 @@ class UpdateProjectNameExecutor implements ProjectSettingsActionExecutor {
   readonly actionType = UPDATE_PROJECT_NAME_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'UpdateProjectNameExecutor: not yet implemented. ' +
-        'Project name updates are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UpdateProjectNameExecutor: not yet implemented. ' +
+      'Project name updates are only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -349,10 +336,8 @@ class UpdateCustomUrlExecutor implements ProjectSettingsActionExecutor {
   readonly actionType = UPDATE_CUSTOM_URL_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'UpdateCustomUrlExecutor: not yet implemented. ' +
-        'Custom URL updates are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UpdateCustomUrlExecutor: not yet implemented. ' +
+      'Custom URL updates are only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -360,10 +345,8 @@ class UpdateTermsAndConditionsExecutor implements ProjectSettingsActionExecutor 
   readonly actionType = UPDATE_TERMS_AND_CONDITIONS_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'UpdateTermsAndConditionsExecutor: not yet implemented. ' +
-        'Terms and conditions updates are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UpdateTermsAndConditionsExecutor: not yet implemented. ' +
+      'Terms and conditions updates are only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -371,10 +354,8 @@ class CreateCustomTagExecutor implements ProjectSettingsActionExecutor {
   readonly actionType = CREATE_CUSTOM_TAG_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'CreateCustomTagExecutor: not yet implemented. ' +
-        'Tag creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateCustomTagExecutor: not yet implemented. ' +
+      'Tag creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -382,10 +363,8 @@ class UpdateCustomTagExecutor implements ProjectSettingsActionExecutor {
   readonly actionType = UPDATE_CUSTOM_TAG_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'UpdateCustomTagExecutor: not yet implemented. ' +
-        'Tag updates are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UpdateCustomTagExecutor: not yet implemented. ' +
+      'Tag updates are only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -393,10 +372,8 @@ class DeleteCustomTagExecutor implements ProjectSettingsActionExecutor {
   readonly actionType = DELETE_CUSTOM_TAG_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'DeleteCustomTagExecutor: not yet implemented. ' +
-        'Tag deletion is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeleteCustomTagExecutor: not yet implemented. ' +
+      'Tag deletion is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -404,10 +381,8 @@ class CreateProjectVariableExecutor implements ProjectSettingsActionExecutor {
   readonly actionType = CREATE_PROJECT_VARIABLE_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'CreateProjectVariableExecutor: not yet implemented. ' +
-        'Variable creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateProjectVariableExecutor: not yet implemented. ' +
+      'Variable creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -415,10 +390,8 @@ class UpdateProjectVariableExecutor implements ProjectSettingsActionExecutor {
   readonly actionType = UPDATE_PROJECT_VARIABLE_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'UpdateProjectVariableExecutor: not yet implemented. ' +
-        'Variable updates are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UpdateProjectVariableExecutor: not yet implemented. ' +
+      'Variable updates are only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -426,10 +399,8 @@ class DeleteProjectVariableExecutor implements ProjectSettingsActionExecutor {
   readonly actionType = DELETE_PROJECT_VARIABLE_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'DeleteProjectVariableExecutor: not yet implemented. ' +
-        'Variable deletion is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeleteProjectVariableExecutor: not yet implemented. ' +
+      'Variable deletion is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -501,10 +472,8 @@ export class BloomreachProjectSettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'viewProjectSettings: not yet implemented. ' +
-        'Project settings must be viewed through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewProjectSettings: not yet implemented. ' +
+      'Project settings must be viewed through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 
   /** @throws {Error} Browser automation not yet available. */
@@ -512,10 +481,8 @@ export class BloomreachProjectSettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'viewProjectToken: not yet implemented. ' +
-        'Project token must be viewed through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewProjectToken: not yet implemented. ' +
+      'Project token must be viewed through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 
   /** @throws {Error} Browser automation not yet available. */
@@ -525,10 +492,8 @@ export class BloomreachProjectSettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'viewTermsAndConditions: not yet implemented. ' +
-        'Terms and conditions must be viewed through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewTermsAndConditions: not yet implemented. ' +
+      'Terms and conditions must be viewed through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 
   /** @throws {Error} Browser automation not yet available. */
@@ -536,10 +501,8 @@ export class BloomreachProjectSettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'listCustomTags: not yet implemented. ' +
-        'Custom tags must be viewed through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listCustomTags: not yet implemented. ' +
+      'Custom tags must be viewed through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 
   /** @throws {Error} Browser automation not yet available. */
@@ -549,10 +512,8 @@ export class BloomreachProjectSettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'listProjectVariables: not yet implemented. ' +
-        'Project variables must be viewed through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listProjectVariables: not yet implemented. ' +
+      'Project variables must be viewed through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 
   // -------------------------------------------------------------------------
@@ -650,7 +611,7 @@ export class BloomreachProjectSettingsService {
     const color = input.color !== undefined ? validateTagColor(input.color) : undefined;
 
     if (name === undefined && color === undefined) {
-      throw new Error('At least one of name or color must be provided for tag update.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one of name or color must be provided for tag update.');
     }
 
     const preview = {
@@ -725,9 +686,7 @@ export class BloomreachProjectSettingsService {
       input.value !== undefined ? validateVariableValue(input.value) : undefined;
 
     if (value === undefined && input.description === undefined) {
-      throw new Error(
-        'At least one of value or description must be provided for variable update.',
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one of value or description must be provided for variable update.');
     }
 
     const preview = {

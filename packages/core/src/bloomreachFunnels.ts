@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
@@ -100,12 +101,10 @@ const MIN_FUNNEL_NAME_LENGTH = 1;
 export function validateFunnelName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_FUNNEL_NAME_LENGTH) {
-    throw new Error('Funnel name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Funnel name must not be empty.');
   }
   if (trimmed.length > MAX_FUNNEL_NAME_LENGTH) {
-    throw new Error(
-      `Funnel name must not exceed ${MAX_FUNNEL_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Funnel name must not exceed ${MAX_FUNNEL_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -113,25 +112,25 @@ export function validateFunnelName(name: string): string {
 export function validateFunnelAnalysisId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Funnel analysis ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Funnel analysis ID must not be empty.');
   }
   return trimmed;
 }
 
 export function validateFunnelSteps(steps: FunnelStep[]): FunnelStep[] {
   if (steps.length < 2) {
-    throw new Error('steps must contain at least two funnel steps.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'steps must contain at least two funnel steps.');
   }
 
   return steps.map((step, index) => {
     const expectedOrder = index + 1;
     if (step.order !== expectedOrder) {
-      throw new Error(`steps[${index}].order must be ${expectedOrder} (got ${step.order}).`);
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `steps[${index}].order must be ${expectedOrder} (got ${step.order}).`);
     }
 
     const eventName = step.eventName.trim();
     if (eventName.length === 0) {
-      throw new Error(`steps[${index}].eventName must not be empty.`);
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `steps[${index}].eventName must not be empty.`);
     }
 
     const label = step.label?.trim();
@@ -150,7 +149,7 @@ export function validateTimeLimitMs(ms: number | undefined): number | undefined 
   }
 
   if (!Number.isInteger(ms) || ms <= 0) {
-    throw new Error(`timeLimitMs must be a positive integer when provided (got ${ms}).`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `timeLimitMs must be a positive integer when provided (got ${ms}).`);
   }
 
   return ms;
@@ -165,9 +164,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -190,10 +189,8 @@ class CreateFunnelExecutor implements FunnelActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateFunnelExecutor: not yet implemented. ' +
-        'Funnel creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateFunnelExecutor: not yet implemented. ' +
+      'Funnel creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -209,10 +206,8 @@ class CloneFunnelExecutor implements FunnelActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CloneFunnelExecutor: not yet implemented. ' +
-        'Funnel cloning is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CloneFunnelExecutor: not yet implemented. ' +
+      'Funnel cloning is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -228,10 +223,8 @@ class ArchiveFunnelExecutor implements FunnelActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ArchiveFunnelExecutor: not yet implemented. ' +
-        'Funnel archiving is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ArchiveFunnelExecutor: not yet implemented. ' +
+      'Funnel archiving is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -263,11 +256,9 @@ export class BloomreachFunnelsService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listFunnelAnalyses: the Bloomreach API does not provide a list endpoint for funnels. ' +
-        'Funnel analysis IDs must be obtained from the Bloomreach Engagement UI ' +
-        '(found in the URL when viewing a funnel, e.g. "606488856f8cf6f848b20af8").',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listFunnelAnalyses: the Bloomreach API does not provide a list endpoint for funnels. ' +
+      'Funnel analysis IDs must be obtained from the Bloomreach Engagement UI ' +
+      '(found in the URL when viewing a funnel, e.g. "606488856f8cf6f848b20af8").');
   }
 
   async viewFunnelResults(input: ViewFunnelResultsInput): Promise<FunnelResults> {
@@ -299,7 +290,7 @@ export class BloomreachFunnelsService {
       name?: string;
     };
     if (!data.success || !Array.isArray(data.rows)) {
-      throw new Error('viewFunnelResults: unexpected API response format.');
+      throw new BloomreachBuddyError('API_ERROR', 'viewFunnelResults: unexpected API response format.');
     }
 
     const header = Array.isArray(data.header) ? data.header : [];

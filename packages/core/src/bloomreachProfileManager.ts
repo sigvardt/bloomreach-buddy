@@ -4,7 +4,7 @@ import { homedir } from 'node:os';
 import lockfile from 'proper-lockfile';
 import { chromium } from 'playwright-core';
 import type { BrowserContext, LaunchOptions } from 'playwright-core';
-import { BloomreachBuddyError } from './bloomreachApiClient.js';
+import { BloomreachBuddyError } from './errors.js';
 
 export interface ProfileManagerConfig {
   /** Base directory for browser profiles. Default: ~/.bloomreach-buddy/profiles */

@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 // ---------------------------------------------------------------------------
@@ -113,12 +114,12 @@ const MAX_API_KEY_NAME_LENGTH = 200;
 export function validateEmail(email: string): string {
   const trimmed = email.trim();
   if (trimmed.length === 0) {
-    throw new Error('Email must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Email must not be empty.');
   }
 
   const atIndex = trimmed.indexOf('@');
   if (atIndex <= 0 || atIndex === trimmed.length - 1) {
-    throw new Error('Email must contain "@" with text on both sides.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Email must contain "@" with text on both sides.');
   }
 
   return trimmed;
@@ -126,9 +127,7 @@ export function validateEmail(email: string): string {
 
 export function validateMemberRole(role: string): TeamMemberRole {
   if (!TEAM_MEMBER_ROLES.includes(role as TeamMemberRole)) {
-    throw new Error(
-      `role must be one of: ${TEAM_MEMBER_ROLES.join(', ')} (got "${role}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `role must be one of: ${TEAM_MEMBER_ROLES.join(', ')} (got "${role}").`);
   }
   return role as TeamMemberRole;
 }
@@ -136,7 +135,7 @@ export function validateMemberRole(role: string): TeamMemberRole {
 export function validateMemberId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Member ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Member ID must not be empty.');
   }
   return trimmed;
 }
@@ -144,12 +143,10 @@ export function validateMemberId(id: string): string {
 export function validateApiKeyName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length === 0) {
-    throw new Error('API key name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'API key name must not be empty.');
   }
   if (trimmed.length > MAX_API_KEY_NAME_LENGTH) {
-    throw new Error(
-      `API key name must not exceed ${MAX_API_KEY_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `API key name must not exceed ${MAX_API_KEY_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -157,7 +154,7 @@ export function validateApiKeyName(name: string): string {
 export function validateApiKeyId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('API key ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'API key ID must not be empty.');
   }
   return trimmed;
 }
@@ -179,9 +176,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -210,10 +207,8 @@ class InviteTeamMemberExecutor implements AccessActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'InviteTeamMemberExecutor: not yet implemented. ' +
-        'Team member invitation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'InviteTeamMemberExecutor: not yet implemented. ' +
+      'Team member invitation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -229,10 +224,8 @@ class UpdateMemberRoleExecutor implements AccessActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'UpdateMemberRoleExecutor: not yet implemented. ' +
-        'Member role updates are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UpdateMemberRoleExecutor: not yet implemented. ' +
+      'Member role updates are only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -248,10 +241,8 @@ class RemoveTeamMemberExecutor implements AccessActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'RemoveTeamMemberExecutor: not yet implemented. ' +
-        'Team member removal is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'RemoveTeamMemberExecutor: not yet implemented. ' +
+      'Team member removal is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -267,10 +258,8 @@ class CreateApiKeyExecutor implements AccessActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateApiKeyExecutor: not yet implemented. ' +
-        'API key creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateApiKeyExecutor: not yet implemented. ' +
+      'API key creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -286,10 +275,8 @@ class DeleteApiKeyExecutor implements AccessActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DeleteApiKeyExecutor: not yet implemented. ' +
-        'API key deletion is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeleteApiKeyExecutor: not yet implemented. ' +
+      'API key deletion is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -332,10 +319,8 @@ export class BloomreachAccessManagementService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'listTeamMembers: not yet implemented. the Bloomreach API does not provide an endpoint for team members. ' +
-        'Team members must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Project Team).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listTeamMembers: not yet implemented. the Bloomreach API does not provide an endpoint for team members. ' +
+      'Team members must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Project Team).', { not_implemented: true });
   }
 
   async listApiKeys(input?: ListApiKeysInput): Promise<BloomreachApiKey[]> {
@@ -343,10 +328,8 @@ export class BloomreachAccessManagementService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'listApiKeys: not yet implemented. the Bloomreach API does not provide an endpoint for API keys. ' +
-        'API keys must be managed through the Bloomreach Engagement UI (navigate to Project Settings > API).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listApiKeys: not yet implemented. the Bloomreach API does not provide an endpoint for API keys. ' +
+      'API keys must be managed through the Bloomreach Engagement UI (navigate to Project Settings > API).', { not_implemented: true });
   }
 
   prepareInviteTeamMember(input: InviteTeamMemberInput): PreparedAccessAction {

@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 // ---------------------------------------------------------------------------
@@ -450,12 +451,10 @@ const MAX_PAGE_VARIABLE_VALUE_LENGTH = 5000;
 export function validateTimezoneName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_TIMEZONE_NAME_LENGTH) {
-    throw new Error('Timezone name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Timezone name must not be empty.');
   }
   if (trimmed.length > MAX_TIMEZONE_NAME_LENGTH) {
-    throw new Error(
-      `Timezone name must not exceed ${MAX_TIMEZONE_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Timezone name must not exceed ${MAX_TIMEZONE_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -463,7 +462,7 @@ export function validateTimezoneName(name: string): string {
 export function validateTimezoneId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Timezone ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Timezone ID must not be empty.');
   }
   return trimmed;
 }
@@ -471,12 +470,10 @@ export function validateTimezoneId(id: string): string {
 export function validateLanguageCode(code: string): string {
   const trimmed = code.trim();
   if (trimmed.length < MIN_LANGUAGE_CODE_LENGTH) {
-    throw new Error('Language code must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Language code must not be empty.');
   }
   if (trimmed.length > MAX_LANGUAGE_CODE_LENGTH) {
-    throw new Error(
-      `Language code must not exceed ${MAX_LANGUAGE_CODE_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Language code must not exceed ${MAX_LANGUAGE_CODE_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -484,12 +481,10 @@ export function validateLanguageCode(code: string): string {
 export function validateLanguageName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_LANGUAGE_NAME_LENGTH) {
-    throw new Error('Language name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Language name must not be empty.');
   }
   if (trimmed.length > MAX_LANGUAGE_NAME_LENGTH) {
-    throw new Error(
-      `Language name must not exceed ${MAX_LANGUAGE_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Language name must not exceed ${MAX_LANGUAGE_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -497,12 +492,10 @@ export function validateLanguageName(name: string): string {
 export function validateFontName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_FONT_NAME_LENGTH) {
-    throw new Error('Font name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Font name must not be empty.');
   }
   if (trimmed.length > MAX_FONT_NAME_LENGTH) {
-    throw new Error(
-      `Font name must not exceed ${MAX_FONT_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Font name must not exceed ${MAX_FONT_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -510,7 +503,7 @@ export function validateFontName(name: string): string {
 export function validateFontId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Font ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Font ID must not be empty.');
   }
   return trimmed;
 }
@@ -518,12 +511,10 @@ export function validateFontId(id: string): string {
 export function validatePolicyName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_POLICY_NAME_LENGTH) {
-    throw new Error('Policy name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Policy name must not be empty.');
   }
   if (trimmed.length > MAX_POLICY_NAME_LENGTH) {
-    throw new Error(
-      `Policy name must not exceed ${MAX_POLICY_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Policy name must not exceed ${MAX_POLICY_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -531,7 +522,7 @@ export function validatePolicyName(name: string): string {
 export function validatePolicyId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Policy ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Policy ID must not be empty.');
   }
   return trimmed;
 }
@@ -539,12 +530,10 @@ export function validatePolicyId(id: string): string {
 export function validateConsentCategory(category: string): string {
   const trimmed = category.trim();
   if (trimmed.length < MIN_CONSENT_CATEGORY_LENGTH) {
-    throw new Error('Consent category must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Consent category must not be empty.');
   }
   if (trimmed.length > MAX_CONSENT_CATEGORY_LENGTH) {
-    throw new Error(
-      `Consent category must not exceed ${MAX_CONSENT_CATEGORY_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Consent category must not exceed ${MAX_CONSENT_CATEGORY_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -552,7 +541,7 @@ export function validateConsentCategory(category: string): string {
 export function validateConsentId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Consent ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Consent ID must not be empty.');
   }
   return trimmed;
 }
@@ -560,12 +549,10 @@ export function validateConsentId(id: string): string {
 export function validateUrlListName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_URL_LIST_NAME_LENGTH) {
-    throw new Error('URL list name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'URL list name must not be empty.');
   }
   if (trimmed.length > MAX_URL_LIST_NAME_LENGTH) {
-    throw new Error(
-      `URL list name must not exceed ${MAX_URL_LIST_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `URL list name must not exceed ${MAX_URL_LIST_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -573,7 +560,7 @@ export function validateUrlListName(name: string): string {
 export function validateUrlListId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('URL list ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'URL list ID must not be empty.');
   }
   return trimmed;
 }
@@ -581,12 +568,10 @@ export function validateUrlListId(id: string): string {
 export function validatePageVariableName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_PAGE_VARIABLE_NAME_LENGTH) {
-    throw new Error('Page variable name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Page variable name must not be empty.');
   }
   if (trimmed.length > MAX_PAGE_VARIABLE_NAME_LENGTH) {
-    throw new Error(
-      `Page variable name must not exceed ${MAX_PAGE_VARIABLE_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Page variable name must not exceed ${MAX_PAGE_VARIABLE_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -594,7 +579,7 @@ export function validatePageVariableName(name: string): string {
 export function validatePageVariableId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Page variable ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Page variable ID must not be empty.');
   }
   return trimmed;
 }
@@ -602,9 +587,7 @@ export function validatePageVariableId(id: string): string {
 export function validatePageVariableValue(value: string): string {
   const trimmed = value.trim();
   if (trimmed.length > MAX_PAGE_VARIABLE_VALUE_LENGTH) {
-    throw new Error(
-      `Page variable value must not exceed ${MAX_PAGE_VARIABLE_VALUE_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Page variable value must not exceed ${MAX_PAGE_VARIABLE_VALUE_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -654,9 +637,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -683,10 +666,8 @@ class UpdateCampaignDefaultsExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'UpdateCampaignDefaultsExecutor: not yet implemented. ' +
-        'Campaign defaults updates are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UpdateCampaignDefaultsExecutor: not yet implemented. ' +
+      'Campaign defaults updates are only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -700,10 +681,8 @@ class CreateTimezoneExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateTimezoneExecutor: not yet implemented. ' +
-        'Timezone creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateTimezoneExecutor: not yet implemented. ' +
+      'Timezone creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -717,10 +696,8 @@ class UpdateTimezoneExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'UpdateTimezoneExecutor: not yet implemented. ' +
-        'Timezone updates are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UpdateTimezoneExecutor: not yet implemented. ' +
+      'Timezone updates are only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -734,10 +711,8 @@ class DeleteTimezoneExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DeleteTimezoneExecutor: not yet implemented. ' +
-        'Timezone deletion is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeleteTimezoneExecutor: not yet implemented. ' +
+      'Timezone deletion is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -751,10 +726,8 @@ class CreateLanguageExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateLanguageExecutor: not yet implemented. ' +
-        'Language creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateLanguageExecutor: not yet implemented. ' +
+      'Language creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -768,10 +741,8 @@ class UpdateLanguageExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'UpdateLanguageExecutor: not yet implemented. ' +
-        'Language updates are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UpdateLanguageExecutor: not yet implemented. ' +
+      'Language updates are only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -785,10 +756,8 @@ class DeleteLanguageExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DeleteLanguageExecutor: not yet implemented. ' +
-        'Language deletion is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeleteLanguageExecutor: not yet implemented. ' +
+      'Language deletion is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -802,10 +771,8 @@ class CreateFontExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateFontExecutor: not yet implemented. ' +
-        'Font creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateFontExecutor: not yet implemented. ' +
+      'Font creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -819,10 +786,8 @@ class UpdateFontExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'UpdateFontExecutor: not yet implemented. ' +
-        'Font updates are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UpdateFontExecutor: not yet implemented. ' +
+      'Font updates are only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -836,10 +801,8 @@ class DeleteFontExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DeleteFontExecutor: not yet implemented. ' +
-        'Font deletion is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeleteFontExecutor: not yet implemented. ' +
+      'Font deletion is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -853,10 +816,8 @@ class CreateThroughputPolicyExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateThroughputPolicyExecutor: not yet implemented. ' +
-        'Throughput policy creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateThroughputPolicyExecutor: not yet implemented. ' +
+      'Throughput policy creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -870,10 +831,8 @@ class UpdateThroughputPolicyExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'UpdateThroughputPolicyExecutor: not yet implemented. ' +
-        'Throughput policy updates are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UpdateThroughputPolicyExecutor: not yet implemented. ' +
+      'Throughput policy updates are only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -887,10 +846,8 @@ class DeleteThroughputPolicyExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DeleteThroughputPolicyExecutor: not yet implemented. ' +
-        'Throughput policy deletion is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeleteThroughputPolicyExecutor: not yet implemented. ' +
+      'Throughput policy deletion is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -904,10 +861,8 @@ class CreateFrequencyPolicyExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateFrequencyPolicyExecutor: not yet implemented. ' +
-        'Frequency policy creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateFrequencyPolicyExecutor: not yet implemented. ' +
+      'Frequency policy creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -921,10 +876,8 @@ class UpdateFrequencyPolicyExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'UpdateFrequencyPolicyExecutor: not yet implemented. ' +
-        'Frequency policy updates are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UpdateFrequencyPolicyExecutor: not yet implemented. ' +
+      'Frequency policy updates are only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -938,10 +891,8 @@ class DeleteFrequencyPolicyExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DeleteFrequencyPolicyExecutor: not yet implemented. ' +
-        'Frequency policy deletion is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeleteFrequencyPolicyExecutor: not yet implemented. ' +
+      'Frequency policy deletion is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -955,10 +906,8 @@ class CreateConsentExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateConsentExecutor: not yet implemented. ' +
-        'Consent creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateConsentExecutor: not yet implemented. ' +
+      'Consent creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -972,10 +921,8 @@ class UpdateConsentExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'UpdateConsentExecutor: not yet implemented. ' +
-        'Consent updates are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UpdateConsentExecutor: not yet implemented. ' +
+      'Consent updates are only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -989,10 +936,8 @@ class DeleteConsentExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DeleteConsentExecutor: not yet implemented. ' +
-        'Consent deletion is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeleteConsentExecutor: not yet implemented. ' +
+      'Consent deletion is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -1006,10 +951,8 @@ class CreateUrlListExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateUrlListExecutor: not yet implemented. ' +
-        'URL list creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateUrlListExecutor: not yet implemented. ' +
+      'URL list creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -1023,10 +966,8 @@ class UpdateUrlListExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'UpdateUrlListExecutor: not yet implemented. ' +
-        'URL list updates are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UpdateUrlListExecutor: not yet implemented. ' +
+      'URL list updates are only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -1040,10 +981,8 @@ class DeleteUrlListExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DeleteUrlListExecutor: not yet implemented. ' +
-        'URL list deletion is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeleteUrlListExecutor: not yet implemented. ' +
+      'URL list deletion is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -1057,10 +996,8 @@ class CreatePageVariableExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreatePageVariableExecutor: not yet implemented. ' +
-        'Page variable creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreatePageVariableExecutor: not yet implemented. ' +
+      'Page variable creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -1074,10 +1011,8 @@ class UpdatePageVariableExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'UpdatePageVariableExecutor: not yet implemented. ' +
-        'Page variable updates are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UpdatePageVariableExecutor: not yet implemented. ' +
+      'Page variable updates are only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -1091,10 +1026,8 @@ class DeletePageVariableExecutor implements CampaignSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DeletePageVariableExecutor: not yet implemented. ' +
-        'Page variable deletion is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeletePageVariableExecutor: not yet implemented. ' +
+      'Page variable deletion is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -1204,10 +1137,8 @@ export class BloomreachCampaignSettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'viewCampaignDefaults: not yet implemented. the Bloomreach API does not provide an endpoint for campaign defaults. ' +
-        'Campaign defaults must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Campaigns).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewCampaignDefaults: not yet implemented. the Bloomreach API does not provide an endpoint for campaign defaults. ' +
+      'Campaign defaults must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Campaigns).', { not_implemented: true });
   }
 
   async listTimezones(input?: ListTimezonesInput): Promise<BloomreachTimezone[]> {
@@ -1215,10 +1146,8 @@ export class BloomreachCampaignSettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'listTimezones: not yet implemented. the Bloomreach API does not provide an endpoint for timezones. ' +
-        'Timezones must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Timezones).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listTimezones: not yet implemented. the Bloomreach API does not provide an endpoint for timezones. ' +
+      'Timezones must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Timezones).', { not_implemented: true });
   }
 
   async listLanguages(input?: ListLanguagesInput): Promise<BloomreachLanguage[]> {
@@ -1226,10 +1155,8 @@ export class BloomreachCampaignSettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'listLanguages: not yet implemented. the Bloomreach API does not provide an endpoint for languages. ' +
-        'Languages must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Languages).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listLanguages: not yet implemented. the Bloomreach API does not provide an endpoint for languages. ' +
+      'Languages must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Languages).', { not_implemented: true });
   }
 
   async listFonts(input?: ListFontsInput): Promise<BloomreachFont[]> {
@@ -1237,10 +1164,8 @@ export class BloomreachCampaignSettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'listFonts: not yet implemented. the Bloomreach API does not provide an endpoint for fonts. ' +
-        'Fonts must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Fonts).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listFonts: not yet implemented. the Bloomreach API does not provide an endpoint for fonts. ' +
+      'Fonts must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Fonts).', { not_implemented: true });
   }
 
   async listThroughputPolicies(
@@ -1250,10 +1175,8 @@ export class BloomreachCampaignSettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'listThroughputPolicies: not yet implemented. the Bloomreach API does not provide an endpoint for throughput policies. ' +
-        'Throughput policies must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Throughput Policy).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listThroughputPolicies: not yet implemented. the Bloomreach API does not provide an endpoint for throughput policies. ' +
+      'Throughput policies must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Throughput Policy).', { not_implemented: true });
   }
 
   async listFrequencyPolicies(
@@ -1263,10 +1186,8 @@ export class BloomreachCampaignSettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'listFrequencyPolicies: not yet implemented. the Bloomreach API does not provide an endpoint for frequency policies. ' +
-        'Frequency policies must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Campaign Frequency Policies).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listFrequencyPolicies: not yet implemented. the Bloomreach API does not provide an endpoint for frequency policies. ' +
+      'Frequency policies must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Campaign Frequency Policies).', { not_implemented: true });
   }
 
   async listConsents(input?: ListConsentsInput): Promise<BloomreachConsent[]> {
@@ -1274,10 +1195,8 @@ export class BloomreachCampaignSettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'listConsents: not yet implemented. the Bloomreach API does not provide an endpoint for consents. ' +
-        'Consents must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Consents).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listConsents: not yet implemented. the Bloomreach API does not provide an endpoint for consents. ' +
+      'Consents must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Consents).', { not_implemented: true });
   }
 
   async listUrlLists(input?: ListUrlListsInput): Promise<BloomreachUrlList[]> {
@@ -1285,10 +1204,8 @@ export class BloomreachCampaignSettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'listUrlLists: not yet implemented. the Bloomreach API does not provide an endpoint for URL lists. ' +
-        'URL lists must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Global URL Lists).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listUrlLists: not yet implemented. the Bloomreach API does not provide an endpoint for URL lists. ' +
+      'URL lists must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Global URL Lists).', { not_implemented: true });
   }
 
   async listPageVariables(input?: ListPageVariablesInput): Promise<BloomreachPageVariable[]> {
@@ -1296,10 +1213,8 @@ export class BloomreachCampaignSettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'listPageVariables: not yet implemented. the Bloomreach API does not provide an endpoint for page variables. ' +
-        'Page variables must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Page Variables).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listPageVariables: not yet implemented. the Bloomreach API does not provide an endpoint for page variables. ' +
+      'Page variables must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Page Variables).', { not_implemented: true });
   }
 
   prepareUpdateCampaignDefaults(
@@ -1329,7 +1244,7 @@ export class BloomreachCampaignSettingsService {
       defaultUtmMedium === undefined &&
       defaultUtmCampaign === undefined
     ) {
-      throw new Error('At least one campaign default field must be provided for defaults update.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one campaign default field must be provided for defaults update.');
     }
 
     const preview = {
@@ -1379,9 +1294,7 @@ export class BloomreachCampaignSettingsService {
     const name = input.name !== undefined ? validateTimezoneName(input.name) : undefined;
 
     if (name === undefined && input.utcOffset === undefined && input.isDefault === undefined) {
-      throw new Error(
-        'At least one of name, utcOffset, or isDefault must be provided for timezone update.',
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one of name, utcOffset, or isDefault must be provided for timezone update.');
     }
 
     const preview = {
@@ -1450,9 +1363,7 @@ export class BloomreachCampaignSettingsService {
     const name = input.name !== undefined ? validateLanguageName(input.name) : undefined;
 
     if (code === undefined && name === undefined && input.isDefault === undefined) {
-      throw new Error(
-        'At least one of code, name, or isDefault must be provided for language update.',
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one of code, name, or isDefault must be provided for language update.');
     }
 
     const preview = {
@@ -1497,7 +1408,7 @@ export class BloomreachCampaignSettingsService {
     const name = validateFontName(input.name);
     const type = input.type.trim();
     if (type.length === 0) {
-      throw new Error('Font type must not be empty.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Font type must not be empty.');
     }
 
     const preview = {
@@ -1524,11 +1435,11 @@ export class BloomreachCampaignSettingsService {
     const type = input.type !== undefined ? input.type.trim() : undefined;
 
     if (type !== undefined && type.length === 0) {
-      throw new Error('Font type must not be empty.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Font type must not be empty.');
     }
 
     if (name === undefined && type === undefined && input.fileUrl === undefined) {
-      throw new Error('At least one of name, type, or fileUrl must be provided for font update.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one of name, type, or fileUrl must be provided for font update.');
     }
 
     const preview = {
@@ -1607,9 +1518,7 @@ export class BloomreachCampaignSettingsService {
       input.periodSeconds === undefined &&
       input.description === undefined
     ) {
-      throw new Error(
-        'At least one modifiable field must be provided for throughput policy update.',
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one modifiable field must be provided for throughput policy update.');
     }
 
     const preview = {
@@ -1690,9 +1599,7 @@ export class BloomreachCampaignSettingsService {
       input.channels === undefined &&
       input.description === undefined
     ) {
-      throw new Error(
-        'At least one modifiable field must be provided for frequency policy update.',
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one modifiable field must be provided for frequency policy update.');
     }
 
     const preview = {
@@ -1769,9 +1676,7 @@ export class BloomreachCampaignSettingsService {
       input.consentType === undefined &&
       input.legitimateInterest === undefined
     ) {
-      throw new Error(
-        'At least one of category, description, consentType, or legitimateInterest must be provided for consent update.',
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one of category, description, consentType, or legitimateInterest must be provided for consent update.');
     }
 
     const preview = {
@@ -1817,7 +1722,7 @@ export class BloomreachCampaignSettingsService {
     const name = validateUrlListName(input.name);
     const listType = input.listType.trim();
     if (listType.length === 0) {
-      throw new Error('URL list type must not be empty.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'URL list type must not be empty.');
     }
 
     const preview = {
@@ -1845,7 +1750,7 @@ export class BloomreachCampaignSettingsService {
     const listType = input.listType !== undefined ? input.listType.trim() : undefined;
 
     if (listType !== undefined && listType.length === 0) {
-      throw new Error('URL list type must not be empty.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'URL list type must not be empty.');
     }
 
     if (
@@ -1854,9 +1759,7 @@ export class BloomreachCampaignSettingsService {
       input.urls === undefined &&
       input.description === undefined
     ) {
-      throw new Error(
-        'At least one of name, listType, urls, or description must be provided for URL list update.',
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one of name, listType, urls, or description must be provided for URL list update.');
     }
 
     const preview = {
@@ -1926,9 +1829,7 @@ export class BloomreachCampaignSettingsService {
     const value = input.value !== undefined ? validatePageVariableValue(input.value) : undefined;
 
     if (name === undefined && value === undefined && input.description === undefined) {
-      throw new Error(
-        'At least one of name, value, or description must be provided for page variable update.',
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one of name, value, or description must be provided for page variable update.');
     }
 
     const preview = {

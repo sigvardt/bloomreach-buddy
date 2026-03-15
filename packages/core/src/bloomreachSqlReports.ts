@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const CREATE_SQL_REPORT_ACTION_TYPE = 'sql_reports.create_report';
@@ -106,12 +107,10 @@ export interface PreparedSqlReportAction {
 export function validateSqlReportName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < 1) {
-    throw new Error('Report name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Report name must not be empty.');
   }
   if (trimmed.length > 200) {
-    throw new Error(
-      `Report name must not exceed 200 characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Report name must not exceed 200 characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -119,7 +118,7 @@ export function validateSqlReportName(name: string): string {
 export function validateSqlReportId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Report ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Report ID must not be empty.');
   }
   return trimmed;
 }
@@ -127,30 +126,24 @@ export function validateSqlReportId(id: string): string {
 export function validateSqlQuery(query: string): string {
   const trimmed = query.trim();
   if (trimmed.length < 1) {
-    throw new Error('SQL query must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'SQL query must not be empty.');
   }
   if (trimmed.length > 10000) {
-    throw new Error(
-      `SQL query must not exceed 10000 characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `SQL query must not exceed 10000 characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
 
 export function validateSqlReportExportFormat(format: string): SqlReportExportFormat {
   if (!SQL_REPORT_EXPORT_FORMATS.includes(format as SqlReportExportFormat)) {
-    throw new Error(
-      `format must be one of: ${SQL_REPORT_EXPORT_FORMATS.join(', ')} (got "${format}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `format must be one of: ${SQL_REPORT_EXPORT_FORMATS.join(', ')} (got "${format}").`);
   }
   return format as SqlReportExportFormat;
 }
 
 export function validateSqlReportStatus(status: string): SqlReportStatus {
   if (!SQL_REPORT_STATUSES.includes(status as SqlReportStatus)) {
-    throw new Error(
-      `status must be one of: ${SQL_REPORT_STATUSES.join(', ')} (got "${status}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `status must be one of: ${SQL_REPORT_STATUSES.join(', ')} (got "${status}").`);
   }
   return status as SqlReportStatus;
 }
@@ -164,9 +157,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -191,10 +184,8 @@ class CreateSqlReportExecutor implements SqlReportActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateSqlReportExecutor: not yet implemented. ' +
-        'SQL report creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateSqlReportExecutor: not yet implemented. ' +
+      'SQL report creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -210,10 +201,8 @@ class ExecuteSqlReportExecutor implements SqlReportActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ExecuteSqlReportExecutor: not yet implemented. ' +
-        'SQL report execution is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ExecuteSqlReportExecutor: not yet implemented. ' +
+      'SQL report execution is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -229,10 +218,8 @@ class ExportSqlReportResultsExecutor implements SqlReportActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ExportSqlReportResultsExecutor: not yet implemented. ' +
-        'SQL report results export is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ExportSqlReportResultsExecutor: not yet implemented. ' +
+      'SQL report results export is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -248,10 +235,8 @@ class CloneSqlReportExecutor implements SqlReportActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CloneSqlReportExecutor: not yet implemented. ' +
-        'SQL report cloning is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CloneSqlReportExecutor: not yet implemented. ' +
+      'SQL report cloning is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -267,10 +252,8 @@ class ArchiveSqlReportExecutor implements SqlReportActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ArchiveSqlReportExecutor: not yet implemented. ' +
-        'SQL report archiving is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ArchiveSqlReportExecutor: not yet implemented. ' +
+      'SQL report archiving is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -311,11 +294,9 @@ export class BloomreachSqlReportsService {
       }
     }
 
-    throw new Error(
-      'listSqlReports: the Bloomreach API does not provide an endpoint for SQL reports. ' +
-        'SQL report data must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Analytics > SQL Reports in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listSqlReports: the Bloomreach API does not provide an endpoint for SQL reports. ' +
+      'SQL report data must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Analytics > SQL Reports in your project).');
   }
 
   async viewSqlReport(input: ViewSqlReportInput): Promise<BloomreachSqlReport> {
@@ -323,11 +304,9 @@ export class BloomreachSqlReportsService {
     validateProject(input.project);
     validateSqlReportId(input.reportId);
 
-    throw new Error(
-      'viewSqlReport: the Bloomreach API does not provide an endpoint for SQL report details. ' +
-        'SQL report details must be viewed in the Bloomreach Engagement UI ' +
-        '(navigate to Analytics > SQL Reports and open the report).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewSqlReport: the Bloomreach API does not provide an endpoint for SQL report details. ' +
+      'SQL report details must be viewed in the Bloomreach Engagement UI ' +
+      '(navigate to Analytics > SQL Reports and open the report).');
   }
 
   prepareCreateSqlReport(input: CreateSqlReportInput): PreparedSqlReportAction {

@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import { input, password, confirm } from '@inquirer/prompts';
 import { readFileSync } from 'node:fs';
+import { BloomreachBuddyError } from "@bloomreach-buddy/core";
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import * as core from '@bloomreach-buddy/core';
@@ -6321,7 +6322,7 @@ projectSettings
   .action(async (options: { project: string; accepted: string; note?: string; json?: boolean }) => {
     try {
       if (options.accepted !== 'true' && options.accepted !== 'false') {
-        throw new Error('Option --accepted must be "true" or "false".');
+        throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Option --accepted must be "true" or "false".');
       }
 
       const service = new BloomreachProjectSettingsService(options.project);

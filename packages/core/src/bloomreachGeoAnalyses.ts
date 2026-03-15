@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
@@ -93,21 +94,17 @@ const MIN_GEO_ANALYSIS_NAME_LENGTH = 1;
 export function validateGeoAnalysisName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_GEO_ANALYSIS_NAME_LENGTH) {
-    throw new Error('Geo analysis name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Geo analysis name must not be empty.');
   }
   if (trimmed.length > MAX_GEO_ANALYSIS_NAME_LENGTH) {
-    throw new Error(
-      `Geo analysis name must not exceed ${MAX_GEO_ANALYSIS_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Geo analysis name must not exceed ${MAX_GEO_ANALYSIS_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
 
 export function validateGeoGranularity(granularity: string): GeoGranularity {
   if (!GEO_GRANULARITIES.includes(granularity as GeoGranularity)) {
-    throw new Error(
-      `granularity must be one of: ${GEO_GRANULARITIES.join(', ')} (got "${granularity}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `granularity must be one of: ${GEO_GRANULARITIES.join(', ')} (got "${granularity}").`);
   }
   return granularity as GeoGranularity;
 }
@@ -115,7 +112,7 @@ export function validateGeoGranularity(granularity: string): GeoGranularity {
 export function validateGeoAnalysisId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Geo analysis ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Geo analysis ID must not be empty.');
   }
   return trimmed;
 }
@@ -123,7 +120,7 @@ export function validateGeoAnalysisId(id: string): string {
 export function validateAttribute(attribute: string): string {
   const trimmed = attribute.trim();
   if (trimmed.length === 0) {
-    throw new Error('attribute must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'attribute must not be empty.');
   }
   return trimmed;
 }
@@ -137,9 +134,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -164,10 +161,8 @@ class CreateGeoAnalysisExecutor implements GeoAnalysisActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateGeoAnalysisExecutor: not yet implemented. ' +
-        'Geo analysis creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateGeoAnalysisExecutor: not yet implemented. ' +
+      'Geo analysis creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -183,10 +178,8 @@ class CloneGeoAnalysisExecutor implements GeoAnalysisActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CloneGeoAnalysisExecutor: not yet implemented. ' +
-        'Geo analysis cloning is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CloneGeoAnalysisExecutor: not yet implemented. ' +
+      'Geo analysis cloning is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -202,10 +195,8 @@ class ArchiveGeoAnalysisExecutor implements GeoAnalysisActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ArchiveGeoAnalysisExecutor: not yet implemented. ' +
-        'Geo analysis archiving is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ArchiveGeoAnalysisExecutor: not yet implemented. ' +
+      'Geo analysis archiving is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -240,11 +231,9 @@ export class BloomreachGeoAnalysesService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listGeoAnalyses: the Bloomreach API does not provide an endpoint for geo analyses. ' +
-        'Geo analysis data must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Analytics > Geo Analyses in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listGeoAnalyses: the Bloomreach API does not provide an endpoint for geo analyses. ' +
+      'Geo analysis data must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Analytics > Geo Analyses in your project).');
   }
 
   async viewGeoResults(input: ViewGeoResultsInput): Promise<GeoResults> {
@@ -264,11 +253,9 @@ export class BloomreachGeoAnalysesService {
       validateDateRange(dateRange);
     }
 
-    throw new Error(
-      'viewGeoResults: the Bloomreach API does not provide an endpoint for geo analysis results. ' +
-        'Geo results must be viewed in the Bloomreach Engagement UI ' +
-        '(navigate to Analytics > Geo Analyses and open the analysis).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewGeoResults: the Bloomreach API does not provide an endpoint for geo analysis results. ' +
+      'Geo results must be viewed in the Bloomreach Engagement UI ' +
+      '(navigate to Analytics > Geo Analyses and open the analysis).');
   }
 
   prepareCreateGeoAnalysis(

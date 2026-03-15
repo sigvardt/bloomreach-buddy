@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { BloomreachBuddyError } from './errors.js';
 import { exec } from 'node:child_process';
 import { join } from 'node:path';
 
@@ -7,7 +8,6 @@ import {
   bloomreachApiFetch,
   buildTrackingPath,
   BloomreachApiError,
-  BloomreachBuddyError,
 } from './bloomreachApiClient.js';
 
 // ---------------------------------------------------------------------------

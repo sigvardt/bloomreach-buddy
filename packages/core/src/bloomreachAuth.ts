@@ -1,5 +1,5 @@
 import type { BrowserContext, Page } from 'playwright-core';
-import { BloomreachBuddyError } from './bloomreachApiClient.js';
+import { BloomreachBuddyError } from './errors.js';
 import type {
   BloomreachProfileManager,
   PersistentContextOptions,

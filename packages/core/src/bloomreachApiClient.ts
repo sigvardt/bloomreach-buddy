@@ -1,4 +1,18 @@
 // ---------------------------------------------------------------------------
+// Re-export error hierarchy from canonical location
+// ---------------------------------------------------------------------------
+
+export {
+  BloomreachBuddyError,
+  BloomreachApiError,
+  toErrorPayload,
+  ERROR_CODES,
+} from './errors.js';
+export type { BloomreachErrorCode, ErrorCode, ErrorPayload } from './errors.js';
+
+import { BloomreachBuddyError, BloomreachApiError } from './errors.js';
+
+// ---------------------------------------------------------------------------
 // Types & config
 // ---------------------------------------------------------------------------
 
@@ -10,53 +24,6 @@ export interface BloomreachApiConfig {
 }
 
 const DEFAULT_BASE_URL = 'https://api.exponea.com';
-
-// ---------------------------------------------------------------------------
-// Error hierarchy
-// ---------------------------------------------------------------------------
-
-export type BloomreachErrorCode =
-  | 'CONFIG_MISSING'
-  | 'TIMEOUT'
-  | 'RATE_LIMITED'
-  | 'API_ERROR'
-  | 'NETWORK_ERROR'
-  | 'AUTH_REQUIRED'
-  | 'CAPTCHA_OR_CHALLENGE'
-  | 'SESSION_EXPIRED'
-  | 'PROFILE_LOCKED'
-  | 'ACTION_PRECONDITION_FAILED'
-  | 'TARGET_NOT_FOUND';
-
-/**
- * Base error class for all Bloomreach Buddy errors.
- * Every error carries a machine-readable `code` for programmatic handling.
- */
-export class BloomreachBuddyError extends Error {
-  readonly code: BloomreachErrorCode;
-
-  constructor(code: BloomreachErrorCode, message: string) {
-    super(message);
-    this.name = 'BloomreachBuddyError';
-    this.code = code;
-  }
-}
-
-/**
- * Thrown on non-2xx API responses. Carries the HTTP status code and the
- * parsed (or raw) response body for inspection.
- */
-export class BloomreachApiError extends BloomreachBuddyError {
-  readonly statusCode: number;
-  readonly responseBody: unknown;
-
-  constructor(message: string, statusCode: number, responseBody: unknown) {
-    super('API_ERROR', message);
-    this.name = 'BloomreachApiError';
-    this.statusCode = statusCode;
-    this.responseBody = responseBody;
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Config resolution
@@ -84,18 +51,21 @@ export function resolveApiConfig(
     throw new BloomreachBuddyError(
       'CONFIG_MISSING',
       'Bloomreach project token is required. Set BLOOMREACH_PROJECT_TOKEN or pass --project-token.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN'] },
     );
   }
   if (apiKeyId.trim().length === 0) {
     throw new BloomreachBuddyError(
       'CONFIG_MISSING',
       'Bloomreach API key ID is required. Set BLOOMREACH_API_KEY_ID or pass --api-key-id.',
+      { missing: ['BLOOMREACH_API_KEY_ID'] },
     );
   }
   if (apiSecret.trim().length === 0) {
     throw new BloomreachBuddyError(
       'CONFIG_MISSING',
       'Bloomreach API secret is required. Set BLOOMREACH_API_SECRET or pass --api-secret.',
+      { missing: ['BLOOMREACH_API_SECRET'] },
     );
   }
 

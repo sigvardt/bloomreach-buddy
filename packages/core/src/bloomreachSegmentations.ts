@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
@@ -130,12 +131,10 @@ const MIN_SEGMENTATION_NAME_LENGTH = 1;
 export function validateSegmentationName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_SEGMENTATION_NAME_LENGTH) {
-    throw new Error('Segmentation name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Segmentation name must not be empty.');
   }
   if (trimmed.length > MAX_SEGMENTATION_NAME_LENGTH) {
-    throw new Error(
-      `Segmentation name must not exceed ${MAX_SEGMENTATION_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Segmentation name must not exceed ${MAX_SEGMENTATION_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -143,41 +142,35 @@ export function validateSegmentationName(name: string): string {
 export function validateSegmentationId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Segmentation ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Segmentation ID must not be empty.');
   }
   return trimmed;
 }
 
 export function validateSegmentConditionType(type: string): SegmentConditionType {
   if (!(SEGMENT_CONDITION_TYPES as readonly string[]).includes(type)) {
-    throw new Error(
-      `Invalid condition type "${type}". Must be one of: ${SEGMENT_CONDITION_TYPES.join(', ')}.`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Invalid condition type "${type}". Must be one of: ${SEGMENT_CONDITION_TYPES.join(', ')}.`);
   }
   return type as SegmentConditionType;
 }
 
 export function validateSegmentConditionOperator(operator: string): SegmentConditionOperator {
   if (!(SEGMENT_CONDITION_OPERATORS as readonly string[]).includes(operator)) {
-    throw new Error(
-      `Invalid condition operator "${operator}". Must be one of: ${SEGMENT_CONDITION_OPERATORS.join(', ')}.`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Invalid condition operator "${operator}". Must be one of: ${SEGMENT_CONDITION_OPERATORS.join(', ')}.`);
   }
   return operator as SegmentConditionOperator;
 }
 
 export function validateLogicalOperator(operator: string): SegmentLogicalOperator {
   if (!(SEGMENT_LOGICAL_OPERATORS as readonly string[]).includes(operator)) {
-    throw new Error(
-      `Invalid logical operator "${operator}". Must be one of: ${SEGMENT_LOGICAL_OPERATORS.join(', ')}.`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Invalid logical operator "${operator}". Must be one of: ${SEGMENT_LOGICAL_OPERATORS.join(', ')}.`);
   }
   return operator as SegmentLogicalOperator;
 }
 
 export function validateSegmentConditions(conditions: SegmentCondition[]): SegmentCondition[] {
   if (conditions.length === 0) {
-    throw new Error('conditions must contain at least one segment condition.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'conditions must contain at least one segment condition.');
   }
 
   return conditions.map((condition, index) => {
@@ -186,7 +179,7 @@ export function validateSegmentConditions(conditions: SegmentCondition[]): Segme
 
     const attribute = condition.attribute.trim();
     if (attribute.length === 0) {
-      throw new Error(`conditions[${index}].attribute must not be empty.`);
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `conditions[${index}].attribute must not be empty.`);
     }
 
     return {
@@ -204,7 +197,7 @@ export function validateCustomerListLimit(limit: number | undefined): number | u
   }
 
   if (!Number.isInteger(limit) || limit <= 0) {
-    throw new Error(`limit must be a positive integer when provided (got ${limit}).`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `limit must be a positive integer when provided (got ${limit}).`);
   }
 
   return limit;
@@ -216,7 +209,7 @@ export function validateCustomerListOffset(offset: number | undefined): number |
   }
 
   if (!Number.isInteger(offset) || offset < 0) {
-    throw new Error(`offset must be a non-negative integer when provided (got ${offset}).`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `offset must be a non-negative integer when provided (got ${offset}).`);
   }
 
   return offset;
@@ -236,9 +229,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -254,10 +247,8 @@ class CreateSegmentationExecutor implements SegmentationActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateSegmentationExecutor: not yet implemented. ' +
-        'Segmentation creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateSegmentationExecutor: not yet implemented. ' +
+      'Segmentation creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -271,10 +262,8 @@ class CloneSegmentationExecutor implements SegmentationActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CloneSegmentationExecutor: not yet implemented. ' +
-        'Segmentation cloning is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CloneSegmentationExecutor: not yet implemented. ' +
+      'Segmentation cloning is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -288,10 +277,8 @@ class ArchiveSegmentationExecutor implements SegmentationActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ArchiveSegmentationExecutor: not yet implemented. ' +
-        'Segmentation archiving is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ArchiveSegmentationExecutor: not yet implemented. ' +
+      'Segmentation archiving is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -323,11 +310,9 @@ export class BloomreachSegmentationsService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listSegmentations: the Bloomreach API does not provide a list endpoint for segmentations. ' +
-        'Segmentation IDs must be obtained from the Bloomreach Engagement UI ' +
-        '(found in the URL when editing a segmentation, e.g. "606488856f8cf6f848b20af8").',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listSegmentations: the Bloomreach API does not provide a list endpoint for segmentations. ' +
+      'Segmentation IDs must be obtained from the Bloomreach Engagement UI ' +
+      '(found in the URL when editing a segmentation, e.g. "606488856f8cf6f848b20af8").');
   }
 
   async viewSegmentSize(input: ViewSegmentSizeInput): Promise<SegmentSize> {
@@ -346,7 +331,7 @@ export class BloomreachSegmentationsService {
 
     const data = response as { header?: string[]; rows?: unknown[][]; success?: boolean };
     if (!data.success || !Array.isArray(data.rows)) {
-      throw new Error('viewSegmentSize: unexpected API response format.');
+      throw new BloomreachBuddyError('API_ERROR', 'viewSegmentSize: unexpected API response format.');
     }
 
     const hashIndex = Array.isArray(data.header) ? data.header.indexOf('#') : -1;

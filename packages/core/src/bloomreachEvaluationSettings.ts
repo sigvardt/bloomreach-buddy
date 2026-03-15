@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 // ---------------------------------------------------------------------------
@@ -125,24 +126,20 @@ const MAX_MAPPING_FIELD_LENGTH = 200;
 export function validateAttributionModel(model: string): string {
   const trimmed = model.trim();
   if (trimmed.length === 0) {
-    throw new Error('Attribution model must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Attribution model must not be empty.');
   }
   if (trimmed.length > MAX_ATTRIBUTION_MODEL_LENGTH) {
-    throw new Error(
-      `Attribution model must not exceed ${MAX_ATTRIBUTION_MODEL_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Attribution model must not exceed ${MAX_ATTRIBUTION_MODEL_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
 
 export function validateAttributionWindow(window: number): number {
   if (!Number.isInteger(window) || window <= 0) {
-    throw new Error('Attribution window must be a positive integer.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Attribution window must be a positive integer.');
   }
   if (window > MAX_ATTRIBUTION_WINDOW_DAYS) {
-    throw new Error(
-      `Attribution window must not exceed ${MAX_ATTRIBUTION_WINDOW_DAYS} days (got ${window}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Attribution window must not exceed ${MAX_ATTRIBUTION_WINDOW_DAYS} days (got ${window}).`);
   }
   return window;
 }
@@ -150,13 +147,13 @@ export function validateAttributionWindow(window: number): number {
 export function validateCurrencyCode(code: string): string {
   const trimmed = code.trim().toUpperCase();
   if (trimmed.length === 0) {
-    throw new Error('Currency code must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Currency code must not be empty.');
   }
   if (trimmed.length !== 3) {
-    throw new Error(`Currency code must be exactly 3 characters (got ${trimmed.length}).`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Currency code must be exactly 3 characters (got ${trimmed.length}).`);
   }
   if (!/^[A-Z]{3}$/.test(trimmed)) {
-    throw new Error('Currency code must contain uppercase letters only (ISO 4217).');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Currency code must contain uppercase letters only (ISO 4217).');
   }
   return trimmed;
 }
@@ -164,7 +161,7 @@ export function validateCurrencyCode(code: string): string {
 export function validateDashboardId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Dashboard ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Dashboard ID must not be empty.');
   }
   return trimmed;
 }
@@ -172,12 +169,10 @@ export function validateDashboardId(id: string): string {
 export function validateMappingField(field: string): string {
   const trimmed = field.trim();
   if (trimmed.length === 0) {
-    throw new Error('Mapping field must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Mapping field must not be empty.');
   }
   if (trimmed.length > MAX_MAPPING_FIELD_LENGTH) {
-    throw new Error(
-      `Mapping field must not exceed ${MAX_MAPPING_FIELD_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Mapping field must not exceed ${MAX_MAPPING_FIELD_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -207,9 +202,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -236,10 +231,8 @@ class ConfigureRevenueAttributionExecutor implements EvaluationSettingsActionExe
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ConfigureRevenueAttributionExecutor: not yet implemented. ' +
-        'Revenue attribution configuration is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ConfigureRevenueAttributionExecutor: not yet implemented. ' +
+      'Revenue attribution configuration is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -253,10 +246,8 @@ class SetCurrencyExecutor implements EvaluationSettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'SetCurrencyExecutor: not yet implemented. ' +
-        'Currency configuration is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'SetCurrencyExecutor: not yet implemented. ' +
+      'Currency configuration is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -270,10 +261,8 @@ class ConfigureEvaluationDashboardsExecutor implements EvaluationSettingsActionE
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ConfigureEvaluationDashboardsExecutor: not yet implemented. ' +
-        'Evaluation dashboard configuration is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ConfigureEvaluationDashboardsExecutor: not yet implemented. ' +
+      'Evaluation dashboard configuration is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -287,10 +276,8 @@ class ConfigureVoucherMappingExecutor implements EvaluationSettingsActionExecuto
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ConfigureVoucherMappingExecutor: not yet implemented. ' +
-        'Voucher mapping configuration is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ConfigureVoucherMappingExecutor: not yet implemented. ' +
+      'Voucher mapping configuration is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -349,10 +336,8 @@ export class BloomreachEvaluationSettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'viewRevenueAttribution: not yet implemented. the Bloomreach API does not provide an endpoint for evaluation settings. ' +
-        'Revenue attribution must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Revenue Attribution).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewRevenueAttribution: not yet implemented. the Bloomreach API does not provide an endpoint for evaluation settings. ' +
+      'Revenue attribution must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Revenue Attribution).', { not_implemented: true });
   }
 
   async viewCurrency(input?: ViewCurrencyInput): Promise<BloomreachCurrencySettings> {
@@ -360,10 +345,8 @@ export class BloomreachEvaluationSettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'viewCurrency: not yet implemented. the Bloomreach API does not provide an endpoint for evaluation settings. ' +
-        'Currency must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Currency).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewCurrency: not yet implemented. the Bloomreach API does not provide an endpoint for evaluation settings. ' +
+      'Currency must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Currency).', { not_implemented: true });
   }
 
   async viewEvaluationDashboards(
@@ -373,10 +356,8 @@ export class BloomreachEvaluationSettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'viewEvaluationDashboards: not yet implemented. the Bloomreach API does not provide an endpoint for evaluation settings. ' +
-        'Evaluation dashboards must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Evaluation Dashboards).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewEvaluationDashboards: not yet implemented. the Bloomreach API does not provide an endpoint for evaluation settings. ' +
+      'Evaluation dashboards must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Evaluation Dashboards).', { not_implemented: true });
   }
 
   async viewVoucherMapping(
@@ -386,10 +367,8 @@ export class BloomreachEvaluationSettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'viewVoucherMapping: not yet implemented. the Bloomreach API does not provide an endpoint for evaluation settings. ' +
-        'Voucher mapping must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Vouchers).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewVoucherMapping: not yet implemented. the Bloomreach API does not provide an endpoint for evaluation settings. ' +
+      'Voucher mapping must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Vouchers).', { not_implemented: true });
   }
 
   prepareConfigureRevenueAttribution(
@@ -447,7 +426,7 @@ export class BloomreachEvaluationSettingsService {
   ): PreparedEvaluationSettingsAction {
     const project = validateProject(input.project);
     if (input.dashboards.length === 0) {
-      throw new Error('At least one dashboard configuration must be provided.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one dashboard configuration must be provided.');
     }
     const dashboards = input.dashboards.map((dashboard) => ({
       id: validateDashboardId(dashboard.id),

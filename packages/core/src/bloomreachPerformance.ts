@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const PERFORMANCE_DASHBOARD_TYPES = [
@@ -22,15 +23,15 @@ const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 function assertValidCalendarDate(label: string, value: string): void {
   if (!ISO_DATE_RE.test(value)) {
-    throw new Error(`${label} must be a valid ISO-8601 date (YYYY-MM-DD), got "${value}".`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${label} must be a valid ISO-8601 date (YYYY-MM-DD), got "${value}".`);
   }
   const parsed = new Date(value + 'T00:00:00Z');
   if (Number.isNaN(parsed.getTime())) {
-    throw new Error(`${label} is not a valid calendar date: "${value}".`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${label} is not a valid calendar date: "${value}".`);
   }
   const roundtrip = parsed.toISOString().slice(0, 10);
   if (roundtrip !== value) {
-    throw new Error(`${label} is not a valid calendar date: "${value}".`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${label} is not a valid calendar date: "${value}".`);
   }
 }
 
@@ -53,9 +54,7 @@ export function validateDateRange(dateRange?: DateRangeFilter): DateRangeFilter 
     dateRange.endDate !== undefined &&
     dateRange.startDate > dateRange.endDate
   ) {
-    throw new Error(
-      `startDate "${dateRange.startDate}" must not be after endDate "${dateRange.endDate}".`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `startDate "${dateRange.startDate}" must not be after endDate "${dateRange.endDate}".`);
   }
 
   return dateRange;
@@ -75,7 +74,7 @@ export type ChannelType = (typeof CHANNEL_TYPES)[number];
 /** @throws {Error} If `channel` is not a recognised channel type. */
 export function validateChannel(channel: string): ChannelType {
   if (!CHANNEL_TYPES.includes(channel as ChannelType)) {
-    throw new Error(`channel must be one of: ${CHANNEL_TYPES.join(', ')} (got "${channel}").`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `channel must be one of: ${CHANNEL_TYPES.join(', ')} (got "${channel}").`);
   }
   return channel as ChannelType;
 }
@@ -200,9 +199,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -251,11 +250,9 @@ export class BloomreachPerformanceService {
     validateDateRange(input.dateRange);
     void this.apiConfig;
 
-    throw new Error(
-      'viewProjectPerformance: the Bloomreach API does not provide an endpoint for project performance dashboards. ' +
-        'Performance data must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Overview > Performance Dashboards > Project in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewProjectPerformance: the Bloomreach API does not provide an endpoint for project performance dashboards. ' +
+      'Performance data must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Overview > Performance Dashboards > Project in your project).');
   }
 
   /** @throws {Error} Browser automation not yet available. */
@@ -269,11 +266,9 @@ export class BloomreachPerformanceService {
       validateChannel(input.channel);
     }
 
-    throw new Error(
-      'viewChannelPerformance: the Bloomreach API does not provide an endpoint for channel performance dashboards. ' +
-        'Channel performance data must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Overview > Performance Dashboards > Channel in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewChannelPerformance: the Bloomreach API does not provide an endpoint for channel performance dashboards. ' +
+      'Channel performance data must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Overview > Performance Dashboards > Channel in your project).');
   }
 
   /** @throws {Error} Browser automation not yet available. */
@@ -283,11 +278,9 @@ export class BloomreachPerformanceService {
     validateProject(input.project);
     void this.apiConfig;
 
-    throw new Error(
-      'viewBloomreachUsage: the Bloomreach API does not provide an endpoint for usage dashboards. ' +
-        'Usage data must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Overview > Pricing Dashboard in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewBloomreachUsage: the Bloomreach API does not provide an endpoint for usage dashboards. ' +
+      'Usage data must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Overview > Pricing Dashboard in your project).');
   }
 
   /** @throws {Error} Browser automation not yet available. */
@@ -297,11 +290,9 @@ export class BloomreachPerformanceService {
     validateProject(input.project);
     void this.apiConfig;
 
-    throw new Error(
-      'viewProjectOverview: the Bloomreach API does not provide an endpoint for project overview dashboards. ' +
-        'Overview data must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Overview > Project in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewProjectOverview: the Bloomreach API does not provide an endpoint for project overview dashboards. ' +
+      'Overview data must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Overview > Project in your project).');
   }
 
   /** @throws {Error} Browser automation not yet available. */
@@ -311,10 +302,8 @@ export class BloomreachPerformanceService {
     validateProject(input.project);
     void this.apiConfig;
 
-    throw new Error(
-      'viewProjectHealth: the Bloomreach API does not provide an endpoint for health dashboards. ' +
-        'Health data must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Overview > Health Dashboard in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewProjectHealth: the Bloomreach API does not provide an endpoint for health dashboards. ' +
+      'Health data must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Overview > Health Dashboard in your project).');
   }
 }

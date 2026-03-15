@@ -1,4 +1,5 @@
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
+import { BloomreachBuddyError } from './errors.js';
 
 export const CREATE_DASHBOARD_ACTION_TYPE = 'dashboards.create_dashboard';
 export const SET_HOME_DASHBOARD_ACTION_TYPE = 'dashboards.set_home_dashboard';
@@ -74,12 +75,10 @@ const MIN_LAYOUT_COLUMNS = 1;
 export function validateDashboardName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_DASHBOARD_NAME_LENGTH) {
-    throw new Error('Dashboard name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Dashboard name must not be empty.');
   }
   if (trimmed.length > MAX_DASHBOARD_NAME_LENGTH) {
-    throw new Error(
-      `Dashboard name must not exceed ${MAX_DASHBOARD_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Dashboard name must not exceed ${MAX_DASHBOARD_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -88,7 +87,7 @@ export function validateDashboardName(name: string): string {
 export function validateProject(project: string): string {
   const trimmed = project.trim();
   if (trimmed.length === 0) {
-    throw new Error('Project identifier must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Project identifier must not be empty.');
   }
   return trimmed;
 }
@@ -101,9 +100,7 @@ export function validateLayoutConfig(layout: DashboardLayoutConfig): DashboardLa
       layout.columns < MIN_LAYOUT_COLUMNS ||
       layout.columns > MAX_LAYOUT_COLUMNS
     ) {
-      throw new Error(
-        `Layout columns must be an integer between ${MIN_LAYOUT_COLUMNS} and ${MAX_LAYOUT_COLUMNS} (got ${layout.columns}).`,
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Layout columns must be an integer between ${MIN_LAYOUT_COLUMNS} and ${MAX_LAYOUT_COLUMNS} (got ${layout.columns}).`);
     }
   }
   return layout;
@@ -118,9 +115,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -147,10 +144,8 @@ class CreateDashboardExecutor implements DashboardActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateDashboardExecutor: not yet implemented. ' +
-        'Dashboard creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateDashboardExecutor: not yet implemented. ' +
+      'Dashboard creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -164,10 +159,8 @@ class SetHomeDashboardExecutor implements DashboardActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'SetHomeDashboardExecutor: not yet implemented. ' +
-        'Setting the home dashboard is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'SetHomeDashboardExecutor: not yet implemented. ' +
+      'Setting the home dashboard is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -181,10 +174,8 @@ class DeleteDashboardExecutor implements DashboardActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DeleteDashboardExecutor: not yet implemented. ' +
-        'Dashboard deletion is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeleteDashboardExecutor: not yet implemented. ' +
+      'Dashboard deletion is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -219,11 +210,9 @@ export class BloomreachDashboardsService {
   /** @throws {Error} Browser automation not yet available. */
   async listDashboards(_input?: ListDashboardsInput): Promise<BloomreachDashboard[]> {
     void this.apiConfig;
-    throw new Error(
-      'listDashboards: the Bloomreach API does not provide an endpoint for dashboards. ' +
-        'Dashboard data must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Dashboards in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listDashboards: the Bloomreach API does not provide an endpoint for dashboards. ' +
+      'Dashboard data must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Dashboards in your project).');
   }
 
   /** @throws {Error} If input validation fails. */
@@ -258,7 +247,7 @@ export class BloomreachDashboardsService {
     const project = validateProject(input.project);
     const dashboardId = input.dashboardId.trim();
     if (dashboardId.length === 0) {
-      throw new Error('Dashboard ID must not be empty.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Dashboard ID must not be empty.');
     }
 
     const preview = {
@@ -281,7 +270,7 @@ export class BloomreachDashboardsService {
     const project = validateProject(input.project);
     const dashboardId = input.dashboardId.trim();
     if (dashboardId.length === 0) {
-      throw new Error('Dashboard ID must not be empty.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Dashboard ID must not be empty.');
     }
 
     const preview = {

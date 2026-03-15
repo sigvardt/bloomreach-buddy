@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import type { BloomreachDatabase, PreparedActionRow } from './db/database.js';
-import { BloomreachBuddyError } from './bloomreachApiClient.js';
+import { BloomreachBuddyError } from './errors.js';
 
 export const DEFAULT_TOKEN_TTL_MS = 30 * 60 * 1000;
 

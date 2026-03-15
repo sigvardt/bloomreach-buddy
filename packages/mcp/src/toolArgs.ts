@@ -1,3 +1,5 @@
+import { BloomreachBuddyError } from "@bloomreach-buddy/core";
+
 export type ToolArgs = Record<string, unknown>;
 
 export function readString(args: ToolArgs, key: string, fallback: string): string {
@@ -19,7 +21,7 @@ export function readRequiredString(args: ToolArgs, key: string): string {
   if (typeof value === 'string' && value.trim().length > 0) {
     return value.trim();
   }
-  throw new Error(`${key} is required.`);
+  throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${key} is required.`);
 }
 
 export function readBoundedString(
@@ -32,7 +34,7 @@ export function readBoundedString(
     typeof fallback === 'string' ? readString(args, key, fallback) : readRequiredString(args, key);
 
   if (value.length > maxLength) {
-    throw new Error(`${key} must be ${maxLength} characters or fewer.`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${key} must be ${maxLength} characters or fewer.`);
   }
 
   return value;
@@ -44,7 +46,7 @@ export function readValidatedUrl(args: ToolArgs, key: string): string {
   try {
     return new URL(value).toString();
   } catch (error) {
-    throw new Error(
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED',
       `${key} must be a valid URL. ${error instanceof Error ? error.message : String(error)}`,
     );
   }
@@ -57,7 +59,7 @@ export function readPositiveNumber(args: ToolArgs, key: string, fallback: number
   }
 
   if (!Number.isFinite(value) || value <= 0) {
-    throw new Error(`${key} must be a positive number.`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${key} must be a positive number.`);
   }
 
   return value;
@@ -70,7 +72,7 @@ export function readNonNegativeNumber(args: ToolArgs, key: string, fallback: num
   }
 
   if (!Number.isFinite(value) || value < 0) {
-    throw new Error(`${key} must be zero or a positive number.`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${key} must be zero or a positive number.`);
   }
 
   return value;
@@ -87,7 +89,7 @@ export function readRequiredBoolean(args: ToolArgs, key: string): boolean {
     return value;
   }
 
-  throw new Error(`${key} is required.`);
+  throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${key} is required.`);
 }
 
 export function readOptionalPositiveNumber(args: ToolArgs, key: string): number | undefined {
@@ -110,7 +112,7 @@ export function readOptionalNonNegativeNumber(args: ToolArgs, key: string): numb
     !Number.isInteger(value) ||
     value < 0
   ) {
-    throw new Error(`${key} must be a non-negative integer.`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${key} must be a non-negative integer.`);
   }
 
   return value;
@@ -134,7 +136,7 @@ export function readStringArray(args: ToolArgs, key: string): string[] | undefin
     return items.length > 0 ? items : undefined;
   }
 
-  throw new Error(`${key} must be a string or array of strings.`);
+  throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${key} must be a string or array of strings.`);
 }
 
 export function readRequiredStringArray(args: ToolArgs, key: string): string[] {
@@ -143,7 +145,7 @@ export function readRequiredStringArray(args: ToolArgs, key: string): string[] {
     return values;
   }
 
-  throw new Error(`${key} is required.`);
+  throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${key} is required.`);
 }
 
 export function readObject(args: ToolArgs, key: string): Record<string, unknown> | undefined {
@@ -156,5 +158,5 @@ export function readObject(args: ToolArgs, key: string): Record<string, unknown>
     return value as Record<string, unknown>;
   }
 
-  throw new Error(`${key} must be an object.`);
+  throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${key} must be an object.`);
 }

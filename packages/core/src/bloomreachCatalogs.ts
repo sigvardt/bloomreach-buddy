@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import { bloomreachApiFetch, buildDataPath } from './bloomreachApiClient.js';
 
@@ -98,12 +99,10 @@ const MIN_CATALOG_NAME_LENGTH = 1;
 export function validateCatalogName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_CATALOG_NAME_LENGTH) {
-    throw new Error('Catalog name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Catalog name must not be empty.');
   }
   if (trimmed.length > MAX_CATALOG_NAME_LENGTH) {
-    throw new Error(
-      `Catalog name must not exceed ${MAX_CATALOG_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Catalog name must not exceed ${MAX_CATALOG_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -111,7 +110,7 @@ export function validateCatalogName(name: string): string {
 export function validateCatalogId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Catalog ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Catalog ID must not be empty.');
   }
   return trimmed;
 }
@@ -119,20 +118,18 @@ export function validateCatalogId(id: string): string {
 export function validateCatalogSchema(schema: Record<string, string>): Record<string, string> {
   const entries = Object.entries(schema);
   if (entries.length === 0) {
-    throw new Error('Catalog schema must include at least one field.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Catalog schema must include at least one field.');
   }
 
   const normalizedSchema: Record<string, string> = {};
   for (const [fieldName, fieldType] of entries) {
     const normalizedFieldName = fieldName.trim();
     if (normalizedFieldName.length === 0) {
-      throw new Error('Catalog schema field names must not be empty.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Catalog schema field names must not be empty.');
     }
     if (!VALID_CATALOG_FIELD_TYPES.has(fieldType)) {
-      throw new Error(
-        `Invalid catalog field type "${fieldType}" for field "${normalizedFieldName}". ` +
-          `Valid types: ${[...VALID_CATALOG_FIELD_TYPES].join(', ')}.`,
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Invalid catalog field type "${fieldType}" for field "${normalizedFieldName}". ` +
+        `Valid types: ${[...VALID_CATALOG_FIELD_TYPES].join(', ')}.`);
     }
     normalizedSchema[normalizedFieldName] = fieldType;
   }
@@ -142,7 +139,7 @@ export function validateCatalogSchema(schema: Record<string, string>): Record<st
 
 export function validateCatalogItems(items: Record<string, unknown>[]): Record<string, unknown>[] {
   if (items.length === 0) {
-    throw new Error('Catalog items must include at least one item.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Catalog items must include at least one item.');
   }
   return items;
 }
@@ -151,13 +148,13 @@ export function validateCatalogItemUpdates(
   items: { id: string; properties: Record<string, unknown> }[],
 ): { id: string; properties: Record<string, unknown> }[] {
   if (items.length === 0) {
-    throw new Error('Catalog item updates must include at least one item.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Catalog item updates must include at least one item.');
   }
 
   return items.map((item) => {
     const id = item.id.trim();
     if (id.length === 0) {
-      throw new Error('Catalog item ID must not be empty.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Catalog item ID must not be empty.');
     }
     return {
       id,
@@ -180,9 +177,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -335,12 +332,12 @@ export class BloomreachCatalogsService {
     validateCatalogId(input.catalogId);
     if (input.page !== undefined) {
       if (!Number.isInteger(input.page) || input.page <= 0) {
-        throw new Error(`page must be a positive integer (got ${input.page}).`);
+        throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `page must be a positive integer (got ${input.page}).`);
       }
     }
     if (input.pageSize !== undefined) {
       if (!Number.isInteger(input.pageSize) || input.pageSize <= 0) {
-        throw new Error(`pageSize must be a positive integer (got ${input.pageSize}).`);
+        throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `pageSize must be a positive integer (got ${input.pageSize}).`);
       }
     }
 

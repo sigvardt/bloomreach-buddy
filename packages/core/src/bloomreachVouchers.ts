@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import {
   validateListLimit as validateVoucherListLimit,
@@ -109,12 +110,10 @@ const MAX_REDEMPTIONS_LIMIT = 1_000_000;
 export function validatePoolName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_POOL_NAME_LENGTH) {
-    throw new Error('Pool name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Pool name must not be empty.');
   }
   if (trimmed.length > MAX_POOL_NAME_LENGTH) {
-    throw new Error(
-      `Pool name must not exceed ${MAX_POOL_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Pool name must not exceed ${MAX_POOL_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -123,12 +122,10 @@ export function validatePoolName(name: string): string {
 export function validatePoolId(poolId: string): string {
   const trimmed = poolId.trim();
   if (trimmed.length === 0) {
-    throw new Error('Pool ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Pool ID must not be empty.');
   }
   if (trimmed.length > MAX_POOL_ID_LENGTH) {
-    throw new Error(
-      `Pool ID must not exceed ${MAX_POOL_ID_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Pool ID must not exceed ${MAX_POOL_ID_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -136,29 +133,25 @@ export function validatePoolId(poolId: string): string {
 /** @throws {Error} If any voucher code is empty, exceeds 200 chars, or batch exceeds 10,000. */
 export function validateVoucherCodes(codes: string[]): string[] {
   if (codes.length === 0) {
-    throw new Error('At least one voucher code must be provided.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one voucher code must be provided.');
   }
   if (codes.length > MAX_VOUCHER_CODES_PER_BATCH) {
-    throw new Error(
-      `Voucher code batch must not exceed ${MAX_VOUCHER_CODES_PER_BATCH} codes (got ${codes.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Voucher code batch must not exceed ${MAX_VOUCHER_CODES_PER_BATCH} codes (got ${codes.length}).`);
   }
   const validated: string[] = [];
   for (const code of codes) {
     const trimmed = code.trim();
     if (trimmed.length === 0) {
-      throw new Error('Voucher code must not be empty.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Voucher code must not be empty.');
     }
     if (trimmed.length > MAX_VOUCHER_CODE_LENGTH) {
-      throw new Error(
-        `Voucher code must not exceed ${MAX_VOUCHER_CODE_LENGTH} characters (got ${trimmed.length}).`,
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Voucher code must not exceed ${MAX_VOUCHER_CODE_LENGTH} characters (got ${trimmed.length}).`);
     }
     validated.push(trimmed);
   }
   const unique = new Set(validated);
   if (unique.size !== validated.length) {
-    throw new Error('Voucher codes must be unique within a batch.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Voucher codes must be unique within a batch.');
   }
   return validated;
 }
@@ -166,12 +159,10 @@ export function validateVoucherCodes(codes: string[]): string[] {
 /** @throws {Error} If count is not a positive integer or exceeds 100,000. */
 export function validateAutoGenerateCount(count: number): number {
   if (!Number.isInteger(count) || count < 1) {
-    throw new Error('Auto-generate count must be a positive integer.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Auto-generate count must be a positive integer.');
   }
   if (count > MAX_AUTO_GENERATE_COUNT) {
-    throw new Error(
-      `Auto-generate count must not exceed ${MAX_AUTO_GENERATE_COUNT} (got ${count}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Auto-generate count must not exceed ${MAX_AUTO_GENERATE_COUNT} (got ${count}).`);
   }
   return count;
 }
@@ -180,22 +171,20 @@ export function validateAutoGenerateCount(count: number): number {
 export function validateRedemptionRules(rules: RedemptionRules): RedemptionRules {
   if (rules.maxRedemptions !== undefined) {
     if (!Number.isInteger(rules.maxRedemptions) || rules.maxRedemptions < 1) {
-      throw new Error('Max redemptions must be a positive integer.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Max redemptions must be a positive integer.');
     }
     if (rules.maxRedemptions > MAX_REDEMPTIONS_LIMIT) {
-      throw new Error(
-        `Max redemptions must not exceed ${MAX_REDEMPTIONS_LIMIT} (got ${rules.maxRedemptions}).`,
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Max redemptions must not exceed ${MAX_REDEMPTIONS_LIMIT} (got ${rules.maxRedemptions}).`);
     }
   }
   if (rules.expiresAt !== undefined) {
     const trimmed = rules.expiresAt.trim();
     if (trimmed.length === 0) {
-      throw new Error('Expiration date must not be empty.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Expiration date must not be empty.');
     }
     const parsed = Date.parse(trimmed);
     if (isNaN(parsed)) {
-      throw new Error('Expiration date must be a valid ISO-8601 date string.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Expiration date must be a valid ISO-8601 date string.');
     }
   }
   return rules;
@@ -210,18 +199,14 @@ export function validateVoucherSource(
     (voucherCodes === undefined || voucherCodes.length === 0) &&
     autoGenerateCount === undefined
   ) {
-    throw new Error(
-      'Either voucher codes or auto-generate count must be provided.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Either voucher codes or auto-generate count must be provided.');
   }
   if (
     voucherCodes !== undefined &&
     voucherCodes.length > 0 &&
     autoGenerateCount !== undefined
   ) {
-    throw new Error(
-      'Provide either voucher codes or auto-generate count, not both.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Provide either voucher codes or auto-generate count, not both.');
   }
 }
 
@@ -234,9 +219,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -265,10 +250,8 @@ class CreateVoucherPoolExecutor implements VoucherActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateVoucherPoolExecutor: not yet implemented. ' +
-        'Voucher pool creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateVoucherPoolExecutor: not yet implemented. ' +
+      'Voucher pool creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -284,10 +267,8 @@ class AddVouchersExecutor implements VoucherActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'AddVouchersExecutor: not yet implemented. ' +
-        'Adding vouchers to a pool is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'AddVouchersExecutor: not yet implemented. ' +
+      'Adding vouchers to a pool is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -303,10 +284,8 @@ class DeleteVoucherPoolExecutor implements VoucherActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DeleteVoucherPoolExecutor: not yet implemented. ' +
-        'Voucher pool deletion is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeleteVoucherPoolExecutor: not yet implemented. ' +
+      'Voucher pool deletion is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -350,10 +329,8 @@ export class BloomreachVouchersService {
     }
 
     void this.apiConfig;
-    throw new Error(
-      'listVoucherPools: the Bloomreach API does not provide a voucher pool listing endpoint. ' +
-        'Voucher pool management is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listVoucherPools: the Bloomreach API does not provide a voucher pool listing endpoint. ' +
+      'Voucher pool management is only available through the Bloomreach Engagement UI.');
   }
 
   /** @throws {Error} Browser automation not yet available. */
@@ -362,10 +339,8 @@ export class BloomreachVouchersService {
     validatePoolId(input.poolId);
 
     void this.apiConfig;
-    throw new Error(
-      'viewVoucherStatus: the Bloomreach API does not provide a voucher status endpoint. ' +
-        'Voucher pool management is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewVoucherStatus: the Bloomreach API does not provide a voucher status endpoint. ' +
+      'Voucher pool management is only available through the Bloomreach Engagement UI.');
   }
 
   /** @throws {Error} If input validation fails. */

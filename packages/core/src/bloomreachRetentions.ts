@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
@@ -103,12 +104,10 @@ const MIN_RETENTION_NAME_LENGTH = 1;
 export function validateRetentionName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_RETENTION_NAME_LENGTH) {
-    throw new Error('Retention name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Retention name must not be empty.');
   }
   if (trimmed.length > MAX_RETENTION_NAME_LENGTH) {
-    throw new Error(
-      `Retention name must not exceed ${MAX_RETENTION_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Retention name must not exceed ${MAX_RETENTION_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -119,9 +118,7 @@ export function validateRetentionGranularity(
   if (
     !RETENTION_GRANULARITIES.includes(granularity as RetentionGranularity)
   ) {
-    throw new Error(
-      `granularity must be one of: ${RETENTION_GRANULARITIES.join(', ')} (got "${granularity}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `granularity must be one of: ${RETENTION_GRANULARITIES.join(', ')} (got "${granularity}").`);
   }
   return granularity as RetentionGranularity;
 }
@@ -129,7 +126,7 @@ export function validateRetentionGranularity(
 export function validateRetentionAnalysisId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Retention analysis ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Retention analysis ID must not be empty.');
   }
   return trimmed;
 }
@@ -137,7 +134,7 @@ export function validateRetentionAnalysisId(id: string): string {
 export function validateEventName(label: string, eventName: string): string {
   const trimmed = eventName.trim();
   if (trimmed.length === 0) {
-    throw new Error(`${label} must not be empty.`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${label} must not be empty.`);
   }
   return trimmed;
 }
@@ -151,9 +148,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -176,10 +173,8 @@ class CreateRetentionExecutor implements RetentionActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateRetentionExecutor: not yet implemented. ' +
-        'Retention creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateRetentionExecutor: not yet implemented. ' +
+      'Retention creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -195,10 +190,8 @@ class CloneRetentionExecutor implements RetentionActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CloneRetentionExecutor: not yet implemented. ' +
-        'Retention cloning is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CloneRetentionExecutor: not yet implemented. ' +
+      'Retention cloning is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -214,10 +207,8 @@ class ArchiveRetentionExecutor implements RetentionActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ArchiveRetentionExecutor: not yet implemented. ' +
-        'Retention archiving is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ArchiveRetentionExecutor: not yet implemented. ' +
+      'Retention archiving is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -251,11 +242,9 @@ export class BloomreachRetentionsService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listRetentionAnalyses: the Bloomreach API does not provide a list endpoint for retentions. ' +
-        'Retention analysis IDs must be obtained from the Bloomreach Engagement UI ' +
-        '(found in the URL when viewing a retention analysis, e.g. "606488856f8cf6f848b20af8").',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listRetentionAnalyses: the Bloomreach API does not provide a list endpoint for retentions. ' +
+      'Retention analysis IDs must be obtained from the Bloomreach Engagement UI ' +
+      '(found in the URL when viewing a retention analysis, e.g. "606488856f8cf6f848b20af8").');
   }
 
   async viewRetentionResults(
@@ -293,7 +282,7 @@ export class BloomreachRetentionsService {
       name?: string;
     };
     if (!data.success || !Array.isArray(data.rows)) {
-      throw new Error('viewRetentionResults: unexpected API response format.');
+      throw new BloomreachBuddyError('API_ERROR', 'viewRetentionResults: unexpected API response format.');
     }
 
     const header = Array.isArray(data.header) ? data.header : [];

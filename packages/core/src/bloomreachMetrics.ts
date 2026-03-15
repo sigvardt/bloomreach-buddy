@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
@@ -96,12 +97,10 @@ const PROPERTY_REQUIRED_AGGREGATION_TYPES = new Set(['sum', 'average', 'min', 'm
 export function validateMetricName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_METRIC_NAME_LENGTH) {
-    throw new Error('Metric name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Metric name must not be empty.');
   }
   if (trimmed.length > MAX_METRIC_NAME_LENGTH) {
-    throw new Error(
-      `Metric name must not exceed ${MAX_METRIC_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Metric name must not exceed ${MAX_METRIC_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -109,7 +108,7 @@ export function validateMetricName(name: string): string {
 export function validateMetricId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Metric ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Metric ID must not be empty.');
   }
   return trimmed;
 }
@@ -117,12 +116,10 @@ export function validateMetricId(id: string): string {
 export function validateDescription(description: string): string {
   const trimmed = description.trim();
   if (trimmed.length === 0) {
-    throw new Error('Description must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Description must not be empty.');
   }
   if (trimmed.length > MAX_DESCRIPTION_LENGTH) {
-    throw new Error(
-      `Description must not exceed ${MAX_DESCRIPTION_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Description must not exceed ${MAX_DESCRIPTION_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -130,12 +127,10 @@ export function validateDescription(description: string): string {
 export function validateAggregationType(type: string): string {
   const normalized = type.trim().toLowerCase();
   if (normalized.length === 0) {
-    throw new Error('Aggregation type must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Aggregation type must not be empty.');
   }
   if (!AGGREGATION_TYPES.has(normalized)) {
-    throw new Error(
-      `Aggregation type must be one of: ${Array.from(AGGREGATION_TYPES).join(', ')} (got ${normalized}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Aggregation type must be one of: ${Array.from(AGGREGATION_TYPES).join(', ')} (got ${normalized}).`);
   }
   return normalized;
 }
@@ -143,7 +138,7 @@ export function validateAggregationType(type: string): string {
 export function validateAggregation(aggregation: MetricAggregation): MetricAggregation {
   const eventName = aggregation.eventName.trim();
   if (eventName.length === 0) {
-    throw new Error('Aggregation eventName must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Aggregation eventName must not be empty.');
   }
 
   const aggregationType = validateAggregationType(aggregation.aggregationType);
@@ -153,11 +148,11 @@ export function validateAggregation(aggregation: MetricAggregation): MetricAggre
     PROPERTY_REQUIRED_AGGREGATION_TYPES.has(aggregationType) &&
     (propertyName === undefined || propertyName.length === 0)
   ) {
-    throw new Error(`aggregation.propertyName is required for aggregationType ${aggregationType}.`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `aggregation.propertyName is required for aggregationType ${aggregationType}.`);
   }
 
   if (propertyName !== undefined && propertyName.length === 0) {
-    throw new Error('Aggregation propertyName must not be empty when provided.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Aggregation propertyName must not be empty when provided.');
   }
 
   return {
@@ -176,9 +171,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -201,10 +196,8 @@ class CreateMetricExecutor implements MetricActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateMetricExecutor: not yet implemented. ' +
-        'Metric creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateMetricExecutor: not yet implemented. ' +
+      'Metric creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -218,10 +211,8 @@ class EditMetricExecutor implements MetricActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'EditMetricExecutor: not yet implemented. ' +
-        'Metric editing is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'EditMetricExecutor: not yet implemented. ' +
+      'Metric editing is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -235,10 +226,8 @@ class DeleteMetricExecutor implements MetricActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DeleteMetricExecutor: not yet implemented. ' +
-        'Metric deletion is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeleteMetricExecutor: not yet implemented. ' +
+      'Metric deletion is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -271,11 +260,9 @@ export class BloomreachMetricsService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listMetrics: the Bloomreach API does not provide an endpoint for metrics. ' +
-        'Metric data must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Data & Assets > Metrics in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listMetrics: the Bloomreach API does not provide an endpoint for metrics. ' +
+      'Metric data must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Data & Assets > Metrics in your project).');
   }
 
   async viewMetricResults(input: ViewMetricResultsInput): Promise<MetricResults> {
@@ -291,11 +278,9 @@ export class BloomreachMetricsService {
       validateDateRange(dateRange);
     }
 
-    throw new Error(
-      'viewMetricResults: the Bloomreach API does not provide an endpoint for metric results. ' +
-        'Metric results must be viewed in the Bloomreach Engagement UI ' +
-        '(navigate to Data & Assets > Metrics and open the metric).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewMetricResults: the Bloomreach API does not provide an endpoint for metric results. ' +
+      'Metric results must be viewed in the Bloomreach Engagement UI ' +
+      '(navigate to Data & Assets > Metrics and open the metric).');
   }
 
   prepareCreateMetric(input: CreateMetricInput): PreparedMetricAction {

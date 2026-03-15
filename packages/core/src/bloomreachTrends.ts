@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
@@ -91,21 +92,17 @@ const MIN_TREND_NAME_LENGTH = 1;
 export function validateTrendName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_TREND_NAME_LENGTH) {
-    throw new Error('Trend name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Trend name must not be empty.');
   }
   if (trimmed.length > MAX_TREND_NAME_LENGTH) {
-    throw new Error(
-      `Trend name must not exceed ${MAX_TREND_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Trend name must not exceed ${MAX_TREND_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
 
 export function validateTrendGranularity(granularity: string): TrendGranularity {
   if (!TREND_GRANULARITIES.includes(granularity as TrendGranularity)) {
-    throw new Error(
-      `granularity must be one of: ${TREND_GRANULARITIES.join(', ')} (got "${granularity}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `granularity must be one of: ${TREND_GRANULARITIES.join(', ')} (got "${granularity}").`);
   }
   return granularity as TrendGranularity;
 }
@@ -113,7 +110,7 @@ export function validateTrendGranularity(granularity: string): TrendGranularity 
 export function validateTrendAnalysisId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Trend analysis ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Trend analysis ID must not be empty.');
   }
   return trimmed;
 }
@@ -127,9 +124,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -152,10 +149,8 @@ class CreateTrendExecutor implements TrendActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateTrendExecutor: not yet implemented. ' +
-        'Trend creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateTrendExecutor: not yet implemented. ' +
+      'Trend creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -169,10 +164,8 @@ class CloneTrendExecutor implements TrendActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CloneTrendExecutor: not yet implemented. ' +
-        'Trend cloning is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CloneTrendExecutor: not yet implemented. ' +
+      'Trend cloning is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -186,10 +179,8 @@ class ArchiveTrendExecutor implements TrendActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ArchiveTrendExecutor: not yet implemented. ' +
-        'Trend archiving is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ArchiveTrendExecutor: not yet implemented. ' +
+      'Trend archiving is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -222,11 +213,9 @@ export class BloomreachTrendsService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listTrendAnalyses: the Bloomreach API does not provide an endpoint for trend analyses. ' +
-        'Trend data must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Analytics > Trends in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listTrendAnalyses: the Bloomreach API does not provide an endpoint for trend analyses. ' +
+      'Trend data must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Analytics > Trends in your project).');
   }
 
   async viewTrendResults(input: ViewTrendResultsInput): Promise<TrendResults> {
@@ -246,11 +235,9 @@ export class BloomreachTrendsService {
       validateDateRange(dateRange);
     }
 
-    throw new Error(
-      'viewTrendResults: the Bloomreach API does not provide an endpoint for trend analysis results. ' +
-        'Trend results must be viewed in the Bloomreach Engagement UI ' +
-        '(navigate to Analytics > Trends and open the analysis).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewTrendResults: the Bloomreach API does not provide an endpoint for trend analysis results. ' +
+      'Trend results must be viewed in the Bloomreach Engagement UI ' +
+      '(navigate to Analytics > Trends and open the analysis).');
   }
 
   prepareCreateTrendAnalysis(input: CreateTrendAnalysisInput): PreparedTrendAction {
@@ -261,7 +248,7 @@ export class BloomreachTrendsService {
 
     const events = input.events.map((event) => event.trim()).filter(Boolean);
     if (events.length === 0) {
-      throw new Error('events must contain at least one event name.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'events must contain at least one event name.');
     }
 
     const preview = {
