@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
+import { input, password, confirm } from '@inquirer/prompts';
 import { readFileSync } from 'node:fs';
 import {
   BloomreachAccessManagementService,
@@ -39,6 +40,10 @@ import {
   BloomreachVouchersService,
   BloomreachWeblayersService,
   resolveApiConfig,
+  validateCredentials,
+  writeEnvFile,
+  openBrowserUrl,
+  BLOOMREACH_API_SETTINGS_URL,
 } from '@bloomreach-buddy/core';
 import type {
   BloomreachApiConfig,
@@ -11971,6 +11976,194 @@ recommendations
         }
       } catch (error) {
         console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    },
+  );
+
+
+// ---------------------------------------------------------------------------
+// Setup wizard
+// ---------------------------------------------------------------------------
+
+program
+  .command('setup')
+  .description('Interactive setup wizard for Bloomreach API credentials')
+  .option('--no-browser', 'Skip opening the browser to API settings')
+  .option('--no-validate', 'Skip credential validation via API call')
+  .option('--env-path <path>', 'Directory for .env file (default: current directory)')
+  .option('--overwrite', 'Overwrite .env entirely instead of merging')
+  .option('--json', 'Output result as JSON')
+  .action(
+    async (options: {
+      browser: boolean;
+      validate: boolean;
+      envPath?: string;
+      overwrite?: boolean;
+      json?: boolean;
+    }) => {
+      try {
+        console.log('');
+        console.log('  Bloomreach Buddy Setup');
+        console.log('  =====================');
+        console.log('');
+
+        // Check for existing credentials
+        const existing = tryResolveApiConfig();
+        if (existing) {
+          console.log('  Existing credentials detected.');
+          console.log(`    Project Token: ${existing.projectToken.slice(0, 8)}...`);
+          console.log(`    API Key ID:    ${existing.apiKeyId.slice(0, 8)}...`);
+          console.log('');
+
+          const reconfigure = await confirm({
+            message: 'Credentials already configured. Reconfigure?',
+            default: false,
+          });
+
+          if (!reconfigure) {
+            console.log('');
+            console.log('  Setup cancelled. Existing credentials preserved.');
+            return;
+          }
+          console.log('');
+        }
+
+        // Instructions
+        console.log('  You will need three values from the Bloomreach dashboard:');
+        console.log('');
+        console.log('  1. Project Token');
+        console.log('     Location: Project Settings > Access Management > API');
+        console.log('');
+        console.log('  2. API Key ID');
+        console.log('     Location: Project Settings > Access Management > API > Private API keys');
+        console.log('');
+        console.log('  3. API Secret');
+        console.log('     Shown once when you create a new API key');
+        console.log('');
+
+        // Offer to open browser
+        if (options.browser) {
+          const openBrowser = await confirm({
+            message: 'Open Bloomreach dashboard in your browser?',
+            default: true,
+          });
+
+          if (openBrowser) {
+            openBrowserUrl(BLOOMREACH_API_SETTINGS_URL);
+            console.log(`  Opening ${BLOOMREACH_API_SETTINGS_URL}`);
+            console.log('');
+          }
+        }
+
+        // Collect credentials
+        console.log('  Step 1: Project Token');
+        const projectToken = await input({
+          message: 'Project Token:',
+          required: true,
+          validate: (v) => v.trim().length > 0 || 'Project token is required',
+        });
+
+        console.log('');
+        console.log('  Step 2: API Key');
+        const apiKeyId = await input({
+          message: 'API Key ID:',
+          required: true,
+          validate: (v) => v.trim().length > 0 || 'API key ID is required',
+        });
+
+        const apiSecret = await password({
+          message: 'API Secret:',
+          mask: '*',
+          validate: (v) => v.length > 0 || 'API secret is required',
+        });
+
+        console.log('');
+        console.log('  Step 3: API Base URL (optional)');
+        const baseUrl = await input({
+          message: 'Base URL:',
+          default: 'https://api.exponea.com',
+          validate: (v) => {
+            try {
+              new URL(v);
+              return true;
+            } catch {
+              return 'Must be a valid URL';
+            }
+          },
+        });
+
+        const credentials = {
+          projectToken: projectToken.trim(),
+          apiKeyId: apiKeyId.trim(),
+          apiSecret,
+          baseUrl: baseUrl.trim(),
+        };
+
+        // Validate credentials
+        if (options.validate) {
+          console.log('');
+          console.log('  Validating credentials...');
+
+          const validationResult = await validateCredentials(credentials);
+
+          if (!validationResult.valid) {
+            console.error('');
+            console.error(`  Validation failed: ${validationResult.message}`);
+            console.error(`  Error type: ${validationResult.error}`);
+            console.error('');
+
+            const retry = await confirm({
+              message: 'Validation failed. Save credentials anyway?',
+              default: false,
+            });
+
+            if (!retry) {
+              console.log('  Setup cancelled.');
+              process.exit(1);
+            }
+          } else {
+            console.log('  Credentials verified successfully!');
+            if (validationResult.serverTime) {
+              const serverDate = new Date(validationResult.serverTime * 1000);
+              console.log(`  Server time: ${serverDate.toISOString()}`);
+            }
+          }
+        }
+
+        // Write .env file
+        console.log('');
+        const envPath = writeEnvFile(credentials, {
+          directory: options.envPath,
+          merge: !options.overwrite,
+        });
+
+        if (options.json) {
+          printJson({
+            status: 'success',
+            envPath,
+            projectToken: credentials.projectToken,
+            apiKeyId: credentials.apiKeyId,
+            baseUrl: credentials.baseUrl,
+          });
+        } else {
+          console.log(`  Credentials written to ${envPath}`);
+          console.log('');
+          console.log('  Setup complete! You can verify with:');
+          console.log('    bloomreach status');
+          console.log('');
+        }
+      } catch (error) {
+        if (options.json) {
+          printJson({
+            status: 'error',
+            message: error instanceof Error ? error.message : String(error),
+          });
+        } else {
+          console.error(
+            `Error: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
         process.exit(1);
       }
     },

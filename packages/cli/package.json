@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@bloomreach-buddy/core": "0.0.1",
+    "@inquirer/prompts": "8.3.0",
     "commander": "^14.0.3"
   },
   "devDependencies": {
