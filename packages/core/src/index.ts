@@ -38,6 +38,9 @@ export * from './bloomreachAccessManagement.js';
 export * from './bloomreachApiClient.js';
 export * from './bloomreachSetup.js';
 export * from './bloomreachTracking.js';
+export * from './bloomreachProfileManager.js';
+export * from './bloomreachSessionStore.js';
+export * from './bloomreachAuth.js';
 
 export interface BloomreachClientConfig {
   /** Bloomreach environment ID */

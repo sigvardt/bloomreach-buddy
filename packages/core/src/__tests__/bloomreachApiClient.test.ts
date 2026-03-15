@@ -1233,3 +1233,23 @@ describe('buildWebxpPath', () => {
     );
   });
 });
+
+// ===========================================================================
+// Browser auth error codes
+// ===========================================================================
+
+describe('Browser auth error codes', () => {
+  it.each([
+    'AUTH_REQUIRED',
+    'CAPTCHA_OR_CHALLENGE',
+    'SESSION_EXPIRED',
+    'PROFILE_LOCKED',
+  ] as const)('BloomreachBuddyError can be constructed with code %s', (code) => {
+    const error = new BloomreachBuddyError(code, `Test ${code} message`);
+    expect(error).toBeInstanceOf(BloomreachBuddyError);
+    expect(error).toBeInstanceOf(Error);
+    expect(error.code).toBe(code);
+    expect(error.message).toBe(`Test ${code} message`);
+    expect(error.name).toBe('BloomreachBuddyError');
+  });
+});

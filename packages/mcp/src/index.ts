@@ -4,6 +4,7 @@ export * from './toolArgs.js';
 export * from './toolResults.js';
 
 export const BLOOMREACH_STATUS_TOOL = 'bloomreach.session.status';
+export const BLOOMREACH_SESSION_OPEN_LOGIN_TOOL = 'bloomreach.session.open_login';
 export const BLOOMREACH_DASHBOARDS_LIST_TOOL = 'bloomreach.dashboards.list';
 export const BLOOMREACH_DASHBOARDS_PREPARE_CREATE_TOOL = 'bloomreach.dashboards.prepare_create';
 export const BLOOMREACH_DASHBOARDS_PREPARE_SET_HOME_TOOL = 'bloomreach.dashboards.prepare_set_home';
@@ -366,6 +367,7 @@ export const BLOOMREACH_TRACKING_TRACK_CONSENT_TOOL = 'bloomreach.tracking.track
 export const BLOOMREACH_TRACKING_TRACK_CAMPAIGN_TOOL = 'bloomreach.tracking.track_campaign';
 export const BLOOMREACH_MCP_TOOL_NAMES = [
   BLOOMREACH_STATUS_TOOL,
+  BLOOMREACH_SESSION_OPEN_LOGIN_TOOL,
   BLOOMREACH_DASHBOARDS_LIST_TOOL,
   BLOOMREACH_DASHBOARDS_PREPARE_CREATE_TOOL,
   BLOOMREACH_DASHBOARDS_PREPARE_SET_HOME_TOOL,

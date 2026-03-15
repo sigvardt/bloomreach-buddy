@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import {
   BloomreachAccessManagementService,
   BloomreachAssetManagerService,
+  BloomreachAuthService,
   BloomreachCampaignCalendarService,
   BloomreachCampaignSettingsService,
   BloomreachChannelSettingsService,
@@ -40,9 +41,11 @@ import {
   BloomreachVouchersService,
   BloomreachWeblayersService,
   resolveApiConfig,
+  resolveProfilesDir,
   validateCredentials,
   writeEnvFile,
   openBrowserUrl,
+  BloomreachProfileManager,
   BLOOMREACH_API_SETTINGS_URL,
 } from '@bloomreach-buddy/core';
 import type {
@@ -12159,6 +12162,195 @@ program
             status: 'error',
             message: error instanceof Error ? error.message : String(error),
           });
+        } else {
+          console.error(
+            `Error: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+        process.exit(1);
+      }
+    },
+  );
+
+program
+  .command('login')
+  .description('Open browser for manual Bloomreach login (captures session for automation)')
+  .option('--profile <name>', 'Browser profile name', 'default')
+  .option('--timeout <ms>', 'Login timeout in milliseconds', '300000')
+  .option('--login-url <url>', 'Override login URL')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      profile: string;
+      timeout: string;
+      loginUrl?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const profilesDir = resolveProfilesDir();
+        const profileManager = new BloomreachProfileManager({ profilesDir });
+        const authService = new BloomreachAuthService(profileManager, { profilesDir });
+
+        if (!options.json) {
+          console.log('');
+          console.log('  Opening browser for Bloomreach login...');
+          console.log('  Complete the login in the browser window.');
+          console.log(`  Timeout: ${Number(options.timeout) / 1000}s`);
+          console.log('');
+        }
+
+        const result = await authService.openLogin({
+          profileName: options.profile,
+          timeoutMs: Number(options.timeout),
+          loginUrl: options.loginUrl,
+        });
+
+        if (options.json) {
+          console.log(JSON.stringify(result, null, 2));
+        } else if (result.timedOut) {
+          console.log('  Login timed out. Please try again.');
+          process.exit(1);
+        } else if (result.authenticated) {
+          console.log('  Login successful! Session captured and encrypted.');
+          console.log(`  Profile: ${result.profileName}`);
+        } else {
+          console.log(`  Login failed: ${result.reason}`);
+          process.exit(1);
+        }
+      } catch (error) {
+        if (options.json) {
+          console.log(
+            JSON.stringify(
+              {
+                authenticated: false,
+                error: error instanceof Error ? error.message : String(error),
+              },
+              null,
+              2,
+            ),
+          );
+        } else {
+          console.error(
+            `Error: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+        process.exit(1);
+      }
+    },
+  );
+
+const auth = program
+  .command('auth')
+  .description('Manage Bloomreach browser authentication');
+
+auth
+  .command('status')
+  .description('Check browser session authentication status')
+  .option('--profile <name>', 'Browser profile name', 'default')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { profile: string; json?: boolean }) => {
+      try {
+        const profilesDir = resolveProfilesDir();
+        const profileManager = new BloomreachProfileManager({ profilesDir });
+        const authService = new BloomreachAuthService(profileManager, { profilesDir });
+
+        const status = await authService.status({ profileName: options.profile });
+
+        if (options.json) {
+          console.log(JSON.stringify(status, null, 2));
+        } else {
+          console.log('');
+          console.log(`  Authenticated: ${status.authenticated ? 'yes' : 'no'}`);
+          console.log(`  Profile:       ${status.profileName}`);
+          console.log(`  Reason:        ${status.reason}`);
+          if (status.sessionExpired) {
+            console.log('  Session:       expired');
+          }
+          if (status.cookieSummary && status.cookieSummary.length > 0) {
+            console.log(`  Cookies:       ${status.cookieSummary.length} stored`);
+          }
+          console.log('');
+        }
+      } catch (error) {
+        if (options.json) {
+          console.log(
+            JSON.stringify(
+              {
+                authenticated: false,
+                error: error instanceof Error ? error.message : String(error),
+              },
+              null,
+              2,
+            ),
+          );
+        } else {
+          console.error(
+            `Error: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+        process.exit(1);
+      }
+    },
+  );
+
+auth
+  .command('open-login')
+  .description('Open browser for manual Bloomreach login (alias for "bloomreach login")')
+  .option('--profile <name>', 'Browser profile name', 'default')
+  .option('--timeout <ms>', 'Login timeout in milliseconds', '300000')
+  .option('--login-url <url>', 'Override login URL')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: {
+      profile: string;
+      timeout: string;
+      loginUrl?: string;
+      json?: boolean;
+    }) => {
+      try {
+        const profilesDir = resolveProfilesDir();
+        const profileManager = new BloomreachProfileManager({ profilesDir });
+        const authService = new BloomreachAuthService(profileManager, { profilesDir });
+
+        if (!options.json) {
+          console.log('');
+          console.log('  Opening browser for Bloomreach login...');
+          console.log('  Complete the login in the browser window.');
+          console.log(`  Timeout: ${Number(options.timeout) / 1000}s`);
+          console.log('');
+        }
+
+        const result = await authService.openLogin({
+          profileName: options.profile,
+          timeoutMs: Number(options.timeout),
+          loginUrl: options.loginUrl,
+        });
+
+        if (options.json) {
+          console.log(JSON.stringify(result, null, 2));
+        } else if (result.timedOut) {
+          console.log('  Login timed out. Please try again.');
+          process.exit(1);
+        } else if (result.authenticated) {
+          console.log('  Login successful! Session captured and encrypted.');
+          console.log(`  Profile: ${result.profileName}`);
+        } else {
+          console.log(`  Login failed: ${result.reason}`);
+          process.exit(1);
+        }
+      } catch (error) {
+        if (options.json) {
+          console.log(
+            JSON.stringify(
+              {
+                authenticated: false,
+                error: error instanceof Error ? error.message : String(error),
+              },
+              null,
+              2,
+            ),
+          );
         } else {
           console.error(
             `Error: ${error instanceof Error ? error.message : String(error)}`,
