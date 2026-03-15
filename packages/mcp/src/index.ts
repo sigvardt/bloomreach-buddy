@@ -360,6 +360,17 @@ export const BLOOMREACH_ACCESS_PREPARE_DELETE_API_KEY_TOOL =
 export const BLOOMREACH_ACTIONS_CONFIRM_TOOL = 'bloomreach.actions.confirm';
 export const BLOOMREACH_ACTIONS_LIST_TOOL = 'bloomreach.actions.list';
 
+// --- Recommendations tools (issue #182) ---
+export const BLOOMREACH_RECOMMENDATIONS_LIST_TOOL = 'bloomreach.recommendations.list';
+export const BLOOMREACH_RECOMMENDATIONS_VIEW_PERFORMANCE_TOOL =
+  'bloomreach.recommendations.view_performance';
+export const BLOOMREACH_RECOMMENDATIONS_PREPARE_CREATE_TOOL =
+  'bloomreach.recommendations.prepare_create';
+export const BLOOMREACH_RECOMMENDATIONS_PREPARE_CONFIGURE_TOOL =
+  'bloomreach.recommendations.prepare_configure';
+export const BLOOMREACH_RECOMMENDATIONS_PREPARE_DELETE_TOOL =
+  'bloomreach.recommendations.prepare_delete';
+
 
 // --- Tracking tools (issue #177) ---
 export const BLOOMREACH_TRACKING_TRACK_EVENT_TOOL = 'bloomreach.tracking.track_event';
@@ -623,6 +634,11 @@ export const BLOOMREACH_MCP_TOOL_NAMES = [
   BLOOMREACH_ACCESS_LIST_API_KEYS_TOOL,
   BLOOMREACH_ACCESS_PREPARE_CREATE_API_KEY_TOOL,
   BLOOMREACH_ACCESS_PREPARE_DELETE_API_KEY_TOOL,
+  BLOOMREACH_RECOMMENDATIONS_LIST_TOOL,
+  BLOOMREACH_RECOMMENDATIONS_VIEW_PERFORMANCE_TOOL,
+  BLOOMREACH_RECOMMENDATIONS_PREPARE_CREATE_TOOL,
+  BLOOMREACH_RECOMMENDATIONS_PREPARE_CONFIGURE_TOOL,
+  BLOOMREACH_RECOMMENDATIONS_PREPARE_DELETE_TOOL,
   BLOOMREACH_TRACKING_TRACK_EVENT_TOOL,
   BLOOMREACH_TRACKING_TRACK_BATCH_TOOL,
   BLOOMREACH_TRACKING_TRACK_CUSTOMER_TOOL,
@@ -633,4 +649,3 @@ export const BLOOMREACH_MCP_TOOL_NAMES = [
 ] as const;
 
 export type BloomreachMcpToolName = (typeof BLOOMREACH_MCP_TOOL_NAMES)[number];
-
