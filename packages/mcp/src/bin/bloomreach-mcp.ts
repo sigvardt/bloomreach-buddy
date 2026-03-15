@@ -6118,6 +6118,174 @@ const tools: ToolRoute[] = [
     serviceClass: 'BloomreachTrackingService',
     methodName: 'prepareTrackCampaign',
   },
+  {
+    name: toolNames.BLOOMREACH_RECOMMENDATIONS_LIST_TOOL,
+    description:
+      'List recommendation models in the project, optionally filtered by status. Returns model metadata including name, status, algorithm, and URL. ⚠️ Not yet available — coming in a future release.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        status: {
+          type: 'string',
+          description:
+            'Filter by model status: active, inactive, training, or draft.',
+        },
+      },
+      required: ['project'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachRecommendationsService',
+    methodName: 'listRecommendationModels',
+  },
+  {
+    name: toolNames.BLOOMREACH_RECOMMENDATIONS_VIEW_PERFORMANCE_TOOL,
+    description:
+      'View performance metrics of a recommendation model including impressions, clicks, CTR, conversions, revenue, and average order value. ⚠️ Not yet available — coming in a future release.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        modelId: {
+          type: 'string',
+          description:
+            'ID of the recommendation model. Use bloomreach.recommendations.list to find available IDs.',
+        },
+      },
+      required: ['project', 'modelId'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachRecommendationsService',
+    methodName: 'viewModelPerformance',
+  },
+  {
+    name: toolNames.BLOOMREACH_RECOMMENDATIONS_PREPARE_CREATE_TOOL,
+    description:
+      'Create a new recommendation model. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        name: {
+          type: 'string',
+          description: 'Display name for the recommendation model (1–200 characters).',
+        },
+        modelType: {
+          type: 'string',
+          description:
+            'Type of recommendation model (e.g. product_recommendations, category_recommendations).',
+        },
+        algorithm: {
+          type: 'string',
+          description:
+            'Recommendation algorithm: collaborative_filtering, content_based, hybrid, trending, or personalized.',
+        },
+        catalogId: {
+          type: 'string',
+          description: 'Catalog ID to use for recommendations.',
+        },
+        operatorNote: {
+          type: 'string',
+          description: 'Optional note describing the reason for this action.',
+        },
+      },
+      required: ['project', 'name', 'modelType'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachRecommendationsService',
+    methodName: 'prepareCreateRecommendationModel',
+  },
+  {
+    name: toolNames.BLOOMREACH_RECOMMENDATIONS_PREPARE_CONFIGURE_TOOL,
+    description:
+      'Configure parameters of an existing recommendation model (algorithm, filters, boost rules, max items). Returns a confirmToken — call bloomreach.actions.confirm to execute.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        modelId: {
+          type: 'string',
+          description:
+            'ID of the recommendation model. Use bloomreach.recommendations.list to find available IDs.',
+        },
+        algorithm: {
+          type: 'string',
+          description:
+            'Recommendation algorithm: collaborative_filtering, content_based, hybrid, trending, or personalized.',
+        },
+        catalogId: {
+          type: 'string',
+          description: 'Catalog ID to use for recommendations.',
+        },
+        filters: {
+          type: 'array',
+          description:
+            'Filter rules to restrict recommended items. Each rule has field, operator, and value.',
+        },
+        boostRules: {
+          type: 'array',
+          description:
+            'Boost rules to prioritize certain items. Each rule has field and weight (0–100).',
+        },
+        maxItems: {
+          type: 'number',
+          description: 'Maximum number of items to recommend (1–100).',
+        },
+        operatorNote: {
+          type: 'string',
+          description: 'Optional note describing the reason for this action.',
+        },
+      },
+      required: ['project', 'modelId'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachRecommendationsService',
+    methodName: 'prepareConfigureRecommendationModel',
+  },
+  {
+    name: toolNames.BLOOMREACH_RECOMMENDATIONS_PREPARE_DELETE_TOOL,
+    description:
+      'Delete a recommendation model. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        modelId: {
+          type: 'string',
+          description:
+            'ID of the recommendation model. Use bloomreach.recommendations.list to find available IDs.',
+        },
+        operatorNote: {
+          type: 'string',
+          description: 'Optional note describing the reason for this action.',
+        },
+      },
+      required: ['project', 'modelId'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachRecommendationsService',
+    methodName: 'prepareDeleteRecommendationModel',
+  },
 ];
 
 const toolByName = new Map<string, ToolRoute>(tools.map((tool) => [tool.name, tool]));

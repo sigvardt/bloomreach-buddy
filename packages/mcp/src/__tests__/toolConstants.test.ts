@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { BLOOMREACH_MCP_TOOL_NAMES } from '../index.js';
 
 describe('tool constants', () => {
-  it('exports 262 tool name constants via BLOOMREACH_MCP_TOOL_NAMES', () => {
-    expect(BLOOMREACH_MCP_TOOL_NAMES).toHaveLength(262);
+  it('exports 267 tool name constants via BLOOMREACH_MCP_TOOL_NAMES', () => {
+    expect(BLOOMREACH_MCP_TOOL_NAMES).toHaveLength(267);
   });
 
   it('all tool names follow bloomreach.<domain>.<action> dot-notation', () => {
@@ -46,7 +46,7 @@ describe('tool constants', () => {
     }
   });
 
-  it('covers all 34 expected service domains', () => {
+  it('covers all 35 expected service domains', () => {
     const domains = new Set(BLOOMREACH_MCP_TOOL_NAMES.map((name) => name.split('.')[1]));
     const expectedDomains = [
       'actions',
@@ -70,6 +70,7 @@ describe('tool constants', () => {
       'metrics',
       'performance',
       'project_settings',
+      'recommendations',
       'reports',
       'retentions',
       'scenarios',
