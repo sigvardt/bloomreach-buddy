@@ -9,7 +9,7 @@ import {
 export const CREATE_CUSTOMER_ACTION_TYPE = 'customers.create_customer';
 export const UPDATE_CUSTOMER_ACTION_TYPE = 'customers.update_customer';
 export const DELETE_CUSTOMER_ACTION_TYPE = 'customers.delete_customer';
-export const TRACK_EVENT_ACTION_TYPE = 'customers.track_event';
+export const CUSTOMER_TRACK_EVENT_ACTION_TYPE = 'customers.track_event';
 export const BATCH_COMMANDS_ACTION_TYPE = 'customers.batch_commands';
 
 export const CUSTOMER_RATE_LIMIT_WINDOW_MS = 3_600_000;
@@ -91,7 +91,7 @@ export interface DeleteCustomerInput {
   operatorNote?: string;
 }
 
-export interface TrackEventInput {
+export interface CustomerTrackEventInput {
   project: string;
   customerIds: CustomerIds;
   eventType: string;
@@ -106,15 +106,15 @@ export interface TrackEventResult {
 
 export interface BatchCommandInput {
   project: string;
-  commands: BatchCommand[];
+  commands: CustomerBatchCommand[];
 }
 
-export interface BatchCommand {
+export interface CustomerBatchCommand {
   name: string;
   data: Record<string, unknown>;
 }
 
-export interface BatchCommandResult {
+export interface CustomerBatchCommandResult {
   success: boolean;
   response: unknown;
 }
@@ -182,7 +182,7 @@ export function validateCustomerIds(ids: CustomerIds): CustomerIds {
   return validated;
 }
 
-export function validateEventType(eventType: string): string {
+export function validateCustomerEventType(eventType: string): string {
   const trimmed = eventType.trim();
   if (trimmed.length === 0) {
     throw new Error('Event type must not be empty.');
@@ -195,7 +195,7 @@ export function validateEventType(eventType: string): string {
   return trimmed;
 }
 
-export function validateBatchCommands(commands: BatchCommand[]): BatchCommand[] {
+export function validateCustomerBatchCommands(commands: CustomerBatchCommand[]): CustomerBatchCommand[] {
   if (!Array.isArray(commands) || commands.length === 0) {
     throw new Error('At least one batch command must be provided.');
   }
@@ -373,7 +373,7 @@ class DeleteCustomerExecutor implements CustomerActionExecutor {
 }
 
 class TrackEventExecutor implements CustomerActionExecutor {
-  readonly actionType = TRACK_EVENT_ACTION_TYPE;
+  readonly actionType = CUSTOMER_TRACK_EVENT_ACTION_TYPE;
   private readonly apiConfig?: BloomreachApiConfig;
 
   constructor(apiConfig?: BloomreachApiConfig) {
@@ -410,7 +410,7 @@ class BatchCommandsExecutor implements CustomerActionExecutor {
 
   async execute(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     const config = requireApiConfig(this.apiConfig, 'BatchCommandsExecutor');
-    const commands = payload.commands as BatchCommand[];
+    const commands = payload.commands as CustomerBatchCommand[];
 
     const path = buildTrackingPath(config, '/batch');
     const response = await bloomreachApiFetch(config, path, {
@@ -427,7 +427,7 @@ export function createCustomerActionExecutors(
     [CREATE_CUSTOMER_ACTION_TYPE]: new CreateCustomerExecutor(apiConfig),
     [UPDATE_CUSTOMER_ACTION_TYPE]: new UpdateCustomerExecutor(apiConfig),
     [DELETE_CUSTOMER_ACTION_TYPE]: new DeleteCustomerExecutor(apiConfig),
-    [TRACK_EVENT_ACTION_TYPE]: new TrackEventExecutor(apiConfig),
+    [CUSTOMER_TRACK_EVENT_ACTION_TYPE]: new TrackEventExecutor(apiConfig),
     [BATCH_COMMANDS_ACTION_TYPE]: new BatchCommandsExecutor(apiConfig),
   };
 }
@@ -674,10 +674,10 @@ export class BloomreachCustomersService {
     };
   }
 
-  async trackEvent(input: TrackEventInput): Promise<TrackEventResult> {
+  async trackEvent(input: CustomerTrackEventInput): Promise<TrackEventResult> {
     validateProject(input.project);
     validateCustomerIds(input.customerIds);
-    validateEventType(input.eventType);
+    validateCustomerEventType(input.eventType);
 
     const config = requireApiConfig(this.apiConfig, 'trackEvent');
     const path = buildTrackingPath(config, '/customers/events');
@@ -695,9 +695,9 @@ export class BloomreachCustomersService {
     return { success: true, response };
   }
 
-  async trackBatchCommands(input: BatchCommandInput): Promise<BatchCommandResult> {
+  async trackBatchCommands(input: BatchCommandInput): Promise<CustomerBatchCommandResult> {
     validateProject(input.project);
-    validateBatchCommands(input.commands);
+    validateCustomerBatchCommands(input.commands);
 
     const config = requireApiConfig(this.apiConfig, 'trackBatchCommands');
     const path = buildTrackingPath(config, '/batch');

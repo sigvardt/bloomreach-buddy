@@ -4,7 +4,7 @@ import {
   CREATE_CUSTOMER_ACTION_TYPE,
   UPDATE_CUSTOMER_ACTION_TYPE,
   DELETE_CUSTOMER_ACTION_TYPE,
-  TRACK_EVENT_ACTION_TYPE,
+  CUSTOMER_TRACK_EVENT_ACTION_TYPE,
   BATCH_COMMANDS_ACTION_TYPE,
   CUSTOMER_RATE_LIMIT_WINDOW_MS,
   CUSTOMER_CREATE_RATE_LIMIT,
@@ -17,8 +17,8 @@ import {
   validateListOffset,
   validateIdType,
   validateProperties,
-  validateEventType,
-  validateBatchCommands,
+  validateCustomerEventType,
+  validateCustomerBatchCommands,
   buildCustomersUrl,
   createCustomerActionExecutors,
   BloomreachCustomersService,
@@ -663,8 +663,8 @@ describe('BloomreachCustomersService', () => {
 });
 
 describe('new action type constants', () => {
-  it('exports TRACK_EVENT_ACTION_TYPE', () => {
-    expect(TRACK_EVENT_ACTION_TYPE).toBe('customers.track_event');
+  it('exports CUSTOMER_TRACK_EVENT_ACTION_TYPE', () => {
+    expect(CUSTOMER_TRACK_EVENT_ACTION_TYPE).toBe('customers.track_event');
   });
 
   it('exports BATCH_COMMANDS_ACTION_TYPE', () => {
@@ -672,46 +672,46 @@ describe('new action type constants', () => {
   });
 });
 
-describe('validateEventType', () => {
+describe('validateCustomerEventType', () => {
   it('returns trimmed event type', () => {
-    expect(validateEventType('  purchase  ')).toBe('purchase');
+    expect(validateCustomerEventType('  purchase  ')).toBe('purchase');
   });
 
   it('throws for empty string', () => {
-    expect(() => validateEventType('')).toThrow('Event type must not be empty');
+    expect(() => validateCustomerEventType('')).toThrow('Event type must not be empty');
   });
 
   it('throws for whitespace-only', () => {
-    expect(() => validateEventType('   ')).toThrow('Event type must not be empty');
+    expect(() => validateCustomerEventType('   ')).toThrow('Event type must not be empty');
   });
 
   it('throws for exceeding 256 characters', () => {
-    expect(() => validateEventType('x'.repeat(257))).toThrow('must not exceed 256 characters');
+    expect(() => validateCustomerEventType('x'.repeat(257))).toThrow('must not exceed 256 characters');
   });
 });
 
-describe('validateBatchCommands', () => {
+describe('validateCustomerBatchCommands', () => {
   it('returns valid commands', () => {
     const cmds = [{ name: 'customers/events', data: { foo: 1 } }];
-    expect(validateBatchCommands(cmds)).toEqual(cmds);
+    expect(validateCustomerBatchCommands(cmds)).toEqual(cmds);
   });
 
   it('throws for empty array', () => {
-    expect(() => validateBatchCommands([])).toThrow('At least one batch command');
+    expect(() => validateCustomerBatchCommands([])).toThrow('At least one batch command');
   });
 
   it('throws for exceeding 50 commands', () => {
     const cmds = Array.from({ length: 51 }, (_, i) => ({ name: `cmd-${i}`, data: { i } }));
-    expect(() => validateBatchCommands(cmds)).toThrow('must not exceed 50');
+    expect(() => validateCustomerBatchCommands(cmds)).toThrow('must not exceed 50');
   });
 
   it('throws for command with empty name', () => {
-    expect(() => validateBatchCommands([{ name: '', data: { a: 1 } }])).toThrow('non-empty name');
+    expect(() => validateCustomerBatchCommands([{ name: '', data: { a: 1 } }])).toThrow('non-empty name');
   });
 
   it('throws for command with null data', () => {
     expect(() =>
-      validateBatchCommands([{ name: 'test', data: null as unknown as Record<string, unknown> }]),
+      validateCustomerBatchCommands([{ name: 'test', data: null as unknown as Record<string, unknown> }]),
     ).toThrow('non-null data object');
   });
 });
@@ -719,13 +719,13 @@ describe('validateBatchCommands', () => {
 describe('createCustomerActionExecutors - new executors', () => {
   it('returns executors for new action types', () => {
     const executors = createCustomerActionExecutors();
-    expect(executors[TRACK_EVENT_ACTION_TYPE]).toBeDefined();
+    expect(executors[CUSTOMER_TRACK_EVENT_ACTION_TYPE]).toBeDefined();
     expect(executors[BATCH_COMMANDS_ACTION_TYPE]).toBeDefined();
   });
 
   it('new executors require API credentials', async () => {
     const executors = createCustomerActionExecutors();
-    await expect(executors[TRACK_EVENT_ACTION_TYPE].execute({})).rejects.toThrow('requires API credentials');
+    await expect(executors[CUSTOMER_TRACK_EVENT_ACTION_TYPE].execute({})).rejects.toThrow('requires API credentials');
     await expect(executors[BATCH_COMMANDS_ACTION_TYPE].execute({})).rejects.toThrow('requires API credentials');
   });
 
@@ -737,7 +737,7 @@ describe('createCustomerActionExecutors - new executors', () => {
       }),
     );
     const executors = createCustomerActionExecutors(TEST_API_CONFIG);
-    await executors[TRACK_EVENT_ACTION_TYPE].execute({
+    await executors[CUSTOMER_TRACK_EVENT_ACTION_TYPE].execute({
       customerIds: { registered: 'cust-1' },
       eventType: 'purchase',
       properties: { total: 99 },
