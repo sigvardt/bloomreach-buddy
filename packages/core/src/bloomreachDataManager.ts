@@ -1,4 +1,8 @@
 import { validateProject } from './bloomreachDashboards.js';
+import {
+  bloomreachApiFetch,
+  buildDataPath,
+} from './bloomreachApiClient.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const ADD_CUSTOMER_PROPERTY_ACTION_TYPE = 'dataManager.add_customer_property';
@@ -177,6 +181,22 @@ export interface PreparedDataManagerAction {
   confirmToken: string;
   expiresAtMs: number;
   preview: Record<string, unknown>;
+}
+
+export interface ConsentCategory {
+  id: string;
+  name: string;
+  description?: string;
+  legitimateInterest?: boolean;
+}
+
+export interface ListConsentCategoriesInput {
+  project: string;
+}
+
+export interface ListConsentCategoriesResult {
+  success: boolean;
+  categories: ConsentCategory[];
 }
 
 const MAX_PROPERTY_NAME_LENGTH = 200;
@@ -703,6 +723,30 @@ export class BloomreachDataManagerService {
 
   get contentSourcesUrl(): string {
     return this.contentSourcesBaseUrl;
+  }
+
+  /**
+   * List consent categories via the Bloomreach Data API.
+   * This is a real REST API endpoint.
+   */
+  async listConsentCategories(
+    input: ListConsentCategoriesInput,
+  ): Promise<ListConsentCategoriesResult> {
+    validateProject(input.project);
+
+    const config = requireApiConfig(this.apiConfig, 'listConsentCategories');
+    const path = buildDataPath(config, '/consent/categories');
+    const response = await bloomreachApiFetch(config, path, {
+      method: 'GET',
+    });
+    const items = Array.isArray(response) ? response : [];
+    const categories: ConsentCategory[] = items.map((item: Record<string, unknown>) => ({
+      id: String(item.id ?? ''),
+      name: String(item.name ?? ''),
+      description: typeof item.description === 'string' ? item.description : undefined,
+      legitimateInterest: typeof item.legitimate_interest === 'boolean' ? item.legitimate_interest : undefined,
+    }));
+    return { success: true, categories };
   }
 
   async listCustomerProperties(

@@ -526,6 +526,78 @@ const tools: ToolRoute[] = [
     methodName: 'prepareArchiveEmailCampaign',
   },
   {
+    name: toolNames.BLOOMREACH_EMAIL_CAMPAIGNS_SEND_TRANSACTIONAL_TOOL,
+    description:
+      'Send a transactional email via the Bloomreach Email API. Use for order confirmations, password resets, welcome emails, and other triggered messages. Requires an integration ID and either a template ID or raw HTML content. Returns { success, response }; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        integrationId: {
+          type: 'string',
+          description: 'Bloomreach email integration ID.',
+        },
+        campaignName: {
+          type: 'string',
+          description: 'Optional campaign name for tracking purposes.',
+        },
+        recipient: {
+          type: 'object',
+          description: 'Recipient object with customerIds (map) and email (string).',
+        },
+        emailContent: {
+          type: 'object',
+          description:
+            'Email content with templateId or html, plus optional subject, senderAddress, senderName, params.',
+        },
+      },
+      required: ['project', 'integrationId', 'recipient', 'emailContent'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachEmailCampaignsService',
+    methodName: 'sendTransactionalEmail',
+  },
+  {
+    name: toolNames.BLOOMREACH_EMAIL_CAMPAIGNS_PREPARE_SEND_TRANSACTIONAL_TOOL,
+    description:
+      'Stage a transactional email for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes integration ID, recipient, email content, and campaign name.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        integrationId: {
+          type: 'string',
+          description: 'Bloomreach email integration ID.',
+        },
+        campaignName: {
+          type: 'string',
+          description: 'Optional campaign name for tracking purposes.',
+        },
+        recipient: {
+          type: 'object',
+          description: 'Recipient object with customerIds (map) and email (string).',
+        },
+        emailContent: {
+          type: 'object',
+          description:
+            'Email content with templateId or html, plus optional subject, senderAddress, senderName, params.',
+        },
+      },
+      required: ['project', 'integrationId', 'recipient', 'emailContent'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachEmailCampaignsService',
+    methodName: 'prepareSendTransactionalEmail',
+  },
+  {
     name: toolNames.BLOOMREACH_SURVEYS_LIST_TOOL,
     description:
       'List all surveys in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
@@ -1511,6 +1583,119 @@ const tools: ToolRoute[] = [
     methodName: 'prepareDeleteCustomer',
   },
   {
+    name: toolNames.BLOOMREACH_CUSTOMERS_TRACK_EVENT_TOOL,
+    description:
+      'Track a customer event via the Bloomreach Tracking API. Use for recording purchases, page views, custom events, and other customer actions. Returns { success, response }; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        customerIds: {
+          type: 'object',
+          description: 'Customer identifier map (registered/email/cookie etc.).',
+        },
+        eventType: {
+          type: 'string',
+          description: 'Event type name (e.g. "purchase", "page_view", "cart_update").',
+        },
+        timestamp: {
+          type: 'number',
+          description: 'Unix timestamp of the event. Defaults to current time if omitted.',
+        },
+        properties: {
+          type: 'object',
+          description: 'Event properties payload (e.g. { total_price: 99.99, item_count: 3 }).',
+        },
+      },
+      required: ['project', 'customerIds', 'eventType'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachCustomersService',
+    methodName: 'trackEvent',
+  },
+  {
+    name: toolNames.BLOOMREACH_CUSTOMERS_BATCH_COMMANDS_TOOL,
+    description:
+      'Execute multiple tracking commands in a single batch request. Supports customers/events, customers (update), and other tracking operations. Returns { success, response }; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        commands: {
+          type: 'array',
+          description:
+            'Array of batch command objects, each with "name" (e.g. "customers/events") and "data" fields.',
+        },
+      },
+      required: ['project', 'commands'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachCustomersService',
+    methodName: 'trackBatchCommands',
+  },
+  {
+    name: toolNames.BLOOMREACH_CUSTOMERS_EXPORT_EVENTS_TOOL,
+    description:
+      'Export events for a specific customer. Returns event history filtered by optional event types. Returns { success, events }; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        customerIds: {
+          type: 'object',
+          description: 'Customer identifier map (registered/email/cookie etc.).',
+        },
+        eventTypes: {
+          type: 'array',
+          description: 'Optional list of event type names to filter by.',
+        },
+      },
+      required: ['project', 'customerIds'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachCustomersService',
+    methodName: 'exportCustomerEvents',
+  },
+  {
+    name: toolNames.BLOOMREACH_CUSTOMERS_EXPORT_ONE_TOOL,
+    description:
+      'Export full data for a single customer including properties, IDs, and optional attributes. Returns { success, customer }; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        customerIds: {
+          type: 'object',
+          description: 'Customer identifier map (registered/email/cookie etc.).',
+        },
+        attributes: {
+          type: 'array',
+          description: 'Optional list of attribute descriptors to include in the export.',
+        },
+      },
+      required: ['project', 'customerIds'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachCustomersService',
+    methodName: 'exportSingleCustomer',
+  },
+  {
     name: toolNames.BLOOMREACH_VOUCHERS_LIST_TOOL,
     description:
       'List all voucher pools in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
@@ -2474,6 +2659,25 @@ const tools: ToolRoute[] = [
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachDataManagerService',
     methodName: 'prepareSaveChanges',
+  },
+  {
+    name: toolNames.BLOOMREACH_DATA_MANAGER_CONSENT_CATEGORIES_TOOL,
+    description:
+      'List consent categories configured in the project via the Bloomreach Data API. Returns { success, categories }; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+      },
+      required: ['project'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachDataManagerService',
+    methodName: 'listConsentCategories',
   },
   {
     name: toolNames.BLOOMREACH_EXPORTS_LIST_TOOL,
@@ -4464,6 +4668,73 @@ const tools: ToolRoute[] = [
     },
     serviceClass: 'BloomreachWeblayersService',
     methodName: 'prepareArchiveWeblayer',
+  },
+  {
+    name: toolNames.BLOOMREACH_WEBLAYERS_BEST_VARIANT_TOOL,
+    description:
+      'Get the best weblayer variant for a customer using Bloomreach contextual bandits (real-time personalization API). Returns the recommended variant based on multi-armed bandit optimization. Returns { success, bestVariant, response }; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        banditId: {
+          type: 'string',
+          description: 'Bandit/experiment ID for the weblayer personalization.',
+        },
+        customerIds: {
+          type: 'object',
+          description: 'Customer identifier map (e.g. { cookie: "abc123" }).',
+        },
+        variants: {
+          type: 'array',
+          description:
+            'Array of variant objects, each with an "id" field (e.g. [{ id: "variant_a" }, { id: "variant_b" }]).',
+        },
+      },
+      required: ['project', 'banditId', 'customerIds', 'variants'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachWeblayersService',
+    methodName: 'getBestVariant',
+  },
+  {
+    name: toolNames.BLOOMREACH_WEBLAYERS_REPORT_REWARD_TOOL,
+    description:
+      'Report a reward/conversion event for a weblayer variant to the Bloomreach contextual bandits API. Use after a customer converts on a specific variant to improve future personalization. Returns { success, response }; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        banditId: {
+          type: 'string',
+          description: 'Bandit/experiment ID for the weblayer personalization.',
+        },
+        customerIds: {
+          type: 'object',
+          description: 'Customer identifier map (e.g. { cookie: "abc123" }).',
+        },
+        variantId: {
+          type: 'string',
+          description: 'ID of the variant that led to the conversion.',
+        },
+        reward: {
+          type: 'number',
+          description: 'Optional reward value (defaults to 1 if omitted).',
+        },
+      },
+      required: ['project', 'banditId', 'customerIds', 'variantId'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachWeblayersService',
+    methodName: 'reportReward',
   },
   {
     name: toolNames.BLOOMREACH_REPORTS_LIST_TOOL,
