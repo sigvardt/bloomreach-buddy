@@ -3,10 +3,14 @@
 import { Command } from 'commander';
 import { input, password, confirm } from '@inquirer/prompts';
 import { readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import * as core from '@bloomreach-buddy/core';
 import {
   BloomreachAccessManagementService,
   BloomreachAssetManagerService,
   BloomreachAuthService,
+  BloomreachDatabase,
   BloomreachCampaignCalendarService,
   BloomreachCampaignSettingsService,
   BloomreachChannelSettingsService,
@@ -40,6 +44,7 @@ import {
   BloomreachTrendsService,
   BloomreachVouchersService,
   BloomreachWeblayersService,
+  TwoPhaseCommitService,
   resolveApiConfig,
   resolveProfilesDir,
   validateCredentials,
@@ -49,6 +54,7 @@ import {
   BLOOMREACH_API_SETTINGS_URL,
 } from '@bloomreach-buddy/core';
 import type {
+  ActionExecutor,
   BloomreachApiConfig,
   CustomerIds,
   DataSelection,
@@ -101,6 +107,55 @@ function tryResolveApiConfig(projectToken?: string): BloomreachApiConfig | undef
   }
 }
 
+const apiConfig = tryResolveApiConfig();
+
+function collectAllExecutors(
+  config?: BloomreachApiConfig,
+): Record<string, ActionExecutor> {
+  const executors: Record<string, ActionExecutor> = {};
+  const factories: Array<() => Record<string, ActionExecutor>> = [
+    () => core.createCustomerActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createDashboardActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createScenarioActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createEmailCampaignActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createSurveyActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createCampaignCalendarActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createTrendActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createFunnelActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createRetentionActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createFlowActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createGeoAnalysisActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createVoucherActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createAssetManagerActionExecutors() as Record<string, ActionExecutor>,
+    () => core.createTagManagerActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createMetricActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createDataManagerActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createExportActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createIntegrationActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createInitiativeActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createProjectSettingsActionExecutors() as Record<string, ActionExecutor>,
+    () => core.createCampaignSettingsActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createSecuritySettingsActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createEvaluationSettingsActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createWeblayerActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createReportActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createSegmentationActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createSqlReportActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createCatalogActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createImportsActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createUseCaseActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createAccessActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createRecommendationActionExecutors() as Record<string, ActionExecutor>,
+    () => core.createChannelSettingsActionExecutors() as Record<string, ActionExecutor>,
+  ];
+
+  for (const factory of factories) {
+    Object.assign(executors, factory());
+  }
+
+  return executors;
+}
+
 const program = new Command();
 
 program
@@ -123,6 +178,75 @@ program
     console.log('-----------------');
     console.log(`Environment: ${result.environment}`);
     console.log(`Connected:   ${result.connected}`);
+  });
+
+const actions = program.command('actions').description('Manage two-phase commit actions');
+
+actions
+  .command('confirm')
+  .description('Confirm and execute a prepared action')
+  .requiredOption('--token <token>', 'Confirmation token from a prepare command')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { token: string; json?: boolean }) => {
+    const dbPath =
+      process.env.BLOOMREACH_BUDDY_DB_PATH ?? join(homedir(), '.bloomreach-buddy', 'state.db');
+    const db = new BloomreachDatabase(dbPath);
+    const allExecutors = collectAllExecutors(apiConfig);
+    const tpc = new TwoPhaseCommitService(db, allExecutors);
+
+    try {
+      const result = await tpc.confirmByToken({ confirmToken: options.token });
+      if (options.json) {
+        printJson(result);
+      } else {
+        console.log(`Action ${result.preparedActionId} confirmed and executed.`);
+        console.log(`Type: ${result.actionType}`);
+        console.log(`Status: ${result.status}`);
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    } finally {
+      db.close();
+    }
+  });
+
+actions
+  .command('list')
+  .description('List prepared actions')
+  .option('--status <status>', 'Filter by status (prepared, executed, failed)')
+  .option('--limit <n>', 'Maximum results', '50')
+  .option('--json', 'Output as JSON')
+  .action(async (options: { status?: string; limit: string; json?: boolean }) => {
+    const dbPath =
+      process.env.BLOOMREACH_BUDDY_DB_PATH ?? join(homedir(), '.bloomreach-buddy', 'state.db');
+    const db = new BloomreachDatabase(dbPath);
+    const tpc = new TwoPhaseCommitService(db, {});
+
+    try {
+      const parsedLimit = Number.parseInt(options.limit, 10);
+      const actionsList = tpc.listPreparedActions({
+        status: options.status,
+        limit: Number.isNaN(parsedLimit) ? 50 : parsedLimit,
+      });
+
+      if (options.json) {
+        printJson(actionsList);
+      } else if (actionsList.length === 0) {
+        console.log('No prepared actions found.');
+      } else {
+        for (const action of actionsList) {
+          console.log(
+            `${action.preparedActionId}  ${action.actionType}  ${action.status}  expires:${new Date(action.expiresAtMs).toISOString()}`,
+          );
+        }
+      }
+    } catch (error) {
+      console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    } finally {
+      db.close();
+    }
   });
 
 const dashboards = program

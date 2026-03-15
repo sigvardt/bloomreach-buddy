@@ -3,6 +3,13 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import * as core from '@bloomreach-buddy/core';
+import {
+  BloomreachDatabase,
+  TwoPhaseCommitService,
+  type ActionExecutor,
+} from '@bloomreach-buddy/core';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import * as toolNames from '../index.js';
 import { toToolResult, toErrorResult } from '../toolResults.js';
 import { isPlainObject, validateToolArgValueAgainstSchema } from '../toolSchema.js';
@@ -22,6 +29,58 @@ const apiConfig: core.BloomreachApiConfig | undefined =
         apiSecret: process.env.BLOOMREACH_API_SECRET,
       }
     : undefined;
+
+function collectAllExecutors(
+  config?: core.BloomreachApiConfig,
+): Record<string, ActionExecutor> {
+  const executors: Record<string, ActionExecutor> = {};
+  const factories: Array<() => Record<string, ActionExecutor>> = [
+    () => core.createCustomerActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createDashboardActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createScenarioActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createEmailCampaignActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createSurveyActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createCampaignCalendarActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createTrendActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createFunnelActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createRetentionActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createFlowActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createGeoAnalysisActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createVoucherActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createAssetManagerActionExecutors() as Record<string, ActionExecutor>,
+    () => core.createTagManagerActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createMetricActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createDataManagerActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createExportActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createIntegrationActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createInitiativeActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createProjectSettingsActionExecutors() as Record<string, ActionExecutor>,
+    () => core.createCampaignSettingsActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createSecuritySettingsActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createEvaluationSettingsActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createWeblayerActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createReportActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createSegmentationActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createSqlReportActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createCatalogActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createImportsActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createUseCaseActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createAccessActionExecutors(config) as Record<string, ActionExecutor>,
+    () => core.createRecommendationActionExecutors() as Record<string, ActionExecutor>,
+    () => core.createChannelSettingsActionExecutors() as Record<string, ActionExecutor>,
+  ];
+
+  for (const factory of factories) {
+    Object.assign(executors, factory());
+  }
+
+  return executors;
+}
+
+const dbPath = process.env.BLOOMREACH_BUDDY_DB_PATH ?? join(homedir(), '.bloomreach-buddy', 'state.db');
+const db = new BloomreachDatabase(dbPath);
+const allExecutors = collectAllExecutors(apiConfig);
+const twoPhaseCommit = new TwoPhaseCommitService(db, allExecutors);
 
 interface InputSchemaProperty {
   type: 'string' | 'number' | 'boolean' | 'object' | 'array';
@@ -118,6 +177,44 @@ const tools: ToolRoute[] = [
         loginUrl: {
           type: 'string',
           description: 'Override the login URL (default: https://eu.login.bloomreach.com/)',
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: toolNames.BLOOMREACH_ACTIONS_CONFIRM_TOOL,
+    description:
+      'Confirm and execute a previously prepared action using its confirmation token. ' +
+      'The token is returned by any prepare_* tool. Once confirmed, the action is executed ' +
+      'and cannot be confirmed again. Tokens expire after 30 minutes.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        confirmToken: {
+          type: 'string',
+          description: 'The confirmation token returned by the prepare_* tool.',
+        },
+      },
+      required: ['confirmToken'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: toolNames.BLOOMREACH_ACTIONS_LIST_TOOL,
+    description:
+      'List prepared actions with optional status filter. ' +
+      'Returns a summary of each action including its ID, type, status, expiry, and preview.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          description: 'Filter by status: "prepared", "executed", or "failed".',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of actions to return (default 50).',
         },
       },
       additionalProperties: false,
@@ -6075,6 +6172,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return toToolResult(result);
     }
 
+    if (name === toolNames.BLOOMREACH_ACTIONS_CONFIRM_TOOL) {
+      const confirmToken = typeof args.confirmToken === 'string' ? args.confirmToken : '';
+      if (!confirmToken) {
+        return toErrorResult(new Error('confirmToken is required.'));
+      }
+      const result = await twoPhaseCommit.confirmByToken({ confirmToken });
+      return toToolResult(result);
+    }
+
+    if (name === toolNames.BLOOMREACH_ACTIONS_LIST_TOOL) {
+      const status = typeof args.status === 'string' ? args.status : undefined;
+      const limit = typeof args.limit === 'number' ? args.limit : undefined;
+      const actions = twoPhaseCommit.listPreparedActions({ status, limit });
+      return toToolResult(actions);
+    }
+
     const route = toolByName.get(name);
     if (!route || !route.serviceClass || !route.methodName) {
       return toErrorResult(new Error(`Unknown tool: ${name}`));
@@ -6102,6 +6215,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const result = await Promise.resolve(
       methodCandidate.call(service, normalizeInput(args, project)),
     );
+
+    if (route.methodName && route.methodName.startsWith('prepare') && result && typeof result === 'object') {
+      const prepareResult = result as Record<string, unknown>;
+      const preview = prepareResult.preview as Record<string, unknown> | undefined;
+      if (preview && typeof preview.action === 'string') {
+        const tpcResult = twoPhaseCommit.prepare({
+          actionType: preview.action,
+          target: preview,
+          payload: preview,
+          preview,
+          operatorNote:
+            typeof preview.operatorNote === 'string' ? preview.operatorNote : undefined,
+        });
+        return toToolResult(tpcResult);
+      }
+    }
+
     return toToolResult(result);
   } catch (error) {
     return toErrorResult(error);

@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { BLOOMREACH_MCP_TOOL_NAMES } from '../index.js';
 
 describe('tool constants', () => {
-  it('exports 260 tool name constants via BLOOMREACH_MCP_TOOL_NAMES', () => {
-    expect(BLOOMREACH_MCP_TOOL_NAMES).toHaveLength(260);
+  it('exports 262 tool name constants via BLOOMREACH_MCP_TOOL_NAMES', () => {
+    expect(BLOOMREACH_MCP_TOOL_NAMES).toHaveLength(262);
   });
 
   it('all tool names follow bloomreach.<domain>.<action> dot-notation', () => {
@@ -30,6 +30,14 @@ describe('tool constants', () => {
     expect(BLOOMREACH_MCP_TOOL_NAMES).toContain('bloomreach.dashboards.list');
   });
 
+  it('includes bloomreach.actions.confirm tool', () => {
+    expect(BLOOMREACH_MCP_TOOL_NAMES).toContain('bloomreach.actions.confirm');
+  });
+
+  it('includes bloomreach.actions.list tool', () => {
+    expect(BLOOMREACH_MCP_TOOL_NAMES).toContain('bloomreach.actions.list');
+  });
+
   it('includes prepare tools with prepare_ in name', () => {
     const prepareTools = BLOOMREACH_MCP_TOOL_NAMES.filter((name) => name.includes('prepare_'));
     expect(prepareTools.length).toBeGreaterThan(0);
@@ -38,9 +46,10 @@ describe('tool constants', () => {
     }
   });
 
-  it('covers all 33 expected service domains', () => {
+  it('covers all 34 expected service domains', () => {
     const domains = new Set(BLOOMREACH_MCP_TOOL_NAMES.map((name) => name.split('.')[1]));
     const expectedDomains = [
+      'actions',
       'access',
       'assets',
       'campaign_settings',
