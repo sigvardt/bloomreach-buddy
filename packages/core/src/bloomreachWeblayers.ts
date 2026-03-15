@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import {
   bloomreachApiFetch,
   buildWebxpPath,
@@ -151,21 +152,17 @@ const MAX_AB_TEST_VARIANTS = 10;
 export function validateWeblayerName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_WEBLAYER_NAME_LENGTH) {
-    throw new Error('Weblayer name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Weblayer name must not be empty.');
   }
   if (trimmed.length > MAX_WEBLAYER_NAME_LENGTH) {
-    throw new Error(
-      `Weblayer name must not exceed ${MAX_WEBLAYER_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Weblayer name must not exceed ${MAX_WEBLAYER_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
 
 export function validateWeblayerStatus(status: string): WeblayerStatus {
   if (!WEBLAYER_STATUSES.includes(status as WeblayerStatus)) {
-    throw new Error(
-      `status must be one of: ${WEBLAYER_STATUSES.join(', ')} (got "${status}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `status must be one of: ${WEBLAYER_STATUSES.join(', ')} (got "${status}").`);
   }
   return status as WeblayerStatus;
 }
@@ -173,7 +170,7 @@ export function validateWeblayerStatus(status: string): WeblayerStatus {
 export function validateWeblayerId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Weblayer ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Weblayer ID must not be empty.');
   }
   return trimmed;
 }
@@ -181,18 +178,18 @@ export function validateWeblayerId(id: string): string {
 export function validateBanditId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Bandit ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Bandit ID must not be empty.');
   }
   return trimmed;
 }
 
 export function validateVariants(variants: WeblayerVariant[]): WeblayerVariant[] {
   if (!Array.isArray(variants) || variants.length === 0) {
-    throw new Error('At least one variant must be provided.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one variant must be provided.');
   }
   for (const v of variants) {
     if (typeof v.id !== 'string' || v.id.trim().length === 0) {
-      throw new Error('Each variant must have a non-empty id.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Each variant must have a non-empty id.');
     }
   }
   return variants;
@@ -201,16 +198,14 @@ export function validateVariants(variants: WeblayerVariant[]): WeblayerVariant[]
 export function validateVariantId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Variant ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Variant ID must not be empty.');
   }
   return trimmed;
 }
 
 export function validateWeblayerDisplayType(displayType: string): WeblayerDisplayType {
   if (!WEBLAYER_DISPLAY_TYPES.includes(displayType as WeblayerDisplayType)) {
-    throw new Error(
-      `displayType must be one of: ${WEBLAYER_DISPLAY_TYPES.join(', ')} (got "${displayType}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `displayType must be one of: ${WEBLAYER_DISPLAY_TYPES.join(', ')} (got "${displayType}").`);
   }
   return displayType as WeblayerDisplayType;
 }
@@ -221,15 +216,11 @@ export function validateWeblayerABTestConfig(config: WeblayerABTestConfig): Webl
     config.variants < MIN_AB_TEST_VARIANTS ||
     config.variants > MAX_AB_TEST_VARIANTS
   ) {
-    throw new Error(
-      `A/B test variants must be an integer between ${MIN_AB_TEST_VARIANTS} and ${MAX_AB_TEST_VARIANTS} (got ${config.variants}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `A/B test variants must be an integer between ${MIN_AB_TEST_VARIANTS} and ${MAX_AB_TEST_VARIANTS} (got ${config.variants}).`);
   }
   if (config.splitPercentage !== undefined) {
     if (config.splitPercentage < 0 || config.splitPercentage > 100) {
-      throw new Error(
-        `A/B test split percentage must be between 0 and 100 (got ${config.splitPercentage}).`,
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `A/B test split percentage must be between 0 and 100 (got ${config.splitPercentage}).`);
     }
   }
   return config;
@@ -239,19 +230,15 @@ export function validateDisplayConditions(
   conditions: WeblayerDisplayConditions,
 ): WeblayerDisplayConditions {
   if (conditions.delayMs !== undefined && conditions.delayMs < 0) {
-    throw new Error(`delayMs must be greater than or equal to 0 (got ${conditions.delayMs}).`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `delayMs must be greater than or equal to 0 (got ${conditions.delayMs}).`);
   }
   if (conditions.scrollPercentage !== undefined) {
     if (conditions.scrollPercentage < 0 || conditions.scrollPercentage > 100) {
-      throw new Error(
-        `scrollPercentage must be between 0 and 100 (got ${conditions.scrollPercentage}).`,
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `scrollPercentage must be between 0 and 100 (got ${conditions.scrollPercentage}).`);
     }
   }
   if (conditions.frequencyCap !== undefined && conditions.frequencyCap < 1) {
-    throw new Error(
-      `frequencyCap must be greater than or equal to 1 (got ${conditions.frequencyCap}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `frequencyCap must be greater than or equal to 1 (got ${conditions.frequencyCap}).`);
   }
   return conditions;
 }
@@ -265,9 +252,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -290,11 +277,9 @@ class CreateWeblayerExecutor implements WeblayerActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateWeblayerExecutor: not yet implemented. ' +
-        'Weblayer creation is only available through the Bloomreach Engagement UI: Campaigns > Web layers. ' +
-        'For real-time personalization, use getBestVariant and reportReward methods.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateWeblayerExecutor: not yet implemented. ' +
+      'Weblayer creation is only available through the Bloomreach Engagement UI: Campaigns > Web layers. ' +
+      'For real-time personalization, use getBestVariant and reportReward methods.', { not_implemented: true });
   }
 }
 
@@ -310,11 +295,9 @@ class StartWeblayerExecutor implements WeblayerActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'StartWeblayerExecutor: not yet implemented. ' +
-        'Weblayer activation is only available through the Bloomreach Engagement UI: Campaigns > Web layers. ' +
-        'For real-time personalization, use getBestVariant and reportReward methods.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'StartWeblayerExecutor: not yet implemented. ' +
+      'Weblayer activation is only available through the Bloomreach Engagement UI: Campaigns > Web layers. ' +
+      'For real-time personalization, use getBestVariant and reportReward methods.', { not_implemented: true });
   }
 }
 
@@ -330,11 +313,9 @@ class StopWeblayerExecutor implements WeblayerActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'StopWeblayerExecutor: not yet implemented. ' +
-        'Weblayer deactivation is only available through the Bloomreach Engagement UI: Campaigns > Web layers. ' +
-        'For real-time personalization, use getBestVariant and reportReward methods.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'StopWeblayerExecutor: not yet implemented. ' +
+      'Weblayer deactivation is only available through the Bloomreach Engagement UI: Campaigns > Web layers. ' +
+      'For real-time personalization, use getBestVariant and reportReward methods.', { not_implemented: true });
   }
 }
 
@@ -350,11 +331,9 @@ class CloneWeblayerExecutor implements WeblayerActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CloneWeblayerExecutor: not yet implemented. ' +
-        'Weblayer cloning is only available through the Bloomreach Engagement UI: Campaigns > Web layers. ' +
-        'For real-time personalization, use getBestVariant and reportReward methods.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CloneWeblayerExecutor: not yet implemented. ' +
+      'Weblayer cloning is only available through the Bloomreach Engagement UI: Campaigns > Web layers. ' +
+      'For real-time personalization, use getBestVariant and reportReward methods.', { not_implemented: true });
   }
 }
 
@@ -370,11 +349,9 @@ class ArchiveWeblayerExecutor implements WeblayerActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ArchiveWeblayerExecutor: not yet implemented. ' +
-        'Weblayer archiving is only available through the Bloomreach Engagement UI: Campaigns > Web layers. ' +
-        'For real-time personalization, use getBestVariant and reportReward methods.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ArchiveWeblayerExecutor: not yet implemented. ' +
+      'Weblayer archiving is only available through the Bloomreach Engagement UI: Campaigns > Web layers. ' +
+      'For real-time personalization, use getBestVariant and reportReward methods.', { not_implemented: true });
   }
 }
 
@@ -412,11 +389,9 @@ export class BloomreachWeblayersService {
     }
 
     void this.apiConfig;
-    throw new Error(
-      'listWeblayers: the Bloomreach API does not provide a weblayer listing endpoint. ' +
-        'Use the Bloomreach Engagement UI: Campaigns > Web layers. ' +
-        'For personalization, use getBestVariant and reportReward methods (API-backed).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listWeblayers: the Bloomreach API does not provide a weblayer listing endpoint. ' +
+      'Use the Bloomreach Engagement UI: Campaigns > Web layers. ' +
+      'For personalization, use getBestVariant and reportReward methods (API-backed).');
   }
 
   async viewWeblayerPerformance(
@@ -426,10 +401,8 @@ export class BloomreachWeblayersService {
     validateWeblayerId(input.weblayerId);
 
     void this.apiConfig;
-    throw new Error(
-      'viewWeblayerPerformance: the Bloomreach API does not provide a weblayer performance endpoint. ' +
-        'Use the Bloomreach Engagement UI: Campaigns > Web layers > [weblayer] > Results.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewWeblayerPerformance: the Bloomreach API does not provide a weblayer performance endpoint. ' +
+      'Use the Bloomreach Engagement UI: Campaigns > Web layers > [weblayer] > Results.');
   }
 
   prepareCreateWeblayer(input: CreateWeblayerInput): PreparedWeblayerAction {

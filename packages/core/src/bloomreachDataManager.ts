@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import {
   bloomreachApiFetch,
   buildDataPath,
@@ -220,7 +221,7 @@ const TRANSFORMATION_TYPES = new Set([
 function validateRequiredTrimmed(value: string, fieldName: string): string {
   const trimmed = value.trim();
   if (trimmed.length === 0) {
-    throw new Error(`${fieldName} must not be empty.`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${fieldName} must not be empty.`);
   }
   return trimmed;
 }
@@ -228,9 +229,7 @@ function validateRequiredTrimmed(value: string, fieldName: string): string {
 function validatePropertyName(name: string): string {
   const trimmed = validateRequiredTrimmed(name, 'Property name');
   if (trimmed.length > MAX_PROPERTY_NAME_LENGTH) {
-    throw new Error(
-      `Property name must not exceed ${MAX_PROPERTY_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Property name must not exceed ${MAX_PROPERTY_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -238,9 +237,7 @@ function validatePropertyName(name: string): string {
 function validateEventName(name: string): string {
   const trimmed = validateRequiredTrimmed(name, 'Event name');
   if (trimmed.length > MAX_EVENT_NAME_LENGTH) {
-    throw new Error(
-      `Event name must not exceed ${MAX_EVENT_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Event name must not exceed ${MAX_EVENT_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -248,9 +245,7 @@ function validateEventName(name: string): string {
 function validateDefinitionName(name: string): string {
   const trimmed = validateRequiredTrimmed(name, 'Definition name');
   if (trimmed.length > MAX_DEFINITION_NAME_LENGTH) {
-    throw new Error(
-      `Definition name must not exceed ${MAX_DEFINITION_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Definition name must not exceed ${MAX_DEFINITION_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -258,9 +253,7 @@ function validateDefinitionName(name: string): string {
 function validateDescription(description: string): string {
   const trimmed = validateRequiredTrimmed(description, 'Description');
   if (trimmed.length > MAX_DESCRIPTION_LENGTH) {
-    throw new Error(
-      `Description must not exceed ${MAX_DESCRIPTION_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Description must not exceed ${MAX_DESCRIPTION_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -268,9 +261,7 @@ function validateDescription(description: string): string {
 function validatePropertyType(type: string): string {
   const normalized = validateRequiredTrimmed(type, 'Property type').toLowerCase();
   if (!PROPERTY_TYPES.has(normalized)) {
-    throw new Error(
-      `Property type must be one of: ${Array.from(PROPERTY_TYPES).join(', ')} (got ${normalized}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Property type must be one of: ${Array.from(PROPERTY_TYPES).join(', ')} (got ${normalized}).`);
   }
   return normalized;
 }
@@ -278,9 +269,7 @@ function validatePropertyType(type: string): string {
 function validateEventType(type: string): string {
   const normalized = validateRequiredTrimmed(type, 'Event type').toLowerCase();
   if (!PROPERTY_TYPES.has(normalized)) {
-    throw new Error(
-      `Event type must be one of: ${Array.from(PROPERTY_TYPES).join(', ')} (got ${normalized}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Event type must be one of: ${Array.from(PROPERTY_TYPES).join(', ')} (got ${normalized}).`);
   }
   return normalized;
 }
@@ -288,9 +277,7 @@ function validateEventType(type: string): string {
 function validateFieldType(type: string): string {
   const normalized = validateRequiredTrimmed(type, 'Field type').toLowerCase();
   if (!PROPERTY_TYPES.has(normalized)) {
-    throw new Error(
-      `Field type must be one of: ${Array.from(PROPERTY_TYPES).join(', ')} (got ${normalized}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Field type must be one of: ${Array.from(PROPERTY_TYPES).join(', ')} (got ${normalized}).`);
   }
   return normalized;
 }
@@ -298,9 +285,7 @@ function validateFieldType(type: string): string {
 function validateSourceType(sourceType: string): string {
   const normalized = validateRequiredTrimmed(sourceType, 'Source type').toLowerCase();
   if (!SOURCE_TYPES.has(normalized)) {
-    throw new Error(
-      `Source type must be one of: ${Array.from(SOURCE_TYPES).join(', ')} (got ${normalized}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Source type must be one of: ${Array.from(SOURCE_TYPES).join(', ')} (got ${normalized}).`);
   }
   return normalized;
 }
@@ -308,11 +293,11 @@ function validateSourceType(sourceType: string): string {
 function validateSourceUrl(url: string): string {
   const trimmed = validateRequiredTrimmed(url, 'Source URL');
   if (trimmed.length > MAX_URL_LENGTH) {
-    throw new Error(`Source URL must not exceed ${MAX_URL_LENGTH} characters (got ${trimmed.length}).`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Source URL must not exceed ${MAX_URL_LENGTH} characters (got ${trimmed.length}).`);
   }
 
   if (!/^[a-zA-Z][a-zA-Z\d+.-]*:\/\/.+/.test(trimmed)) {
-    throw new Error('Source URL must be a valid absolute URL.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Source URL must be a valid absolute URL.');
   }
 
   return trimmed;
@@ -321,9 +306,7 @@ function validateSourceUrl(url: string): string {
 function validateSourceName(name: string): string {
   const trimmed = validateRequiredTrimmed(name, 'Source name');
   if (trimmed.length > MAX_SOURCE_NAME_LENGTH) {
-    throw new Error(
-      `Source name must not exceed ${MAX_SOURCE_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Source name must not exceed ${MAX_SOURCE_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -331,9 +314,7 @@ function validateSourceName(name: string): string {
 function validateDefinitionId(id: string): string {
   const trimmed = validateRequiredTrimmed(id, 'Definition ID');
   if (trimmed.length > MAX_FIELD_NAME_LENGTH) {
-    throw new Error(
-      `Definition ID must not exceed ${MAX_FIELD_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Definition ID must not exceed ${MAX_FIELD_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -341,9 +322,7 @@ function validateDefinitionId(id: string): string {
 function validateSourceId(id: string): string {
   const trimmed = validateRequiredTrimmed(id, 'Source ID');
   if (trimmed.length > MAX_FIELD_NAME_LENGTH) {
-    throw new Error(
-      `Source ID must not exceed ${MAX_FIELD_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Source ID must not exceed ${MAX_FIELD_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -354,16 +333,12 @@ function validateMappingFields(
 ): { sourceField: string; targetField: string } {
   const validatedSourceField = validateRequiredTrimmed(sourceField, 'Source field');
   if (validatedSourceField.length > MAX_FIELD_NAME_LENGTH) {
-    throw new Error(
-      `Source field must not exceed ${MAX_FIELD_NAME_LENGTH} characters (got ${validatedSourceField.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Source field must not exceed ${MAX_FIELD_NAME_LENGTH} characters (got ${validatedSourceField.length}).`);
   }
 
   const validatedTargetField = validateRequiredTrimmed(targetField, 'Target field');
   if (validatedTargetField.length > MAX_FIELD_NAME_LENGTH) {
-    throw new Error(
-      `Target field must not exceed ${MAX_FIELD_NAME_LENGTH} characters (got ${validatedTargetField.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Target field must not exceed ${MAX_FIELD_NAME_LENGTH} characters (got ${validatedTargetField.length}).`);
   }
 
   return {
@@ -375,9 +350,7 @@ function validateMappingFields(
 function validateTransformationType(type: string): string {
   const normalized = validateRequiredTrimmed(type, 'Transformation type').toLowerCase();
   if (!TRANSFORMATION_TYPES.has(normalized)) {
-    throw new Error(
-      `Transformation type must be one of: ${Array.from(TRANSFORMATION_TYPES).join(', ')} (got ${normalized}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Transformation type must be one of: ${Array.from(TRANSFORMATION_TYPES).join(', ')} (got ${normalized}).`);
   }
   return normalized;
 }
@@ -393,7 +366,7 @@ function validateOptionalString(
 
   const trimmed = validateRequiredTrimmed(value, fieldName);
   if (trimmed.length > maxLength) {
-    throw new Error(`${fieldName} must not exceed ${maxLength} characters (got ${trimmed.length}).`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${fieldName} must not exceed ${maxLength} characters (got ${trimmed.length}).`);
   }
 
   return trimmed;
@@ -411,7 +384,7 @@ function validateConfiguration(
     configuration === null ||
     Array.isArray(configuration)
   ) {
-    throw new Error('Configuration must be a non-null object.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Configuration must be a non-null object.');
   }
 
   return configuration;
@@ -436,7 +409,7 @@ function validateEventProperties(
       property.isRequired !== undefined &&
       typeof property.isRequired !== 'boolean'
     ) {
-      throw new Error(`Event property #${index + 1} isRequired must be a boolean.`);
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Event property #${index + 1} isRequired must be a boolean.`);
     }
 
     return {
@@ -482,9 +455,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -509,10 +482,8 @@ class AddCustomerPropertyExecutor implements DataManagerActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'AddCustomerPropertyExecutor: not yet implemented. ' +
-        'Customer property addition is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'AddCustomerPropertyExecutor: not yet implemented. ' +
+      'Customer property addition is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -528,10 +499,8 @@ class EditCustomerPropertyExecutor implements DataManagerActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'EditCustomerPropertyExecutor: not yet implemented. ' +
-        'Customer property editing is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'EditCustomerPropertyExecutor: not yet implemented. ' +
+      'Customer property editing is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -547,10 +516,8 @@ class AddEventDefinitionExecutor implements DataManagerActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'AddEventDefinitionExecutor: not yet implemented. ' +
-        'Event definition creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'AddEventDefinitionExecutor: not yet implemented. ' +
+      'Event definition creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -566,10 +533,8 @@ class AddFieldDefinitionExecutor implements DataManagerActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'AddFieldDefinitionExecutor: not yet implemented. ' +
-        'Field definition creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'AddFieldDefinitionExecutor: not yet implemented. ' +
+      'Field definition creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -585,10 +550,8 @@ class EditFieldDefinitionExecutor implements DataManagerActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'EditFieldDefinitionExecutor: not yet implemented. ' +
-        'Field definition editing is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'EditFieldDefinitionExecutor: not yet implemented. ' +
+      'Field definition editing is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -604,10 +567,8 @@ class ConfigureMappingExecutor implements DataManagerActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ConfigureMappingExecutor: not yet implemented. ' +
-        'Mapping configuration is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ConfigureMappingExecutor: not yet implemented. ' +
+      'Mapping configuration is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -623,10 +584,8 @@ class AddContentSourceExecutor implements DataManagerActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'AddContentSourceExecutor: not yet implemented. ' +
-        'Content source addition is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'AddContentSourceExecutor: not yet implemented. ' +
+      'Content source addition is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -642,10 +601,8 @@ class EditContentSourceExecutor implements DataManagerActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'EditContentSourceExecutor: not yet implemented. ' +
-        'Content source editing is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'EditContentSourceExecutor: not yet implemented. ' +
+      'Content source editing is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -661,10 +618,8 @@ class SaveChangesExecutor implements DataManagerActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'SaveChangesExecutor: not yet implemented. ' +
-        'Saving data manager changes is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'SaveChangesExecutor: not yet implemented. ' +
+      'Saving data manager changes is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -757,11 +712,9 @@ export class BloomreachDataManagerService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listCustomerProperties: the Bloomreach API does not provide an endpoint for customer properties. ' +
-        'Customer property data must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Data & Assets > Data Manager in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listCustomerProperties: the Bloomreach API does not provide an endpoint for customer properties. ' +
+      'Customer property data must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Data & Assets > Data Manager in your project).');
   }
 
   async listEvents(input?: ListEventsInput): Promise<EventDefinition[]> {
@@ -770,11 +723,9 @@ export class BloomreachDataManagerService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listEvents: the Bloomreach API does not provide an endpoint for event definitions. ' +
-        'Event definition data must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Data & Assets > Data Manager > Events in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listEvents: the Bloomreach API does not provide an endpoint for event definitions. ' +
+      'Event definition data must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Data & Assets > Data Manager > Events in your project).');
   }
 
   async listFieldDefinitions(
@@ -785,11 +736,9 @@ export class BloomreachDataManagerService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listFieldDefinitions: the Bloomreach API does not provide an endpoint for field definitions. ' +
-        'Field definition data must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Data & Assets > Data Manager > Definitions in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listFieldDefinitions: the Bloomreach API does not provide an endpoint for field definitions. ' +
+      'Field definition data must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Data & Assets > Data Manager > Definitions in your project).');
   }
 
   async listMappings(input?: ListMappingsInput): Promise<DataMapping[]> {
@@ -798,11 +747,9 @@ export class BloomreachDataManagerService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listMappings: the Bloomreach API does not provide an endpoint for data mappings. ' +
-        'Data mapping information must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Data & Assets > Data Manager > Mapping in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listMappings: the Bloomreach API does not provide an endpoint for data mappings. ' +
+      'Data mapping information must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Data & Assets > Data Manager > Mapping in your project).');
   }
 
   async listContentSources(
@@ -813,11 +760,9 @@ export class BloomreachDataManagerService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listContentSources: the Bloomreach API does not provide an endpoint for content sources. ' +
-        'Content source data must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Data & Assets > Data Manager > Content Sources in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listContentSources: the Bloomreach API does not provide an endpoint for content sources. ' +
+      'Content source data must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Data & Assets > Data Manager > Content Sources in your project).');
   }
 
   prepareAddCustomerProperty(

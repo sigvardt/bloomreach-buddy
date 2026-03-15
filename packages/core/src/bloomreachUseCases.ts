@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const DEPLOY_USE_CASE_ACTION_TYPE = 'use_cases.deploy';
@@ -92,7 +93,7 @@ export interface PreparedUseCaseAction {
 export function validateUseCaseId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Use case ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Use case ID must not be empty.');
   }
   return trimmed;
 }
@@ -100,23 +101,21 @@ export function validateUseCaseId(id: string): string {
 export function validateUseCaseSearchQuery(query: string): string {
   const trimmed = query.trim();
   if (trimmed.length === 0) {
-    throw new Error('Search query must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Search query must not be empty.');
   }
   return trimmed;
 }
 
 export function validateGoalCategory(category: string): UseCaseGoalCategory {
   if (!USE_CASE_GOAL_CATEGORIES.includes(category as UseCaseGoalCategory)) {
-    throw new Error(
-      `category must be one of: ${USE_CASE_GOAL_CATEGORIES.join(', ')} (got "${category}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `category must be one of: ${USE_CASE_GOAL_CATEGORIES.join(', ')} (got "${category}").`);
   }
   return category as UseCaseGoalCategory;
 }
 
 export function validateUseCaseTag(tag: string): UseCaseTag {
   if (!USE_CASE_TAGS.includes(tag as UseCaseTag)) {
-    throw new Error(`tag must be one of: ${USE_CASE_TAGS.join(', ')} (got "${tag}").`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `tag must be one of: ${USE_CASE_TAGS.join(', ')} (got "${tag}").`);
   }
   return tag as UseCaseTag;
 }
@@ -130,9 +129,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -157,10 +156,8 @@ class DeployUseCaseExecutor implements UseCaseActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DeployUseCaseExecutor: not yet implemented. ' +
-        'Use case deployment is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeployUseCaseExecutor: not yet implemented. ' +
+      'Use case deployment is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -176,10 +173,8 @@ class FavoriteUseCaseExecutor implements UseCaseActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'FavoriteUseCaseExecutor: not yet implemented. ' +
-        'Use case favoriting is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'FavoriteUseCaseExecutor: not yet implemented. ' +
+      'Use case favoriting is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -195,10 +190,8 @@ class UnfavoriteUseCaseExecutor implements UseCaseActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'UnfavoriteUseCaseExecutor: not yet implemented. ' +
-        'Use case unfavoriting is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UnfavoriteUseCaseExecutor: not yet implemented. ' +
+      'Use case unfavoriting is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -245,11 +238,9 @@ export class BloomreachUseCasesService {
     }
 
     void this.apiConfig;
-    throw new Error(
-      'listUseCases: the Bloomreach API does not provide a use case listing endpoint. ' +
-        'Use case data must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Use Case Center in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listUseCases: the Bloomreach API does not provide a use case listing endpoint. ' +
+      'Use case data must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Use Case Center in your project).');
   }
 
   async searchUseCases(input: SearchUseCasesInput): Promise<BloomreachUseCase[]> {
@@ -263,10 +254,8 @@ export class BloomreachUseCasesService {
     }
 
     void this.apiConfig;
-    throw new Error(
-      'searchUseCases: the Bloomreach API does not provide a use case search endpoint. ' +
-        'Use case search is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'searchUseCases: the Bloomreach API does not provide a use case search endpoint. ' +
+      'Use case search is only available through the Bloomreach Engagement UI.');
   }
 
   async viewUseCase(input: ViewUseCaseInput): Promise<UseCaseDetails> {
@@ -274,10 +263,8 @@ export class BloomreachUseCasesService {
     validateUseCaseId(input.useCaseId);
 
     void this.apiConfig;
-    throw new Error(
-      'viewUseCase: the Bloomreach API does not provide a use case detail endpoint. ' +
-        'Use case details are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewUseCase: the Bloomreach API does not provide a use case detail endpoint. ' +
+      'Use case details are only available through the Bloomreach Engagement UI.');
   }
 
   async listProjectUseCases(
@@ -288,10 +275,8 @@ export class BloomreachUseCasesService {
     }
 
     void this.apiConfig;
-    throw new Error(
-      'listProjectUseCases: the Bloomreach API does not provide a project use case listing endpoint. ' +
-        'Project use case data is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listProjectUseCases: the Bloomreach API does not provide a project use case listing endpoint. ' +
+      'Project use case data is only available through the Bloomreach Engagement UI.');
   }
 
   prepareDeployUseCase(input: DeployUseCaseInput): PreparedUseCaseAction {

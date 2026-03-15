@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const CREATE_INITIATIVE_ACTION_TYPE = 'initiatives.create_initiative';
@@ -102,12 +103,10 @@ const MAX_ITEMS_PER_ADD = 100;
 export function validateInitiativeName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_INITIATIVE_NAME_LENGTH) {
-    throw new Error('Initiative name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Initiative name must not be empty.');
   }
   if (trimmed.length > MAX_INITIATIVE_NAME_LENGTH) {
-    throw new Error(
-      `Initiative name must not exceed ${MAX_INITIATIVE_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Initiative name must not exceed ${MAX_INITIATIVE_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -115,18 +114,14 @@ export function validateInitiativeName(name: string): string {
 export function validateInitiativeDescription(description: string): string {
   const trimmed = description.trim();
   if (trimmed.length > MAX_INITIATIVE_DESCRIPTION_LENGTH) {
-    throw new Error(
-      `Initiative description must not exceed ${MAX_INITIATIVE_DESCRIPTION_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Initiative description must not exceed ${MAX_INITIATIVE_DESCRIPTION_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
 
 export function validateInitiativeStatus(status: string): InitiativeStatus {
   if (!INITIATIVE_STATUSES.includes(status as InitiativeStatus)) {
-    throw new Error(
-      `status must be one of: ${INITIATIVE_STATUSES.join(', ')} (got "${status}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `status must be one of: ${INITIATIVE_STATUSES.join(', ')} (got "${status}").`);
   }
   return status as InitiativeStatus;
 }
@@ -134,16 +129,14 @@ export function validateInitiativeStatus(status: string): InitiativeStatus {
 export function validateInitiativeId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Initiative ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Initiative ID must not be empty.');
   }
   return trimmed;
 }
 
 export function validateInitiativeItemType(type: string): InitiativeItemType {
   if (!INITIATIVE_ITEM_TYPES.includes(type as InitiativeItemType)) {
-    throw new Error(
-      `Item type must be one of: ${INITIATIVE_ITEM_TYPES.join(', ')} (got "${type}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Item type must be one of: ${INITIATIVE_ITEM_TYPES.join(', ')} (got "${type}").`);
   }
   return type as InitiativeItemType;
 }
@@ -152,16 +145,14 @@ export function validateInitiativeItems(
   items: InitiativeItemReference[],
 ): InitiativeItemReference[] {
   if (items.length === 0) {
-    throw new Error('Items array must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Items array must not be empty.');
   }
   if (items.length > MAX_ITEMS_PER_ADD) {
-    throw new Error(
-      `Cannot add more than ${MAX_ITEMS_PER_ADD} items at once (got ${items.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Cannot add more than ${MAX_ITEMS_PER_ADD} items at once (got ${items.length}).`);
   }
   for (const item of items) {
     if (!item.id || item.id.trim().length === 0) {
-      throw new Error('Each item must have a non-empty ID.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Each item must have a non-empty ID.');
     }
     validateInitiativeItemType(item.type);
   }
@@ -172,7 +163,7 @@ export function validateImportConfiguration(
   configuration: Record<string, unknown>,
 ): Record<string, unknown> {
   if (Object.keys(configuration).length === 0) {
-    throw new Error('Import configuration must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Import configuration must not be empty.');
   }
   return configuration;
 }
@@ -186,9 +177,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -213,9 +204,7 @@ class CreateInitiativeExecutor implements InitiativeActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateInitiativeExecutor: not yet implemented. Initiative creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateInitiativeExecutor: not yet implemented. Initiative creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -231,9 +220,7 @@ class ImportInitiativeExecutor implements InitiativeActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ImportInitiativeExecutor: not yet implemented. Initiative import is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ImportInitiativeExecutor: not yet implemented. Initiative import is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -249,9 +236,7 @@ class AddItemsExecutor implements InitiativeActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'AddItemsExecutor: not yet implemented. Adding items to initiatives is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'AddItemsExecutor: not yet implemented. Adding items to initiatives is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -267,9 +252,7 @@ class ArchiveInitiativeExecutor implements InitiativeActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ArchiveInitiativeExecutor: not yet implemented. Initiative archiving is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ArchiveInitiativeExecutor: not yet implemented. Initiative archiving is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -315,9 +298,7 @@ export class BloomreachInitiativesService {
     }
 
     void this.apiConfig;
-    throw new Error(
-      'listInitiatives: the Bloomreach API does not provide an initiative listing endpoint. Initiative management is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listInitiatives: the Bloomreach API does not provide an initiative listing endpoint. Initiative management is only available through the Bloomreach Engagement UI.');
   }
 
   /** @throws {Error} Browser automation not yet available. */
@@ -330,9 +311,7 @@ export class BloomreachInitiativesService {
     }
 
     void this.apiConfig;
-    throw new Error(
-      'filterInitiatives: the Bloomreach API does not provide an initiative filtering endpoint. Initiative management is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'filterInitiatives: the Bloomreach API does not provide an initiative filtering endpoint. Initiative management is only available through the Bloomreach Engagement UI.');
   }
 
   /** @throws {Error} Browser automation not yet available. */
@@ -343,9 +322,7 @@ export class BloomreachInitiativesService {
     validateInitiativeId(input.initiativeId);
 
     void this.apiConfig;
-    throw new Error(
-      'viewInitiative: the Bloomreach API does not provide an initiative detail endpoint. Initiative management is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewInitiative: the Bloomreach API does not provide an initiative detail endpoint. Initiative management is only available through the Bloomreach Engagement UI.');
   }
 
   /** @throws {Error} If input validation fails. */

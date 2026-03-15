@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import { bloomreachApiFetch, buildDataPath } from './bloomreachApiClient.js';
 
@@ -136,7 +137,7 @@ const SCHEDULE_FREQUENCIES = new Set(['daily', 'weekly', 'monthly']);
 function validateRequiredTrimmed(value: string, fieldName: string): string {
   const trimmed = value.trim();
   if (trimmed.length === 0) {
-    throw new Error(`${fieldName} must not be empty.`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${fieldName} must not be empty.`);
   }
   return trimmed;
 }
@@ -144,9 +145,7 @@ function validateRequiredTrimmed(value: string, fieldName: string): string {
 function validateExportName(name: string): string {
   const trimmed = validateRequiredTrimmed(name, 'Export name');
   if (trimmed.length > MAX_EXPORT_NAME_LENGTH) {
-    throw new Error(
-      `Export name must not exceed ${MAX_EXPORT_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Export name must not exceed ${MAX_EXPORT_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -154,9 +153,7 @@ function validateExportName(name: string): string {
 function validateExportType(exportType: string): string {
   const normalized = validateRequiredTrimmed(exportType, 'Export type').toLowerCase();
   if (!EXPORT_TYPES.has(normalized)) {
-    throw new Error(
-      `Export type must be one of: ${Array.from(EXPORT_TYPES).join(', ')} (got ${normalized}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Export type must be one of: ${Array.from(EXPORT_TYPES).join(', ')} (got ${normalized}).`);
   }
   return normalized;
 }
@@ -164,9 +161,7 @@ function validateExportType(exportType: string): string {
 function validateDestinationType(destinationType: string): string {
   const normalized = validateRequiredTrimmed(destinationType, 'Destination type').toLowerCase();
   if (!DESTINATION_TYPES.has(normalized)) {
-    throw new Error(
-      `Destination type must be one of: ${Array.from(DESTINATION_TYPES).join(', ')} (got ${normalized}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Destination type must be one of: ${Array.from(DESTINATION_TYPES).join(', ')} (got ${normalized}).`);
   }
   return normalized;
 }
@@ -174,9 +169,7 @@ function validateDestinationType(destinationType: string): string {
 function validateExportId(exportId: string): string {
   const trimmed = validateRequiredTrimmed(exportId, 'Export ID');
   if (trimmed.length > MAX_EXPORT_ID_LENGTH) {
-    throw new Error(
-      `Export ID must not exceed ${MAX_EXPORT_ID_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Export ID must not exceed ${MAX_EXPORT_ID_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -184,9 +177,7 @@ function validateExportId(exportId: string): string {
 function validateScheduleFrequency(frequency: string): string {
   const normalized = validateRequiredTrimmed(frequency, 'Schedule frequency').toLowerCase();
   if (!SCHEDULE_FREQUENCIES.has(normalized)) {
-    throw new Error(
-      `Schedule frequency must be one of: ${Array.from(SCHEDULE_FREQUENCIES).join(', ')} (got ${normalized}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Schedule frequency must be one of: ${Array.from(SCHEDULE_FREQUENCIES).join(', ')} (got ${normalized}).`);
   }
   return normalized;
 }
@@ -202,7 +193,7 @@ function validateOptionalString(
 
   const trimmed = validateRequiredTrimmed(value, fieldName);
   if (trimmed.length > maxLength) {
-    throw new Error(`${fieldName} must not exceed ${maxLength} characters (got ${trimmed.length}).`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${fieldName} must not exceed ${maxLength} characters (got ${trimmed.length}).`);
   }
 
   return trimmed;
@@ -214,12 +205,12 @@ function validateStringArray(values: string[] | undefined, fieldName: string): s
   }
 
   if (!Array.isArray(values)) {
-    throw new Error(`${fieldName} must be an array.`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${fieldName} must be an array.`);
   }
 
   const normalized = values.map((value, index) => {
     if (typeof value !== 'string') {
-      throw new Error(`${fieldName}[${index}] must be a string.`);
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${fieldName}[${index}] must be a string.`);
     }
     return validateRequiredTrimmed(value, `${fieldName}[${index}]`);
   });
@@ -238,9 +229,7 @@ function validateDataSelection(dataSelection: DataSelection): DataSelection {
     (segments !== undefined && segments.length > 0);
 
   if (!hasSelections) {
-    throw new Error(
-      'Data selection must include at least one non-empty list: attributes, events, or segments.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Data selection must include at least one non-empty list: attributes, events, or segments.');
   }
 
   return {
@@ -298,24 +287,24 @@ function validateDestination(destination: ExportDestination): ExportDestination 
 
   if (destination.port !== undefined) {
     if (!Number.isInteger(destination.port) || destination.port < 1 || destination.port > 65535) {
-      throw new Error('Destination port must be an integer between 1 and 65535.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Destination port must be an integer between 1 and 65535.');
     }
   }
 
   if (type === 'sftp' && (host === undefined || path === undefined)) {
-    throw new Error('SFTP destination requires host and path.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'SFTP destination requires host and path.');
   }
 
   if (type === 's3' && (bucket === undefined || path === undefined)) {
-    throw new Error('S3 destination requires bucket and path.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'S3 destination requires bucket and path.');
   }
 
   if (type === 'email' && email === undefined) {
-    throw new Error('Email destination requires email.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Email destination requires email.');
   }
 
   if (type === 'webhook' && webhookUrl === undefined) {
-    throw new Error('Webhook destination requires webhookUrl.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Webhook destination requires webhookUrl.');
   }
 
   return {
@@ -339,13 +328,13 @@ function validateTimeFormat(time: string): string {
   const trimmed = validateRequiredTrimmed(time, 'Schedule time');
   const match = /^(\d{2}):(\d{2})$/.exec(trimmed);
   if (match === null) {
-    throw new Error('Schedule time must use HH:MM format.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Schedule time must use HH:MM format.');
   }
 
   const hours = Number(match[1]);
   const minutes = Number(match[2]);
   if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
-    throw new Error('Schedule time must use 24-hour HH:MM values (00-23 and 00-59).');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Schedule time must use 24-hour HH:MM values (00-23 and 00-59).');
   }
 
   return trimmed;
@@ -359,12 +348,12 @@ function validateSchedule(schedule: ExportSchedule): ExportSchedule {
   const daysOfWeek = schedule.daysOfWeek;
   if (daysOfWeek !== undefined) {
     if (!Array.isArray(daysOfWeek) || daysOfWeek.length === 0) {
-      throw new Error('Schedule daysOfWeek must be a non-empty array when provided.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Schedule daysOfWeek must be a non-empty array when provided.');
     }
 
     daysOfWeek.forEach((day, index) => {
       if (!Number.isInteger(day) || day < 0 || day > 6) {
-        throw new Error(`Schedule daysOfWeek[${index}] must be an integer from 0 to 6.`);
+        throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Schedule daysOfWeek[${index}] must be an integer from 0 to 6.`);
       }
     });
   }
@@ -372,16 +361,16 @@ function validateSchedule(schedule: ExportSchedule): ExportSchedule {
   const dayOfMonth = schedule.dayOfMonth;
   if (dayOfMonth !== undefined) {
     if (!Number.isInteger(dayOfMonth) || dayOfMonth < 1 || dayOfMonth > 31) {
-      throw new Error('Schedule dayOfMonth must be an integer from 1 to 31.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Schedule dayOfMonth must be an integer from 1 to 31.');
     }
   }
 
   if (frequency === 'weekly' && daysOfWeek === undefined) {
-    throw new Error('Weekly schedules require daysOfWeek.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Weekly schedules require daysOfWeek.');
   }
 
   if (frequency === 'monthly' && dayOfMonth === undefined) {
-    throw new Error('Monthly schedules require dayOfMonth.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Monthly schedules require dayOfMonth.');
   }
 
   return {
@@ -420,9 +409,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;

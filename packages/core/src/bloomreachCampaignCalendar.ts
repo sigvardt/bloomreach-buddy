@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const EXPORT_CALENDAR_ACTION_TYPE = 'campaign_calendar.export';
@@ -109,11 +110,11 @@ const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 export function validateDateFormat(date: string): string {
   const trimmed = date.trim();
   if (!ISO_DATE_REGEX.test(trimmed)) {
-    throw new Error(`Date must be in YYYY-MM-DD format (got "${trimmed}").`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Date must be in YYYY-MM-DD format (got "${trimmed}").`);
   }
   const parsed = new Date(trimmed);
   if (isNaN(parsed.getTime())) {
-    throw new Error(`Date is not a valid calendar date (got "${trimmed}").`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Date is not a valid calendar date (got "${trimmed}").`);
   }
   return trimmed;
 }
@@ -126,9 +127,7 @@ export function validateCalendarDateRange(startDate: string, endDate: string): C
   const validStart = validateDateFormat(startDate);
   const validEnd = validateDateFormat(endDate);
   if (new Date(validStart) > new Date(validEnd)) {
-    throw new Error(
-      `Start date must not be after end date (start: "${validStart}", end: "${validEnd}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Start date must not be after end date (start: "${validStart}", end: "${validEnd}").`);
   }
   return { startDate: validStart, endDate: validEnd };
 }
@@ -136,9 +135,7 @@ export function validateCalendarDateRange(startDate: string, endDate: string): C
 /** @throws {Error} If `type` is not a recognised campaign type. */
 export function validateCalendarCampaignType(type: string): CampaignCalendarCampaignType {
   if (!CAMPAIGN_CALENDAR_CAMPAIGN_TYPES.includes(type as CampaignCalendarCampaignType)) {
-    throw new Error(
-      `Campaign type must be one of: ${CAMPAIGN_CALENDAR_CAMPAIGN_TYPES.join(', ')} (got "${type}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Campaign type must be one of: ${CAMPAIGN_CALENDAR_CAMPAIGN_TYPES.join(', ')} (got "${type}").`);
   }
   return type as CampaignCalendarCampaignType;
 }
@@ -146,9 +143,7 @@ export function validateCalendarCampaignType(type: string): CampaignCalendarCamp
 /** @throws {Error} If `status` is not a recognised campaign calendar status. */
 export function validateCalendarCampaignStatus(status: string): CampaignCalendarStatus {
   if (!CAMPAIGN_CALENDAR_STATUSES.includes(status as CampaignCalendarStatus)) {
-    throw new Error(
-      `Campaign status must be one of: ${CAMPAIGN_CALENDAR_STATUSES.join(', ')} (got "${status}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Campaign status must be one of: ${CAMPAIGN_CALENDAR_STATUSES.join(', ')} (got "${status}").`);
   }
   return status as CampaignCalendarStatus;
 }
@@ -156,9 +151,7 @@ export function validateCalendarCampaignStatus(status: string): CampaignCalendar
 /** @throws {Error} If `channel` is not a recognised campaign channel. */
 export function validateCalendarChannel(channel: string): CampaignCalendarChannel {
   if (!CAMPAIGN_CALENDAR_CHANNELS.includes(channel as CampaignCalendarChannel)) {
-    throw new Error(
-      `Channel must be one of: ${CAMPAIGN_CALENDAR_CHANNELS.join(', ')} (got "${channel}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Channel must be one of: ${CAMPAIGN_CALENDAR_CHANNELS.join(', ')} (got "${channel}").`);
   }
   return channel as CampaignCalendarChannel;
 }
@@ -166,9 +159,7 @@ export function validateCalendarChannel(channel: string): CampaignCalendarChanne
 /** @throws {Error} If `format` is not a recognised export format. */
 export function validateExportFormat(format: string): CampaignCalendarExportFormat {
   if (!CAMPAIGN_CALENDAR_EXPORT_FORMATS.includes(format as CampaignCalendarExportFormat)) {
-    throw new Error(
-      `Export format must be one of: ${CAMPAIGN_CALENDAR_EXPORT_FORMATS.join(', ')} (got "${format}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Export format must be one of: ${CAMPAIGN_CALENDAR_EXPORT_FORMATS.join(', ')} (got "${format}").`);
   }
   return format as CampaignCalendarExportFormat;
 }
@@ -182,9 +173,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -211,10 +202,8 @@ class ExportCalendarExecutor implements CampaignCalendarActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ExportCalendarExecutor: not yet implemented. ' +
-        'Calendar export is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ExportCalendarExecutor: not yet implemented. ' +
+      'Calendar export is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -263,10 +252,8 @@ export class BloomreachCampaignCalendarService {
     }
 
     void this.apiConfig;
-    throw new Error(
-      'viewCampaignCalendar: the Bloomreach API does not provide a calendar view endpoint. ' +
-        'Campaign calendar is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewCampaignCalendar: the Bloomreach API does not provide a calendar view endpoint. ' +
+      'Campaign calendar is only available through the Bloomreach Engagement UI.');
   }
 
   async filterCampaignCalendar(
@@ -294,10 +281,8 @@ export class BloomreachCampaignCalendarService {
     }
 
     void this.apiConfig;
-    throw new Error(
-      'filterCampaignCalendar: the Bloomreach API does not provide a calendar filter endpoint. ' +
-        'Campaign calendar is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'filterCampaignCalendar: the Bloomreach API does not provide a calendar filter endpoint. ' +
+      'Campaign calendar is only available through the Bloomreach Engagement UI.');
   }
 
   prepareExportCalendar(input: ExportCalendarInput): PreparedCalendarAction {

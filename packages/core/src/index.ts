@@ -1,6 +1,7 @@
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import { validateCredentials } from './bloomreachSetup.js';
 
+export * from './errors.js';
 export * from "./db/database.js";
 export * from "./twoPhaseCommit.js";
 export * from './bloomreachCampaignCalendar.js';

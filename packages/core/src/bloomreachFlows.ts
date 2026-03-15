@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
@@ -107,12 +108,10 @@ const MAX_JOURNEY_DEPTH = 20;
 export function validateFlowName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_FLOW_NAME_LENGTH) {
-    throw new Error('Flow name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Flow name must not be empty.');
   }
   if (trimmed.length > MAX_FLOW_NAME_LENGTH) {
-    throw new Error(
-      `Flow name must not exceed ${MAX_FLOW_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Flow name must not exceed ${MAX_FLOW_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -120,7 +119,7 @@ export function validateFlowName(name: string): string {
 export function validateFlowAnalysisId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Flow analysis ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Flow analysis ID must not be empty.');
   }
   return trimmed;
 }
@@ -128,25 +127,25 @@ export function validateFlowAnalysisId(id: string): string {
 export function validateStartingEvent(eventName: string): string {
   const trimmed = eventName.trim();
   if (trimmed.length === 0) {
-    throw new Error('Starting event must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Starting event must not be empty.');
   }
   return trimmed;
 }
 
 export function validateFlowEvents(events: FlowEvent[]): FlowEvent[] {
   if (events.length < 1) {
-    throw new Error('events must contain at least one event to track.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'events must contain at least one event to track.');
   }
 
   return events.map((event, index) => {
     const expectedOrder = index + 1;
     if (event.order !== expectedOrder) {
-      throw new Error(`events[${index}].order must be ${expectedOrder} (got ${event.order}).`);
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `events[${index}].order must be ${expectedOrder} (got ${event.order}).`);
     }
 
     const eventName = event.eventName.trim();
     if (eventName.length === 0) {
-      throw new Error(`events[${index}].eventName must not be empty.`);
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `events[${index}].eventName must not be empty.`);
     }
 
     const label = event.label?.trim();
@@ -165,9 +164,7 @@ export function validateMaxJourneyDepth(depth: number | undefined): number | und
   }
 
   if (!Number.isInteger(depth) || depth < MIN_JOURNEY_DEPTH || depth > MAX_JOURNEY_DEPTH) {
-    throw new Error(
-      `maxJourneyDepth must be an integer between ${MIN_JOURNEY_DEPTH} and ${MAX_JOURNEY_DEPTH} (got ${depth}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `maxJourneyDepth must be an integer between ${MIN_JOURNEY_DEPTH} and ${MAX_JOURNEY_DEPTH} (got ${depth}).`);
   }
 
   return depth;
@@ -182,9 +179,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -207,10 +204,8 @@ class CreateFlowExecutor implements FlowActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateFlowExecutor: not yet implemented. ' +
-        'Flow creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateFlowExecutor: not yet implemented. ' +
+      'Flow creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -224,10 +219,8 @@ class CloneFlowExecutor implements FlowActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CloneFlowExecutor: not yet implemented. ' +
-        'Flow cloning is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CloneFlowExecutor: not yet implemented. ' +
+      'Flow cloning is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -241,10 +234,8 @@ class ArchiveFlowExecutor implements FlowActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ArchiveFlowExecutor: not yet implemented. ' +
-        'Flow archiving is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ArchiveFlowExecutor: not yet implemented. ' +
+      'Flow archiving is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -277,11 +268,9 @@ export class BloomreachFlowsService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listFlowAnalyses: the Bloomreach API does not provide an endpoint for flow analyses. ' +
-        'Flow data must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Analytics > Flows in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listFlowAnalyses: the Bloomreach API does not provide an endpoint for flow analyses. ' +
+      'Flow data must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Analytics > Flows in your project).');
   }
 
   async viewFlowResults(input: ViewFlowResultsInput): Promise<FlowResults> {
@@ -297,11 +286,9 @@ export class BloomreachFlowsService {
       validateDateRange(dateRange);
     }
 
-    throw new Error(
-      'viewFlowResults: the Bloomreach API does not provide an endpoint for flow analysis results. ' +
-        'Flow results must be viewed in the Bloomreach Engagement UI ' +
-        '(navigate to Analytics > Flows and open the analysis).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewFlowResults: the Bloomreach API does not provide an endpoint for flow analysis results. ' +
+      'Flow results must be viewed in the Bloomreach Engagement UI ' +
+      '(navigate to Analytics > Flows and open the analysis).');
   }
 
   prepareCreateFlowAnalysis(input: CreateFlowAnalysisInput): PreparedFlowAction {

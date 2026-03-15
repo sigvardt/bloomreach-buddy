@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 
 export const CREATE_RECOMMENDATION_MODEL_ACTION_TYPE = 'recommendations.create_model';
 export const CONFIGURE_RECOMMENDATION_MODEL_ACTION_TYPE = 'recommendations.configure_model';
@@ -118,12 +119,10 @@ const MAX_MAX_ITEMS = 100;
 export function validateModelName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_MODEL_NAME_LENGTH) {
-    throw new Error('Model name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Model name must not be empty.');
   }
   if (trimmed.length > MAX_MODEL_NAME_LENGTH) {
-    throw new Error(
-      `Model name must not exceed ${MAX_MODEL_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Model name must not exceed ${MAX_MODEL_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -131,25 +130,21 @@ export function validateModelName(name: string): string {
 export function validateModelId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Model ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Model ID must not be empty.');
   }
   return trimmed;
 }
 
 export function validateRecommendationModelStatus(status: string): RecommendationModelStatus {
   if (!RECOMMENDATION_MODEL_STATUSES.includes(status as RecommendationModelStatus)) {
-    throw new Error(
-      `status must be one of: ${RECOMMENDATION_MODEL_STATUSES.join(', ')} (got "${status}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `status must be one of: ${RECOMMENDATION_MODEL_STATUSES.join(', ')} (got "${status}").`);
   }
   return status as RecommendationModelStatus;
 }
 
 export function validateAlgorithmType(algorithm: string): RecommendationAlgorithmType {
   if (!RECOMMENDATION_ALGORITHM_TYPES.includes(algorithm as RecommendationAlgorithmType)) {
-    throw new Error(
-      `algorithm must be one of: ${RECOMMENDATION_ALGORITHM_TYPES.join(', ')} (got "${algorithm}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `algorithm must be one of: ${RECOMMENDATION_ALGORITHM_TYPES.join(', ')} (got "${algorithm}").`);
   }
   return algorithm as RecommendationAlgorithmType;
 }
@@ -158,9 +153,7 @@ export function validateFilterRules(
   filters: RecommendationFilterRule[],
 ): RecommendationFilterRule[] {
   if (filters.length > MAX_FILTER_RULES) {
-    throw new Error(
-      `filters must contain at most ${MAX_FILTER_RULES} rules (got ${filters.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `filters must contain at most ${MAX_FILTER_RULES} rules (got ${filters.length}).`);
   }
 
   return filters.map((filter, index) => {
@@ -169,13 +162,13 @@ export function validateFilterRules(
     const value = filter.value.trim();
 
     if (field.length === 0) {
-      throw new Error(`filters[${index}].field must not be empty.`);
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `filters[${index}].field must not be empty.`);
     }
     if (operator.length === 0) {
-      throw new Error(`filters[${index}].operator must not be empty.`);
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `filters[${index}].operator must not be empty.`);
     }
     if (value.length === 0) {
-      throw new Error(`filters[${index}].value must not be empty.`);
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `filters[${index}].value must not be empty.`);
     }
 
     return {
@@ -190,21 +183,17 @@ export function validateBoostRules(
   boostRules: RecommendationBoostRule[],
 ): RecommendationBoostRule[] {
   if (boostRules.length > MAX_BOOST_RULES) {
-    throw new Error(
-      `boostRules must contain at most ${MAX_BOOST_RULES} rules (got ${boostRules.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `boostRules must contain at most ${MAX_BOOST_RULES} rules (got ${boostRules.length}).`);
   }
 
   return boostRules.map((boostRule, index) => {
     const field = boostRule.field.trim();
     if (field.length === 0) {
-      throw new Error(`boostRules[${index}].field must not be empty.`);
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `boostRules[${index}].field must not be empty.`);
     }
 
     if (boostRule.weight < MIN_BOOST_WEIGHT || boostRule.weight > MAX_BOOST_WEIGHT) {
-      throw new Error(
-        `boostRules[${index}].weight must be between ${MIN_BOOST_WEIGHT} and ${MAX_BOOST_WEIGHT} (got ${boostRule.weight}).`,
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `boostRules[${index}].weight must be between ${MIN_BOOST_WEIGHT} and ${MAX_BOOST_WEIGHT} (got ${boostRule.weight}).`);
     }
 
     return {
@@ -216,9 +205,7 @@ export function validateBoostRules(
 
 export function validateMaxItems(maxItems: number): number {
   if (!Number.isInteger(maxItems) || maxItems < MIN_MAX_ITEMS || maxItems > MAX_MAX_ITEMS) {
-    throw new Error(
-      `maxItems must be an integer between ${MIN_MAX_ITEMS} and ${MAX_MAX_ITEMS} (got ${maxItems}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `maxItems must be an integer between ${MIN_MAX_ITEMS} and ${MAX_MAX_ITEMS} (got ${maxItems}).`);
   }
 
   return maxItems;
@@ -237,9 +224,7 @@ class CreateRecommendationModelExecutor implements RecommendationActionExecutor 
   readonly actionType = CREATE_RECOMMENDATION_MODEL_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'CreateRecommendationModelExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateRecommendationModelExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -247,9 +232,7 @@ class ConfigureRecommendationModelExecutor implements RecommendationActionExecut
   readonly actionType = CONFIGURE_RECOMMENDATION_MODEL_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'ConfigureRecommendationModelExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ConfigureRecommendationModelExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -257,9 +240,7 @@ class DeleteRecommendationModelExecutor implements RecommendationActionExecutor 
   readonly actionType = DELETE_RECOMMENDATION_MODEL_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'DeleteRecommendationModelExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeleteRecommendationModelExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -295,9 +276,7 @@ export class BloomreachRecommendationsService {
       }
     }
 
-    throw new Error(
-      'listRecommendationModels: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listRecommendationModels: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 
   async viewModelPerformance(
@@ -306,9 +285,7 @@ export class BloomreachRecommendationsService {
     validateProject(input.project);
     validateModelId(input.modelId);
 
-    throw new Error(
-      'viewModelPerformance: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewModelPerformance: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 
   prepareCreateRecommendationModel(
@@ -318,7 +295,7 @@ export class BloomreachRecommendationsService {
     const name = validateModelName(input.name);
     const modelType = input.modelType.trim();
     if (modelType.length === 0) {
-      throw new Error('Model type must not be empty.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Model type must not be empty.');
     }
     const algorithm =
       input.algorithm !== undefined ? validateAlgorithmType(input.algorithm) : undefined;

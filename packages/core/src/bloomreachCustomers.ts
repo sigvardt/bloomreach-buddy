@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import {
   bloomreachApiFetch,
@@ -156,12 +157,10 @@ const MAX_LIST_LIMIT = 1000;
 export function validateCustomerId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Customer ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Customer ID must not be empty.');
   }
   if (trimmed.length > MAX_CUSTOMER_ID_LENGTH) {
-    throw new Error(
-      `Customer ID must not exceed ${MAX_CUSTOMER_ID_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Customer ID must not exceed ${MAX_CUSTOMER_ID_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -171,7 +170,7 @@ export function validateCustomerIds(ids: CustomerIds): CustomerIds {
     (v) => typeof v === 'string' && v.trim().length > 0,
   );
   if (!hasAtLeastOne) {
-    throw new Error('At least one customer identifier must be provided.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one customer identifier must be provided.');
   }
   const validated: CustomerIds = {};
   for (const [key, value] of Object.entries(ids)) {
@@ -185,35 +184,31 @@ export function validateCustomerIds(ids: CustomerIds): CustomerIds {
 export function validateCustomerEventType(eventType: string): string {
   const trimmed = eventType.trim();
   if (trimmed.length === 0) {
-    throw new Error('Event type must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Event type must not be empty.');
   }
   if (trimmed.length > 256) {
-    throw new Error(
-      `Event type must not exceed 256 characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Event type must not exceed 256 characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
 
 export function validateCustomerBatchCommands(commands: CustomerBatchCommand[]): CustomerBatchCommand[] {
   if (!Array.isArray(commands) || commands.length === 0) {
-    throw new Error('At least one batch command must be provided.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one batch command must be provided.');
   }
   if (commands.length > 50) {
-    throw new Error(
-      `Batch commands must not exceed 50 (got ${commands.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Batch commands must not exceed 50 (got ${commands.length}).`);
   }
   for (const cmd of commands) {
     if (typeof cmd.name !== 'string' || cmd.name.trim().length === 0) {
-      throw new Error('Each batch command must have a non-empty name.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Each batch command must have a non-empty name.');
     }
     if (
       typeof cmd.data !== 'object' ||
       cmd.data === null ||
       Array.isArray(cmd.data)
     ) {
-      throw new Error('Each batch command must have a non-null data object.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Each batch command must have a non-null data object.');
     }
   }
   return commands;
@@ -222,12 +217,10 @@ export function validateCustomerBatchCommands(commands: CustomerBatchCommand[]):
 export function validateSearchQuery(query: string): string {
   const trimmed = query.trim();
   if (trimmed.length === 0) {
-    throw new Error('Search query must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Search query must not be empty.');
   }
   if (trimmed.length > MAX_SEARCH_QUERY_LENGTH) {
-    throw new Error(
-      `Search query must not exceed ${MAX_SEARCH_QUERY_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Search query must not exceed ${MAX_SEARCH_QUERY_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -237,10 +230,10 @@ export function validateListLimit(limit?: number): number {
     return DEFAULT_LIST_LIMIT;
   }
   if (!Number.isInteger(limit) || limit < 1) {
-    throw new Error('Limit must be a positive integer.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Limit must be a positive integer.');
   }
   if (limit > MAX_LIST_LIMIT) {
-    throw new Error(`Limit must not exceed ${MAX_LIST_LIMIT} (got ${limit}).`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Limit must not exceed ${MAX_LIST_LIMIT} (got ${limit}).`);
   }
   return limit;
 }
@@ -250,7 +243,7 @@ export function validateListOffset(offset?: number): number {
     return 0;
   }
   if (!Number.isInteger(offset) || offset < 0) {
-    throw new Error('Offset must be a non-negative integer.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Offset must be a non-negative integer.');
   }
   return offset;
 }
@@ -258,7 +251,7 @@ export function validateListOffset(offset?: number): number {
 export function validateIdType(idType?: string): string {
   const trimmed = (idType ?? 'registered').trim();
   if (trimmed.length === 0) {
-    throw new Error('ID type must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ID type must not be empty.');
   }
   return trimmed;
 }
@@ -267,10 +260,10 @@ export function validateProperties(
   properties: Record<string, unknown>,
 ): Record<string, unknown> {
   if (typeof properties !== 'object' || properties === null || Array.isArray(properties)) {
-    throw new Error('Properties must be a non-null object.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Properties must be a non-null object.');
   }
   if (Object.keys(properties).length === 0) {
-    throw new Error('At least one property must be provided.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one property must be provided.');
   }
   return properties;
 }
@@ -289,9 +282,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;

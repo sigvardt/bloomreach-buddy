@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import { bloomreachApiFetch, buildEmailPath } from './bloomreachApiClient.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
@@ -169,12 +170,10 @@ const MAX_AB_TEST_VARIANTS = 10;
 export function validateCampaignName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_CAMPAIGN_NAME_LENGTH) {
-    throw new Error('Campaign name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Campaign name must not be empty.');
   }
   if (trimmed.length > MAX_CAMPAIGN_NAME_LENGTH) {
-    throw new Error(
-      `Campaign name must not exceed ${MAX_CAMPAIGN_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Campaign name must not exceed ${MAX_CAMPAIGN_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -183,12 +182,10 @@ export function validateCampaignName(name: string): string {
 export function validateSubjectLine(subjectLine: string): string {
   const trimmed = subjectLine.trim();
   if (trimmed.length < MIN_SUBJECT_LINE_LENGTH) {
-    throw new Error('Subject line must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Subject line must not be empty.');
   }
   if (trimmed.length > MAX_SUBJECT_LINE_LENGTH) {
-    throw new Error(
-      `Subject line must not exceed ${MAX_SUBJECT_LINE_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Subject line must not exceed ${MAX_SUBJECT_LINE_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -196,9 +193,7 @@ export function validateSubjectLine(subjectLine: string): string {
 /** @throws {Error} If `status` is not a recognised email campaign status. */
 export function validateEmailCampaignStatus(status: string): EmailCampaignStatus {
   if (!EMAIL_CAMPAIGN_STATUSES.includes(status as EmailCampaignStatus)) {
-    throw new Error(
-      `status must be one of: ${EMAIL_CAMPAIGN_STATUSES.join(', ')} (got "${status}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `status must be one of: ${EMAIL_CAMPAIGN_STATUSES.join(', ')} (got "${status}").`);
   }
   return status as EmailCampaignStatus;
 }
@@ -206,9 +201,7 @@ export function validateEmailCampaignStatus(status: string): EmailCampaignStatus
 /** @throws {Error} If `templateType` is not a recognised template type. */
 export function validateTemplateType(templateType: string): EmailTemplateType {
   if (!EMAIL_TEMPLATE_TYPES.includes(templateType as EmailTemplateType)) {
-    throw new Error(
-      `templateType must be one of: ${EMAIL_TEMPLATE_TYPES.join(', ')} (got "${templateType}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `templateType must be one of: ${EMAIL_TEMPLATE_TYPES.join(', ')} (got "${templateType}").`);
   }
   return templateType as EmailTemplateType;
 }
@@ -216,9 +209,7 @@ export function validateTemplateType(templateType: string): EmailTemplateType {
 /** @throws {Error} If `scheduleType` is not a recognised schedule type. */
 export function validateScheduleType(scheduleType: string): SendScheduleType {
   if (!SEND_SCHEDULE_TYPES.includes(scheduleType as SendScheduleType)) {
-    throw new Error(
-      `schedule type must be one of: ${SEND_SCHEDULE_TYPES.join(', ')} (got "${scheduleType}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `schedule type must be one of: ${SEND_SCHEDULE_TYPES.join(', ')} (got "${scheduleType}").`);
   }
   return scheduleType as SendScheduleType;
 }
@@ -230,15 +221,11 @@ export function validateABTestConfig(config: EmailCampaignABTestConfig): EmailCa
     config.variants < MIN_AB_TEST_VARIANTS ||
     config.variants > MAX_AB_TEST_VARIANTS
   ) {
-    throw new Error(
-      `A/B test variants must be an integer between ${MIN_AB_TEST_VARIANTS} and ${MAX_AB_TEST_VARIANTS} (got ${config.variants}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `A/B test variants must be an integer between ${MIN_AB_TEST_VARIANTS} and ${MAX_AB_TEST_VARIANTS} (got ${config.variants}).`);
   }
   if (config.splitPercentage !== undefined) {
     if (config.splitPercentage < 0 || config.splitPercentage > 100) {
-      throw new Error(
-        `A/B test split percentage must be between 0 and 100 (got ${config.splitPercentage}).`,
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `A/B test split percentage must be between 0 and 100 (got ${config.splitPercentage}).`);
     }
   }
   return config;
@@ -248,7 +235,7 @@ export function validateABTestConfig(config: EmailCampaignABTestConfig): EmailCa
 export function validateCampaignId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Campaign ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Campaign ID must not be empty.');
   }
   return trimmed;
 }
@@ -257,10 +244,10 @@ export function validateCampaignId(id: string): string {
 export function validateSchedule(schedule: EmailCampaignSchedule): EmailCampaignSchedule {
   validateScheduleType(schedule.type);
   if (schedule.type === 'scheduled' && schedule.scheduledAt === undefined) {
-    throw new Error('scheduledAt is required when schedule type is "scheduled".');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'scheduledAt is required when schedule type is "scheduled".');
   }
   if (schedule.type === 'recurring' && schedule.cronExpression === undefined) {
-    throw new Error('cronExpression is required when schedule type is "recurring".');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'cronExpression is required when schedule type is "recurring".');
   }
   return schedule;
 }
@@ -268,7 +255,7 @@ export function validateSchedule(schedule: EmailCampaignSchedule): EmailCampaign
 export function validateEmailIntegrationId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Integration ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Integration ID must not be empty.');
   }
   return trimmed;
 }
@@ -276,10 +263,10 @@ export function validateEmailIntegrationId(id: string): string {
 export function validateEmailAddress(email: string): string {
   const trimmed = email.trim();
   if (trimmed.length === 0) {
-    throw new Error('Email address must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Email address must not be empty.');
   }
   if (!trimmed.includes('@')) {
-    throw new Error('Email address must contain an @ symbol.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Email address must contain an @ symbol.');
   }
   return trimmed;
 }
@@ -288,9 +275,7 @@ export function validateTransactionalEmailContent(
   content: TransactionalEmailContent,
 ): TransactionalEmailContent {
   if (!content.templateId && !content.html) {
-    throw new Error(
-      'Email content must include either a templateId or raw html.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Email content must include either a templateId or raw html.');
   }
   return content;
 }
@@ -304,9 +289,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -327,11 +312,9 @@ class CreateEmailCampaignExecutor implements EmailCampaignActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateEmailCampaignExecutor: not yet implemented. ' +
-        'Use the Bloomreach Engagement UI: Campaigns > Email campaigns. ' +
-        'For sending individual transactional emails via API, use the sendTransactionalEmail method.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateEmailCampaignExecutor: not yet implemented. ' +
+      'Use the Bloomreach Engagement UI: Campaigns > Email campaigns. ' +
+      'For sending individual transactional emails via API, use the sendTransactionalEmail method.', { not_implemented: true });
   }
 }
 
@@ -345,11 +328,9 @@ class SendEmailCampaignExecutor implements EmailCampaignActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'SendEmailCampaignExecutor: not yet implemented. ' +
-        'Use the Bloomreach Engagement UI: Campaigns > Email campaigns. ' +
-        'For sending individual transactional emails via API, use the sendTransactionalEmail method.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'SendEmailCampaignExecutor: not yet implemented. ' +
+      'Use the Bloomreach Engagement UI: Campaigns > Email campaigns. ' +
+      'For sending individual transactional emails via API, use the sendTransactionalEmail method.', { not_implemented: true });
   }
 }
 
@@ -363,11 +344,9 @@ class CloneEmailCampaignExecutor implements EmailCampaignActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CloneEmailCampaignExecutor: not yet implemented. ' +
-        'Use the Bloomreach Engagement UI: Campaigns > Email campaigns. ' +
-        'For sending individual transactional emails via API, use the sendTransactionalEmail method.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CloneEmailCampaignExecutor: not yet implemented. ' +
+      'Use the Bloomreach Engagement UI: Campaigns > Email campaigns. ' +
+      'For sending individual transactional emails via API, use the sendTransactionalEmail method.', { not_implemented: true });
   }
 }
 
@@ -381,11 +360,9 @@ class ArchiveEmailCampaignExecutor implements EmailCampaignActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ArchiveEmailCampaignExecutor: not yet implemented. ' +
-        'Use the Bloomreach Engagement UI: Campaigns > Email campaigns. ' +
-        'For sending individual transactional emails via API, use the sendTransactionalEmail method.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ArchiveEmailCampaignExecutor: not yet implemented. ' +
+      'Use the Bloomreach Engagement UI: Campaigns > Email campaigns. ' +
+      'For sending individual transactional emails via API, use the sendTransactionalEmail method.', { not_implemented: true });
   }
 }
 
@@ -477,11 +454,9 @@ export class BloomreachEmailCampaignsService {
     }
 
     void this.apiConfig;
-    throw new Error(
-      'listEmailCampaigns: the Bloomreach API does not provide a list endpoint for email campaigns. ' +
-        'Use the Bloomreach Engagement UI: Campaigns > Email campaigns. ' +
-        'For sending individual emails via API, use the sendTransactionalEmail method instead.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listEmailCampaigns: the Bloomreach API does not provide a list endpoint for email campaigns. ' +
+      'Use the Bloomreach Engagement UI: Campaigns > Email campaigns. ' +
+      'For sending individual emails via API, use the sendTransactionalEmail method instead.');
   }
 
   /**
@@ -493,10 +468,8 @@ export class BloomreachEmailCampaignsService {
     validateCampaignId(input.campaignId);
 
     void this.apiConfig;
-    throw new Error(
-      'viewCampaignResults: the Bloomreach API does not provide a campaign results endpoint for email campaigns. ' +
-        'Use the Bloomreach Engagement UI: Campaigns > Email campaigns > [campaign] > Results.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewCampaignResults: the Bloomreach API does not provide a campaign results endpoint for email campaigns. ' +
+      'Use the Bloomreach Engagement UI: Campaigns > Email campaigns > [campaign] > Results.');
   }
 
   /** @throws {Error} If input validation fails. */

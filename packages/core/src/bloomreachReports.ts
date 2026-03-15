@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import { bloomreachApiFetch, buildDataPath } from './bloomreachApiClient.js';
 
@@ -141,12 +142,10 @@ const MIN_REPORT_LIMIT = 1;
 export function validateReportName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_REPORT_NAME_LENGTH) {
-    throw new Error('Report name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Report name must not be empty.');
   }
   if (trimmed.length > MAX_REPORT_NAME_LENGTH) {
-    throw new Error(
-      `Report name must not exceed ${MAX_REPORT_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Report name must not exceed ${MAX_REPORT_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -155,7 +154,7 @@ export function validateReportName(name: string): string {
 export function validateReportId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Report ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Report ID must not be empty.');
   }
   return trimmed;
 }
@@ -163,12 +162,12 @@ export function validateReportId(id: string): string {
 /** @throws {Error} If metrics array is empty. */
 export function validateMetrics(metrics: string[]): string[] {
   if (metrics.length === 0) {
-    throw new Error('At least one metric is required.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one metric is required.');
   }
   const trimmed = metrics.map((m) => m.trim());
   for (const metric of trimmed) {
     if (metric.length === 0) {
-      throw new Error('Metric names must not be empty.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Metric names must not be empty.');
     }
   }
   return trimmed;
@@ -176,9 +175,7 @@ export function validateMetrics(metrics: string[]): string[] {
 
 export function validateReportExportFormat(format: string): ReportExportFormat {
   if (!REPORT_EXPORT_FORMATS.includes(format as ReportExportFormat)) {
-    throw new Error(
-      `Export format must be one of: ${REPORT_EXPORT_FORMATS.join(', ')} (got "${format}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Export format must be one of: ${REPORT_EXPORT_FORMATS.join(', ')} (got "${format}").`);
   }
   return format as ReportExportFormat;
 }
@@ -186,9 +183,7 @@ export function validateReportExportFormat(format: string): ReportExportFormat {
 /** @throws {Error} If sort order is not asc or desc. */
 export function validateSortOrder(order: string): ReportSortOrder {
   if (!REPORT_SORT_ORDERS.includes(order as ReportSortOrder)) {
-    throw new Error(
-      `Sort order must be one of: ${REPORT_SORT_ORDERS.join(', ')} (got "${order}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Sort order must be one of: ${REPORT_SORT_ORDERS.join(', ')} (got "${order}").`);
   }
   return order as ReportSortOrder;
 }
@@ -200,9 +195,7 @@ export function validateLimit(limit: number): number {
     limit < MIN_REPORT_LIMIT ||
     limit > MAX_REPORT_LIMIT
   ) {
-    throw new Error(
-      `Limit must be an integer between ${MIN_REPORT_LIMIT} and ${MAX_REPORT_LIMIT} (got ${limit}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Limit must be an integer between ${MIN_REPORT_LIMIT} and ${MAX_REPORT_LIMIT} (got ${limit}).`);
   }
   return limit;
 }
@@ -216,9 +209,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -245,10 +238,8 @@ class CreateReportExecutor implements ReportActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateReportExecutor: not yet implemented. ' +
-        'Report creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateReportExecutor: not yet implemented. ' +
+      'Report creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -264,10 +255,8 @@ class CloneReportExecutor implements ReportActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CloneReportExecutor: not yet implemented. ' +
-        'Report cloning is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CloneReportExecutor: not yet implemented. ' +
+      'Report cloning is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -283,10 +272,8 @@ class ArchiveReportExecutor implements ReportActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ArchiveReportExecutor: not yet implemented. ' +
-        'Report archiving is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ArchiveReportExecutor: not yet implemented. ' +
+      'Report archiving is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -302,10 +289,8 @@ class ExportReportExecutor implements ReportActionExecutor {
     _payload: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ExportReportExecutor: not yet implemented. ' +
-        'Report export is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ExportReportExecutor: not yet implemented. ' +
+      'Report export is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -348,11 +333,9 @@ export class BloomreachReportsService {
       validateProject(_input.project);
     }
 
-    throw new Error(
-      'listReports: the Bloomreach API does not provide a list endpoint for reports. ' +
-        'Report IDs must be obtained from the Bloomreach Engagement UI ' +
-        '(found in the URL when viewing a report, e.g. "606488856f8cf6f848b20af8").',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listReports: the Bloomreach API does not provide a list endpoint for reports. ' +
+      'Report IDs must be obtained from the Bloomreach Engagement UI ' +
+      '(found in the URL when viewing a report, e.g. "606488856f8cf6f848b20af8").');
   }
 
   /** @throws {Error} Browser automation not yet available. */
@@ -385,7 +368,7 @@ export class BloomreachReportsService {
       name?: string;
     };
     if (!data.success || !Array.isArray(data.rows)) {
-      throw new Error('viewReportResults: unexpected API response format.');
+      throw new BloomreachBuddyError('API_ERROR', 'viewReportResults: unexpected API response format.');
     }
 
     const columns = Array.isArray(data.header) ? data.header : [];

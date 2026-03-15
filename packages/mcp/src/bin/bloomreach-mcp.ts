@@ -4,6 +4,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import * as core from '@bloomreach-buddy/core';
 import {
+  BloomreachBuddyError,
   BloomreachDatabase,
   TwoPhaseCommitService,
   type ActionExecutor,
@@ -113,7 +114,7 @@ function getProject(args: Record<string, unknown>): string {
   const projectFromArgs = typeof args.project === 'string' ? args.project.trim() : '';
   const project = projectFromArgs || projectId.trim();
   if (!project) {
-    throw new Error('Missing project. Provide `project` argument or BLOOMREACH_PROJECT env var.');
+    throw new BloomreachBuddyError('CONFIG_MISSING', 'Missing project. Provide `project` argument or BLOOMREACH_PROJECT env var.', { missing: ['BLOOMREACH_PROJECT'] });
   }
   return project;
 }
@@ -122,7 +123,7 @@ function getServiceConstructor(serviceClass: string): ServiceConstructor {
   const coreExports = core as unknown as Record<string, unknown>;
   const candidate = coreExports[serviceClass];
   if (typeof candidate !== 'function') {
-    throw new Error(`Missing service constructor: ${serviceClass}`);
+    throw new BloomreachBuddyError('TARGET_NOT_FOUND', `Missing service constructor: ${serviceClass}`);
   }
   return candidate as ServiceConstructor;
 }
@@ -6209,7 +6210,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const service = new ServiceCtor(project, apiConfig);
     const methodCandidate = service[route.methodName];
     if (typeof methodCandidate !== 'function') {
-      throw new Error(`Service method not found: ${route.serviceClass}.${route.methodName}`);
+      throw new BloomreachBuddyError('TARGET_NOT_FOUND', `Service method not found: ${route.serviceClass}.${route.methodName}`);
     }
 
     const result = await Promise.resolve(

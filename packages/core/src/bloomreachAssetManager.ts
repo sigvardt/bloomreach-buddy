@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 
 export const CREATE_EMAIL_TEMPLATE_ACTION_TYPE =
   'asset_manager.create_email_template';
@@ -230,12 +231,10 @@ type CloneableAssetType = (typeof CLONEABLE_ASSET_TYPES)[number];
 export function validateAssetName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_ASSET_NAME_LENGTH) {
-    throw new Error('Asset name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Asset name must not be empty.');
   }
   if (trimmed.length > MAX_ASSET_NAME_LENGTH) {
-    throw new Error(
-      `Asset name must not exceed ${MAX_ASSET_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Asset name must not exceed ${MAX_ASSET_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -243,7 +242,7 @@ export function validateAssetName(name: string): string {
 /** @throws {Error} If `type` is not a recognised asset type. */
 export function validateAssetType(type: string): AssetType {
   if (!ASSET_TYPES.includes(type as AssetType)) {
-    throw new Error(`assetType must be one of: ${ASSET_TYPES.join(', ')} (got "${type}").`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `assetType must be one of: ${ASSET_TYPES.join(', ')} (got "${type}").`);
   }
   return type as AssetType;
 }
@@ -251,9 +250,7 @@ export function validateAssetType(type: string): AssetType {
 /** @throws {Error} If `status` is not a recognised template status. */
 export function validateTemplateStatus(status: string): TemplateStatus {
   if (!TEMPLATE_STATUSES.includes(status as TemplateStatus)) {
-    throw new Error(
-      `status must be one of: ${TEMPLATE_STATUSES.join(', ')} (got "${status}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `status must be one of: ${TEMPLATE_STATUSES.join(', ')} (got "${status}").`);
   }
   return status as TemplateStatus;
 }
@@ -261,9 +258,7 @@ export function validateTemplateStatus(status: string): TemplateStatus {
 /** @throws {Error} If `category` is not a recognised file category. */
 export function validateFileCategory(category: string): FileCategory {
   if (!FILE_CATEGORIES.includes(category as FileCategory)) {
-    throw new Error(
-      `category must be one of: ${FILE_CATEGORIES.join(', ')} (got "${category}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `category must be one of: ${FILE_CATEGORIES.join(', ')} (got "${category}").`);
   }
   return category as FileCategory;
 }
@@ -271,9 +266,7 @@ export function validateFileCategory(category: string): FileCategory {
 /** @throws {Error} If `language` is not a recognised snippet language. */
 export function validateSnippetLanguage(language: string): SnippetLanguage {
   if (!SNIPPET_LANGUAGES.includes(language as SnippetLanguage)) {
-    throw new Error(
-      `language must be one of: ${SNIPPET_LANGUAGES.join(', ')} (got "${language}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `language must be one of: ${SNIPPET_LANGUAGES.join(', ')} (got "${language}").`);
   }
   return language as SnippetLanguage;
 }
@@ -281,9 +274,7 @@ export function validateSnippetLanguage(language: string): SnippetLanguage {
 /** @throws {Error} If `type` is not a recognised builder type. */
 export function validateBuilderType(type: string): TemplateBuilderType {
   if (!TEMPLATE_BUILDER_TYPES.includes(type as TemplateBuilderType)) {
-    throw new Error(
-      `builderType must be one of: ${TEMPLATE_BUILDER_TYPES.join(', ')} (got "${type}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `builderType must be one of: ${TEMPLATE_BUILDER_TYPES.join(', ')} (got "${type}").`);
   }
   return type as TemplateBuilderType;
 }
@@ -291,12 +282,10 @@ export function validateBuilderType(type: string): TemplateBuilderType {
 /** @throws {Error} If snippet content is empty or exceeds 100000 characters. */
 export function validateSnippetContent(content: string): string {
   if (content.trim().length === 0) {
-    throw new Error('Snippet content must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Snippet content must not be empty.');
   }
   if (content.length > MAX_SNIPPET_CONTENT_LENGTH) {
-    throw new Error(
-      `Snippet content must not exceed ${MAX_SNIPPET_CONTENT_LENGTH} characters (got ${content.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Snippet content must not exceed ${MAX_SNIPPET_CONTENT_LENGTH} characters (got ${content.length}).`);
   }
   return content;
 }
@@ -305,10 +294,10 @@ export function validateSnippetContent(content: string): string {
 export function validateMimeType(mimeType: string): string {
   const trimmed = mimeType.trim();
   if (trimmed.length === 0) {
-    throw new Error('MIME type must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'MIME type must not be empty.');
   }
   if (!trimmed.includes('/')) {
-    throw new Error('MIME type must include a "/" separator.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'MIME type must include a "/" separator.');
   }
   return trimmed;
 }
@@ -317,7 +306,7 @@ export function validateMimeType(mimeType: string): string {
 export function validateAssetId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Asset ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Asset ID must not be empty.');
   }
   return trimmed;
 }
@@ -325,9 +314,7 @@ export function validateAssetId(id: string): string {
 function validateCloneableAssetType(type: string): CloneableAssetType {
   const assetType = validateAssetType(type);
   if (!CLONEABLE_ASSET_TYPES.includes(assetType as CloneableAssetType)) {
-    throw new Error(
-      `assetType must be one of cloneable types: ${CLONEABLE_ASSET_TYPES.join(', ')} (got "${type}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `assetType must be one of cloneable types: ${CLONEABLE_ASSET_TYPES.join(', ')} (got "${type}").`);
   }
   return assetType as CloneableAssetType;
 }
@@ -369,9 +356,7 @@ class CreateEmailTemplateExecutor implements AssetManagerActionExecutor {
   readonly actionType = CREATE_EMAIL_TEMPLATE_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'CreateEmailTemplateExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateEmailTemplateExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -379,9 +364,7 @@ class CreateWeblayerTemplateExecutor implements AssetManagerActionExecutor {
   readonly actionType = CREATE_WEBLAYER_TEMPLATE_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'CreateWeblayerTemplateExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateWeblayerTemplateExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -389,9 +372,7 @@ class CreateBlockExecutor implements AssetManagerActionExecutor {
   readonly actionType = CREATE_BLOCK_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'CreateBlockExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateBlockExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -399,9 +380,7 @@ class CreateCustomRowExecutor implements AssetManagerActionExecutor {
   readonly actionType = CREATE_CUSTOM_ROW_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'CreateCustomRowExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateCustomRowExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -409,9 +388,7 @@ class CreateSnippetExecutor implements AssetManagerActionExecutor {
   readonly actionType = CREATE_SNIPPET_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'CreateSnippetExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateSnippetExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -419,9 +396,7 @@ class EditSnippetExecutor implements AssetManagerActionExecutor {
   readonly actionType = EDIT_SNIPPET_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'EditSnippetExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'EditSnippetExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -429,9 +404,7 @@ class UploadFileExecutor implements AssetManagerActionExecutor {
   readonly actionType = UPLOAD_FILE_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'UploadFileExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UploadFileExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -439,9 +412,7 @@ class DeleteFileExecutor implements AssetManagerActionExecutor {
   readonly actionType = DELETE_FILE_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'DeleteFileExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeleteFileExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -449,9 +420,7 @@ class CloneTemplateExecutor implements AssetManagerActionExecutor {
   readonly actionType = CLONE_TEMPLATE_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'CloneTemplateExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CloneTemplateExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -459,9 +428,7 @@ class ArchiveTemplateExecutor implements AssetManagerActionExecutor {
   readonly actionType = ARCHIVE_TEMPLATE_ACTION_TYPE;
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
-    throw new Error(
-      'ArchiveTemplateExecutor: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ArchiveTemplateExecutor: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 }
 
@@ -538,9 +505,7 @@ export class BloomreachAssetManagerService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listEmailTemplates: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listEmailTemplates: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 
   /** @throws {Error} Browser automation not yet available. */
@@ -551,9 +516,7 @@ export class BloomreachAssetManagerService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listWeblayerTemplates: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listWeblayerTemplates: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 
   /** @throws {Error} Browser automation not yet available. */
@@ -562,9 +525,7 @@ export class BloomreachAssetManagerService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listBlocks: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listBlocks: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 
   /** @throws {Error} Browser automation not yet available. */
@@ -573,9 +534,7 @@ export class BloomreachAssetManagerService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listCustomRows: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listCustomRows: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 
   /** @throws {Error} Browser automation not yet available. */
@@ -584,9 +543,7 @@ export class BloomreachAssetManagerService {
       validateProject(input.project);
     }
 
-    throw new Error(
-      'listSnippets: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listSnippets: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 
   /** @throws {Error} Browser automation not yet available. */
@@ -598,9 +555,7 @@ export class BloomreachAssetManagerService {
       }
     }
 
-    throw new Error(
-      'listFiles: not yet implemented. Requires browser automation infrastructure.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listFiles: not yet implemented. Requires browser automation infrastructure.', { not_implemented: true });
   }
 
   /** @throws {Error} If input validation fails. */

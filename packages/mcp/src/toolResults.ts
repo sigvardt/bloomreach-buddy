@@ -1,4 +1,4 @@
-import { BloomreachBuddyError } from '@bloomreach-buddy/core';
+import { BloomreachBuddyError, toErrorPayload } from '@bloomreach-buddy/core';
 import type { ToolArgs } from './toolArgs.js';
 
 export type ToolResult = { content: Array<{ type: 'text'; text: string }> };
@@ -39,8 +39,12 @@ export function buildRecoveryHint(error: unknown): string {
       return 'Bloomreach rate limit reached. Wait for the rate-limit window to reset before retrying.';
     case 'API_ERROR':
       return 'Bloomreach API returned an error response. Check input parameters and project permissions, then retry.';
-    case 'ACTION_PRECONDITION_FAILED':
-      return 'Action precondition not met. The confirm token may be expired, already used, or invalid. Prepare a new action and retry.';
+    case 'ACTION_PRECONDITION_FAILED': {
+      if (error.details.not_implemented) {
+        return 'This feature is not yet available through the API. Visit the Bloomreach Engagement UI to perform this action manually.';
+      }
+      return 'Action precondition not met. Verify input parameters and retry with corrected values.';
+    }
     case 'TARGET_NOT_FOUND':
       return 'The requested resource was not found. Verify the identifier and retry.';
     case 'NETWORK_ERROR':
@@ -59,12 +63,10 @@ export function buildRecoveryHint(error: unknown): string {
 }
 
 export function toErrorResult(error: unknown): ToolErrorResult {
-  const code = isBloomreachError(error) ? error.code : 'UNKNOWN';
-  const message = error instanceof Error ? error.message : 'Unknown error occurred.';
+  const payload = toErrorPayload(error);
 
-  const errorPayload = {
-    code,
-    message,
+  const errorResponse = {
+    ...payload,
     recovery_hint: buildRecoveryHint(error),
   };
 
@@ -73,7 +75,7 @@ export function toErrorResult(error: unknown): ToolErrorResult {
     content: [
       {
         type: 'text',
-        text: JSON.stringify(errorPayload, null, 2),
+        text: JSON.stringify(errorResponse, null, 2),
       },
     ],
   };

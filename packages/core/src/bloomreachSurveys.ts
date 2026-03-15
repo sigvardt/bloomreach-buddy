@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const CREATE_SURVEY_ACTION_TYPE = 'surveys.create_survey';
@@ -114,19 +115,17 @@ const MAX_QUESTION_OPTIONS = 20;
 export function validateSurveyName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_SURVEY_NAME_LENGTH) {
-    throw new Error('Survey name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Survey name must not be empty.');
   }
   if (trimmed.length > MAX_SURVEY_NAME_LENGTH) {
-    throw new Error(
-      `Survey name must not exceed ${MAX_SURVEY_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Survey name must not exceed ${MAX_SURVEY_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
 
 export function validateSurveyStatus(status: string): SurveyStatus {
   if (!SURVEY_STATUSES.includes(status as SurveyStatus)) {
-    throw new Error(`status must be one of: ${SURVEY_STATUSES.join(', ')} (got "${status}").`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `status must be one of: ${SURVEY_STATUSES.join(', ')} (got "${status}").`);
   }
   return status as SurveyStatus;
 }
@@ -134,16 +133,14 @@ export function validateSurveyStatus(status: string): SurveyStatus {
 export function validateSurveyId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Survey ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Survey ID must not be empty.');
   }
   return trimmed;
 }
 
 export function validateQuestionType(type: string): SurveyQuestionType {
   if (!SURVEY_QUESTION_TYPES.includes(type as SurveyQuestionType)) {
-    throw new Error(
-      `question type must be one of: ${SURVEY_QUESTION_TYPES.join(', ')} (got "${type}").`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `question type must be one of: ${SURVEY_QUESTION_TYPES.join(', ')} (got "${type}").`);
   }
   return type as SurveyQuestionType;
 }
@@ -151,22 +148,20 @@ export function validateQuestionType(type: string): SurveyQuestionType {
 export function validateQuestionText(text: string): string {
   const trimmed = text.trim();
   if (trimmed.length < MIN_QUESTION_TEXT_LENGTH) {
-    throw new Error('Question text must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Question text must not be empty.');
   }
   if (trimmed.length > MAX_QUESTION_TEXT_LENGTH) {
-    throw new Error(
-      `Question text must not exceed ${MAX_QUESTION_TEXT_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Question text must not exceed ${MAX_QUESTION_TEXT_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
 
 export function validateQuestions(questions: SurveyQuestion[]): SurveyQuestion[] {
   if (questions.length < MIN_QUESTIONS) {
-    throw new Error(`Survey must include at least ${MIN_QUESTIONS} question.`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Survey must include at least ${MIN_QUESTIONS} question.`);
   }
   if (questions.length > MAX_QUESTIONS) {
-    throw new Error(`Survey must not exceed ${MAX_QUESTIONS} questions (got ${questions.length}).`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Survey must not exceed ${MAX_QUESTIONS} questions (got ${questions.length}).`);
   }
 
   return questions.map((question) => {
@@ -174,9 +169,7 @@ export function validateQuestions(questions: SurveyQuestion[]): SurveyQuestion[]
     const text = validateQuestionText(question.text);
 
     if (question.options !== undefined && question.options.length > MAX_QUESTION_OPTIONS) {
-      throw new Error(
-        `Question options must not exceed ${MAX_QUESTION_OPTIONS} entries (got ${question.options.length}).`,
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Question options must not exceed ${MAX_QUESTION_OPTIONS} entries (got ${question.options.length}).`);
     }
 
     return {
@@ -196,9 +189,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -221,10 +214,8 @@ class CreateSurveyExecutor implements SurveyActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateSurveyExecutor: not yet implemented. ' +
-        'Survey creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateSurveyExecutor: not yet implemented. ' +
+      'Survey creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -238,10 +229,8 @@ class StartSurveyExecutor implements SurveyActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'StartSurveyExecutor: not yet implemented. ' +
-        'Starting surveys is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'StartSurveyExecutor: not yet implemented. ' +
+      'Starting surveys is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -255,10 +244,8 @@ class StopSurveyExecutor implements SurveyActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'StopSurveyExecutor: not yet implemented. ' +
-        'Stopping surveys is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'StopSurveyExecutor: not yet implemented. ' +
+      'Stopping surveys is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -272,10 +259,8 @@ class ArchiveSurveyExecutor implements SurveyActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ArchiveSurveyExecutor: not yet implemented. ' +
-        'Survey archiving is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ArchiveSurveyExecutor: not yet implemented. ' +
+      'Survey archiving is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -322,10 +307,8 @@ export class BloomreachSurveysService {
     }
 
     void this.apiConfig;
-    throw new Error(
-      'listSurveys: the Bloomreach API does not provide a list endpoint for surveys. ' +
-        'Survey management is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listSurveys: the Bloomreach API does not provide a list endpoint for surveys. ' +
+      'Survey management is only available through the Bloomreach Engagement UI.');
   }
 
   async viewSurveyResults(input: ViewSurveyResultsInput): Promise<SurveyResults> {
@@ -333,10 +316,8 @@ export class BloomreachSurveysService {
     validateSurveyId(input.surveyId);
 
     void this.apiConfig;
-    throw new Error(
-      'viewSurveyResults: the Bloomreach API does not provide a survey results endpoint. ' +
-        'Survey analytics are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewSurveyResults: the Bloomreach API does not provide a survey results endpoint. ' +
+      'Survey analytics are only available through the Bloomreach Engagement UI.');
   }
 
   prepareCreateSurvey(input: CreateSurveyInput): PreparedSurveyAction {

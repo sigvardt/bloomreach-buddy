@@ -1,3 +1,5 @@
+import { BloomreachBuddyError } from "@bloomreach-buddy/core";
+
 export type BloomreachMcpSchemaPrimitiveType =
   | 'array'
   | 'boolean'
@@ -85,7 +87,7 @@ export function throwToolSchemaValidationError(
   details: Record<string, unknown> = {},
 ): never {
   void details;
-  throw new Error(`${formatToolSchemaPath(path)} ${message}`);
+  throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${formatToolSchemaPath(path)} ${message}`);
 }
 
 export function validateToolArgEnum(

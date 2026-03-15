@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const CREATE_SCENARIO_ACTION_TYPE = 'scenarios.create_scenario';
@@ -101,19 +102,17 @@ const MIN_SCENARIO_NAME_LENGTH = 1;
 export function validateScenarioName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_SCENARIO_NAME_LENGTH) {
-    throw new Error('Scenario name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Scenario name must not be empty.');
   }
   if (trimmed.length > MAX_SCENARIO_NAME_LENGTH) {
-    throw new Error(
-      `Scenario name must not exceed ${MAX_SCENARIO_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Scenario name must not exceed ${MAX_SCENARIO_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
 
 export function validateScenarioStatus(status: string): ScenarioStatus {
   if (!SCENARIO_STATUSES.includes(status as ScenarioStatus)) {
-    throw new Error(`status must be one of: ${SCENARIO_STATUSES.join(', ')} (got "${status}").`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `status must be one of: ${SCENARIO_STATUSES.join(', ')} (got "${status}").`);
   }
   return status as ScenarioStatus;
 }
@@ -121,7 +120,7 @@ export function validateScenarioStatus(status: string): ScenarioStatus {
 export function validateScenarioId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
-    throw new Error('Scenario ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Scenario ID must not be empty.');
   }
   return trimmed;
 }
@@ -135,9 +134,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -160,10 +159,8 @@ class CreateScenarioExecutor implements ScenarioActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateScenarioExecutor: not yet implemented. ' +
-        'Scenario creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateScenarioExecutor: not yet implemented. ' +
+      'Scenario creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -177,10 +174,8 @@ class StartScenarioExecutor implements ScenarioActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'StartScenarioExecutor: not yet implemented. ' +
-        'Starting scenarios is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'StartScenarioExecutor: not yet implemented. ' +
+      'Starting scenarios is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -194,10 +189,8 @@ class StopScenarioExecutor implements ScenarioActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'StopScenarioExecutor: not yet implemented. ' +
-        'Stopping scenarios is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'StopScenarioExecutor: not yet implemented. ' +
+      'Stopping scenarios is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -211,10 +204,8 @@ class CloneScenarioExecutor implements ScenarioActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CloneScenarioExecutor: not yet implemented. ' +
-        'Scenario cloning is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CloneScenarioExecutor: not yet implemented. ' +
+      'Scenario cloning is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -228,10 +219,8 @@ class ArchiveScenarioExecutor implements ScenarioActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'ArchiveScenarioExecutor: not yet implemented. ' +
-        'Scenario archiving is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'ArchiveScenarioExecutor: not yet implemented. ' +
+      'Scenario archiving is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -269,11 +258,9 @@ export class BloomreachScenariosService {
       }
     }
 
-    throw new Error(
-      'listScenarios: the Bloomreach API does not provide an endpoint for scenarios. ' +
-        'Scenario data must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Campaigns > Scenarios in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listScenarios: the Bloomreach API does not provide an endpoint for scenarios. ' +
+      'Scenario data must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Campaigns > Scenarios in your project).');
   }
 
   async viewScenario(input: ViewScenarioInput): Promise<ScenarioDetails> {
@@ -281,11 +268,9 @@ export class BloomreachScenariosService {
     validateProject(input.project);
     validateScenarioId(input.scenarioId);
 
-    throw new Error(
-      'viewScenario: the Bloomreach API does not provide an endpoint for scenario details. ' +
-        'Scenario details must be viewed in the Bloomreach Engagement UI ' +
-        '(navigate to Campaigns > Scenarios and open the scenario).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewScenario: the Bloomreach API does not provide an endpoint for scenario details. ' +
+      'Scenario details must be viewed in the Bloomreach Engagement UI ' +
+      '(navigate to Campaigns > Scenarios and open the scenario).');
   }
 
   prepareCreateScenario(input: CreateScenarioInput): PreparedScenarioAction {

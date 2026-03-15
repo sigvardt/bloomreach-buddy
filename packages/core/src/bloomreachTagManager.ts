@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 /** Action type for creating a managed tag. */
@@ -133,12 +134,10 @@ const MAX_PRIORITY = 1000;
 export function validateTagName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length < MIN_TAG_NAME_LENGTH) {
-    throw new Error('Tag name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Tag name must not be empty.');
   }
   if (trimmed.length > MAX_TAG_NAME_LENGTH) {
-    throw new Error(
-      `Tag name must not exceed ${MAX_TAG_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Tag name must not exceed ${MAX_TAG_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -147,12 +146,10 @@ export function validateTagName(name: string): string {
 export function validateTagId(tagId: string): string {
   const trimmed = tagId.trim();
   if (trimmed.length === 0) {
-    throw new Error('Tag ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Tag ID must not be empty.');
   }
   if (trimmed.length > MAX_TAG_ID_LENGTH) {
-    throw new Error(
-      `Tag ID must not exceed ${MAX_TAG_ID_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Tag ID must not exceed ${MAX_TAG_ID_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -160,12 +157,10 @@ export function validateTagId(tagId: string): string {
 /** @throws {Error} If JS code is empty or exceeds 100000 characters. */
 export function validateJsCode(code: string): string {
   if (code.trim().length === 0) {
-    throw new Error('JS code must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'JS code must not be empty.');
   }
   if (code.length > MAX_JS_CODE_LENGTH) {
-    throw new Error(
-      `JS code must not exceed ${MAX_JS_CODE_LENGTH} characters (got ${code.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `JS code must not exceed ${MAX_JS_CODE_LENGTH} characters (got ${code.length}).`);
   }
   return code;
 }
@@ -174,7 +169,7 @@ export function validateJsCode(code: string): string {
 export function validateTagStatus(status: string): TagStatus {
   const trimmed = status.trim();
   if (!TAG_STATUSES.includes(trimmed as TagStatus)) {
-    throw new Error(`status must be one of: ${TAG_STATUSES.join(', ')} (got "${status}").`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `status must be one of: ${TAG_STATUSES.join(', ')} (got "${status}").`);
   }
   return trimmed as TagStatus;
 }
@@ -183,12 +178,10 @@ export function validateTagStatus(status: string): TagStatus {
 export function validatePageUrl(url: string): string {
   const trimmed = url.trim();
   if (trimmed.length === 0) {
-    throw new Error('Page URL must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Page URL must not be empty.');
   }
   if (trimmed.length > MAX_PAGE_URL_LENGTH) {
-    throw new Error(
-      `Page URL must not exceed ${MAX_PAGE_URL_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Page URL must not exceed ${MAX_PAGE_URL_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -196,29 +189,27 @@ export function validatePageUrl(url: string): string {
 /** @throws {Error} If events are empty, too many, invalid, or not unique. */
 export function validateEvents(events: string[]): string[] {
   if (events.length === 0) {
-    throw new Error('Events must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Events must not be empty.');
   }
   if (events.length > MAX_EVENTS_COUNT) {
-    throw new Error(`Events must not exceed ${MAX_EVENTS_COUNT} items (got ${events.length}).`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Events must not exceed ${MAX_EVENTS_COUNT} items (got ${events.length}).`);
   }
 
   const validated: string[] = [];
   for (const eventName of events) {
     const trimmed = eventName.trim();
     if (trimmed.length === 0) {
-      throw new Error('Event name must not be empty.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Event name must not be empty.');
     }
     if (trimmed.length > MAX_EVENT_NAME_LENGTH) {
-      throw new Error(
-        `Event name must not exceed ${MAX_EVENT_NAME_LENGTH} characters (got ${trimmed.length}).`,
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Event name must not exceed ${MAX_EVENT_NAME_LENGTH} characters (got ${trimmed.length}).`);
     }
     validated.push(trimmed);
   }
 
   const unique = new Set(validated);
   if (unique.size !== validated.length) {
-    throw new Error('Event names must be unique.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Event names must be unique.');
   }
 
   return validated;
@@ -230,34 +221,28 @@ export function validateCustomerAttributes(
 ): Record<string, string> {
   const entries = Object.entries(attrs);
   if (entries.length === 0) {
-    throw new Error('Customer attributes must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Customer attributes must not be empty.');
   }
   if (entries.length > MAX_CUSTOMER_ATTRIBUTES_COUNT) {
-    throw new Error(
-      `Customer attributes must not exceed ${MAX_CUSTOMER_ATTRIBUTES_COUNT} entries (got ${entries.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Customer attributes must not exceed ${MAX_CUSTOMER_ATTRIBUTES_COUNT} entries (got ${entries.length}).`);
   }
 
   const validated: Record<string, string> = {};
   for (const [key, value] of entries) {
     const trimmedKey = key.trim();
     if (trimmedKey.length === 0) {
-      throw new Error('Customer attribute key must not be empty.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Customer attribute key must not be empty.');
     }
     if (trimmedKey.length > MAX_ATTRIBUTE_KEY_LENGTH) {
-      throw new Error(
-        `Customer attribute key must not exceed ${MAX_ATTRIBUTE_KEY_LENGTH} characters (got ${trimmedKey.length}).`,
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Customer attribute key must not exceed ${MAX_ATTRIBUTE_KEY_LENGTH} characters (got ${trimmedKey.length}).`);
     }
 
     const trimmedValue = value.trim();
     if (trimmedValue.length === 0) {
-      throw new Error('Customer attribute value must not be empty.');
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Customer attribute value must not be empty.');
     }
     if (trimmedValue.length > MAX_ATTRIBUTE_VALUE_LENGTH) {
-      throw new Error(
-        `Customer attribute value must not exceed ${MAX_ATTRIBUTE_VALUE_LENGTH} characters (got ${trimmedValue.length}).`,
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Customer attribute value must not exceed ${MAX_ATTRIBUTE_VALUE_LENGTH} characters (got ${trimmedValue.length}).`);
     }
 
     validated[trimmedKey] = trimmedValue;
@@ -292,10 +277,10 @@ export function validateTriggerConditions(
 /** @throws {Error} If priority is not a positive integer or exceeds 1000. */
 export function validatePriority(priority: number): number {
   if (!Number.isInteger(priority) || priority < 1) {
-    throw new Error('Priority must be a positive integer.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Priority must be a positive integer.');
   }
   if (priority > MAX_PRIORITY) {
-    throw new Error(`Priority must not exceed ${MAX_PRIORITY} (got ${priority}).`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Priority must not exceed ${MAX_PRIORITY} (got ${priority}).`);
   }
   return priority;
 }
@@ -310,9 +295,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -339,10 +324,8 @@ class CreateTagExecutor implements TagManagerActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateTagExecutor: not yet implemented. ' +
-        'Tag creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateTagExecutor: not yet implemented. ' +
+      'Tag creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -356,10 +339,8 @@ class EnableTagExecutor implements TagManagerActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'EnableTagExecutor: not yet implemented. ' +
-        'Tag enabling is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'EnableTagExecutor: not yet implemented. ' +
+      'Tag enabling is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -373,10 +354,8 @@ class DisableTagExecutor implements TagManagerActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DisableTagExecutor: not yet implemented. ' +
-        'Tag disabling is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DisableTagExecutor: not yet implemented. ' +
+      'Tag disabling is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -390,10 +369,8 @@ class EditTagExecutor implements TagManagerActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'EditTagExecutor: not yet implemented. ' +
-        'Tag editing is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'EditTagExecutor: not yet implemented. ' +
+      'Tag editing is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -407,10 +384,8 @@ class DeleteTagExecutor implements TagManagerActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DeleteTagExecutor: not yet implemented. ' +
-        'Tag deletion is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeleteTagExecutor: not yet implemented. ' +
+      'Tag deletion is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -456,11 +431,9 @@ export class BloomreachTagManagerService {
       }
     }
 
-    throw new Error(
-      'listTags: the Bloomreach API does not provide an endpoint for managed tags. ' +
-        'Managed tag data must be obtained from the Bloomreach Engagement UI ' +
-        '(navigate to Data & Assets > Managed Tags in your project).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listTags: the Bloomreach API does not provide an endpoint for managed tags. ' +
+      'Managed tag data must be obtained from the Bloomreach Engagement UI ' +
+      '(navigate to Data & Assets > Managed Tags in your project).');
   }
 
   /** @throws {Error} Bloomreach API does not expose managed tag details. */
@@ -469,11 +442,9 @@ export class BloomreachTagManagerService {
     validateProject(input.project);
     validateTagId(input.tagId);
 
-    throw new Error(
-      'viewTag: the Bloomreach API does not provide an endpoint for managed tag details. ' +
-        'Managed tag details must be viewed in the Bloomreach Engagement UI ' +
-        '(navigate to Data & Assets > Managed Tags and open the tag).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewTag: the Bloomreach API does not provide an endpoint for managed tag details. ' +
+      'Managed tag details must be viewed in the Bloomreach Engagement UI ' +
+      '(navigate to Data & Assets > Managed Tags and open the tag).');
   }
 
   /** @throws {Error} If input validation fails. */

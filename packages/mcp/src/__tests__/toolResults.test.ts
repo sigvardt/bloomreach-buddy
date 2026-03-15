@@ -45,7 +45,7 @@ describe('toErrorResult', () => {
     const result = toErrorResult('string error');
     const payload = JSON.parse(result.content[0]?.text ?? '{}') as Record<string, unknown>;
     expect(payload.code).toBe('UNKNOWN');
-    expect(payload.message).toBe('Unknown error occurred.');
+    expect(payload.message).toBe('string error');
   });
 });
 

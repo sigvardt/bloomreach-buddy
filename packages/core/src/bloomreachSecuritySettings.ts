@@ -1,4 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { BloomreachBuddyError } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 // ---------------------------------------------------------------------------
@@ -122,12 +123,10 @@ const MAX_USERNAME_LENGTH = 200;
 export function validateTunnelName(name: string): string {
   const trimmed = name.trim();
   if (trimmed.length === 0) {
-    throw new Error('Tunnel name must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Tunnel name must not be empty.');
   }
   if (trimmed.length > MAX_TUNNEL_NAME_LENGTH) {
-    throw new Error(
-      `Tunnel name must not exceed ${MAX_TUNNEL_NAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Tunnel name must not exceed ${MAX_TUNNEL_NAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -135,20 +134,20 @@ export function validateTunnelName(name: string): string {
 export function validateHost(host: string): string {
   const trimmed = host.trim();
   if (trimmed.length === 0) {
-    throw new Error('Host must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Host must not be empty.');
   }
   if (trimmed.length > MAX_HOST_LENGTH) {
-    throw new Error(`Host must not exceed ${MAX_HOST_LENGTH} characters (got ${trimmed.length}).`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Host must not exceed ${MAX_HOST_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
 
 export function validatePort(port: number): number {
   if (!Number.isInteger(port) || port <= 0) {
-    throw new Error('Port must be a positive integer.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Port must be a positive integer.');
   }
   if (port < 1 || port > 65535) {
-    throw new Error(`Port must be between 1 and 65535 (got ${port}).`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Port must be between 1 and 65535 (got ${port}).`);
   }
   return port;
 }
@@ -156,12 +155,10 @@ export function validatePort(port: number): number {
 export function validateUsername(username: string): string {
   const trimmed = username.trim();
   if (trimmed.length === 0) {
-    throw new Error('Username must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Username must not be empty.');
   }
   if (trimmed.length > MAX_USERNAME_LENGTH) {
-    throw new Error(
-      `Username must not exceed ${MAX_USERNAME_LENGTH} characters (got ${trimmed.length}).`,
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Username must not exceed ${MAX_USERNAME_LENGTH} characters (got ${trimmed.length}).`);
   }
   return trimmed;
 }
@@ -169,7 +166,7 @@ export function validateUsername(username: string): string {
 export function validateTunnelId(tunnelId: string): string {
   const trimmed = tunnelId.trim();
   if (trimmed.length === 0) {
-    throw new Error('Tunnel ID must not be empty.');
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Tunnel ID must not be empty.');
   }
   return trimmed;
 }
@@ -191,9 +188,9 @@ function requireApiConfig(
   operation: string,
 ): BloomreachApiConfig {
   if (!config) {
-    throw new Error(
-      `${operation} requires API credentials. ` +
-        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    throw new BloomreachBuddyError('CONFIG_MISSING', `${operation} requires API credentials. ` +
+      'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      { missing: ['BLOOMREACH_PROJECT_TOKEN', 'BLOOMREACH_API_KEY_ID', 'BLOOMREACH_API_SECRET'] },
     );
   }
   return config;
@@ -220,10 +217,8 @@ class CreateSshTunnelExecutor implements SecuritySettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'CreateSshTunnelExecutor: not yet implemented. ' +
-        'SSH tunnel creation is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'CreateSshTunnelExecutor: not yet implemented. ' +
+      'SSH tunnel creation is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -237,10 +232,8 @@ class UpdateSshTunnelExecutor implements SecuritySettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'UpdateSshTunnelExecutor: not yet implemented. ' +
-        'SSH tunnel updates are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UpdateSshTunnelExecutor: not yet implemented. ' +
+      'SSH tunnel updates are only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -254,10 +247,8 @@ class DeleteSshTunnelExecutor implements SecuritySettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DeleteSshTunnelExecutor: not yet implemented. ' +
-        'SSH tunnel deletion is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DeleteSshTunnelExecutor: not yet implemented. ' +
+      'SSH tunnel deletion is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -271,10 +262,8 @@ class EnableTwoStepExecutor implements SecuritySettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'EnableTwoStepExecutor: not yet implemented. ' +
-        'Two-step verification enabling is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'EnableTwoStepExecutor: not yet implemented. ' +
+      'Two-step verification enabling is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -288,10 +277,8 @@ class DisableTwoStepExecutor implements SecuritySettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'DisableTwoStepExecutor: not yet implemented. ' +
-        'Two-step verification disabling is only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'DisableTwoStepExecutor: not yet implemented. ' +
+      'Two-step verification disabling is only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -305,10 +292,8 @@ class UpdateTwoStepExecutor implements SecuritySettingsActionExecutor {
 
   async execute(_payload: Record<string, unknown>): Promise<Record<string, unknown>> {
     void this.apiConfig;
-    throw new Error(
-      'UpdateTwoStepExecutor: not yet implemented. ' +
-        'Two-step verification updates are only available through the Bloomreach Engagement UI.',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'UpdateTwoStepExecutor: not yet implemented. ' +
+      'Two-step verification updates are only available through the Bloomreach Engagement UI.', { not_implemented: true });
   }
 }
 
@@ -355,10 +340,8 @@ export class BloomreachSecuritySettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'listSshTunnels: not yet implemented. the Bloomreach API does not provide an endpoint for SSH tunnels. ' +
-        'SSH tunnels must be managed through the Bloomreach Engagement UI (navigate to Project Settings > SSH Tunnels).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'listSshTunnels: not yet implemented. the Bloomreach API does not provide an endpoint for SSH tunnels. ' +
+      'SSH tunnels must be managed through the Bloomreach Engagement UI (navigate to Project Settings > SSH Tunnels).', { not_implemented: true });
   }
 
   async viewSshTunnel(input?: ViewSshTunnelInput): Promise<BloomreachSshTunnel> {
@@ -366,10 +349,8 @@ export class BloomreachSecuritySettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'viewSshTunnel: not yet implemented. the Bloomreach API does not provide an endpoint for SSH tunnels. ' +
-        'SSH tunnels must be managed through the Bloomreach Engagement UI (navigate to Project Settings > SSH Tunnels).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewSshTunnel: not yet implemented. the Bloomreach API does not provide an endpoint for SSH tunnels. ' +
+      'SSH tunnels must be managed through the Bloomreach Engagement UI (navigate to Project Settings > SSH Tunnels).', { not_implemented: true });
   }
 
   async viewTwoStepVerification(
@@ -379,10 +360,8 @@ export class BloomreachSecuritySettingsService {
     if (input !== undefined) {
       validateProject(input.project);
     }
-    throw new Error(
-      'viewTwoStepVerification: not yet implemented. the Bloomreach API does not provide an endpoint for two-step verification. ' +
-        'Two-step verification must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Two-Step Verification).',
-    );
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'viewTwoStepVerification: not yet implemented. the Bloomreach API does not provide an endpoint for two-step verification. ' +
+      'Two-step verification must be managed through the Bloomreach Engagement UI (navigate to Project Settings > Two-Step Verification).', { not_implemented: true });
   }
 
   prepareCreateSshTunnel(input: CreateSshTunnelInput): PreparedSecuritySettingsAction {
@@ -434,9 +413,7 @@ export class BloomreachSecuritySettingsService {
       password === undefined &&
       hostKey === undefined
     ) {
-      throw new Error(
-        'At least one of name, host, port, username, password, or hostKey must be provided for tunnel update.',
-      );
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one of name, host, port, username, password, or hostKey must be provided for tunnel update.');
     }
 
     const preview = {
