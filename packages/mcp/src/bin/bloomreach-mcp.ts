@@ -5562,13 +5562,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const args = isPlainObject(request.params.arguments) ? request.params.arguments : {};
 
   try {
-    if (name === toolNames.BLOOMREACH_STATUS_TOOL) {
-      const client = new core.BloomreachClient({
-        environment: process.env.BLOOMREACH_ENVIRONMENT ?? 'not-configured',
-        apiToken: process.env.BLOOMREACH_API_TOKEN ?? '',
-      });
-      return toToolResult(await client.status());
-    }
+if (name === toolNames.BLOOMREACH_STATUS_TOOL) {
+  const client = new core.BloomreachClient({
+    environment: process.env.BLOOMREACH_ENVIRONMENT ?? 'not-configured',
+    apiToken: process.env.BLOOMREACH_API_TOKEN ?? '',
+    apiConfig,
+  });
+  return toToolResult(await client.status());
+}
 
     const route = toolByName.get(name);
     if (!route || !route.serviceClass || !route.methodName) {
