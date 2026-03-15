@@ -3,7 +3,7 @@ import { BLOOMREACH_MCP_TOOL_NAMES } from '../index.js';
 
 describe('tool constants', () => {
   it('exports 267 tool name constants via BLOOMREACH_MCP_TOOL_NAMES', () => {
-    expect(BLOOMREACH_MCP_TOOL_NAMES).toHaveLength(267);
+    expect(BLOOMREACH_MCP_TOOL_NAMES).toHaveLength(279);
   });
 
   it('all tool names follow bloomreach.<domain>.<action> dot-notation', () => {
@@ -46,13 +46,14 @@ describe('tool constants', () => {
     }
   });
 
-  it('covers all 35 expected service domains', () => {
+  it('covers all 37 expected service domains', () => {
     const domains = new Set(BLOOMREACH_MCP_TOOL_NAMES.map((name) => name.split('.')[1]));
     const expectedDomains = [
       'actions',
       'access',
       'assets',
       'campaign_settings',
+      'channel_settings',
       'campaigns_calendar',
       'catalogs',
       'customers',
