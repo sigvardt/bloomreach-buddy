@@ -224,7 +224,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_DASHBOARDS_LIST_TOOL,
     description:
-      'List all dashboards in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all dashboards in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -251,7 +251,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_DASHBOARDS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new dashboard for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new dashboard. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -262,7 +262,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new dashboard.',
         },
       },
       required: ['project'],
@@ -274,7 +274,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_DASHBOARDS_PREPARE_SET_HOME_TOOL,
     description:
-      'Stage setting a dashboard as the project home for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Set a dashboard as the project home. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -285,7 +285,7 @@ const tools: ToolRoute[] = [
         },
         dashboardId: {
           type: 'string',
-          description: 'Identifier for the target resource (dashboardId).',
+          description: 'ID of the dashboard. Use bloomreach.dashboards.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -297,7 +297,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_DASHBOARDS_PREPARE_DELETE_TOOL,
     description:
-      'Stage deletion of a dashboard for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete a dashboard. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -308,7 +308,7 @@ const tools: ToolRoute[] = [
         },
         dashboardId: {
           type: 'string',
-          description: 'Identifier for the target resource (dashboardId).',
+          description: 'ID of the dashboard. Use bloomreach.dashboards.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -320,7 +320,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PERFORMANCE_PROJECT_TOOL,
     description:
-      'View project-wide revenue and conversion KPIs. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View project-wide revenue and conversion KPIs. ⚠️ Not yet available — coming in a future release.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachPerformanceService',
     methodName: 'viewProjectPerformance',
@@ -328,7 +328,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PERFORMANCE_CHANNEL_TOOL,
     description:
-      'View per-channel engagement, deliverability and revenue metrics. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View per-channel engagement, deliverability and revenue metrics. ⚠️ Not yet available — coming in a future release.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachPerformanceService',
     methodName: 'viewChannelPerformance',
@@ -336,7 +336,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PERFORMANCE_USAGE_TOOL,
     description:
-      'View Bloomreach billing, event-tracking and usage statistics. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View Bloomreach billing, event-tracking and usage statistics. ⚠️ Not yet available — coming in a future release.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachPerformanceService',
     methodName: 'viewBloomreachUsage',
@@ -344,7 +344,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PERFORMANCE_OVERVIEW_TOOL,
     description:
-      'View high-level project statistics. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View high-level project statistics. ⚠️ Not yet available — coming in a future release.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachPerformanceService',
     methodName: 'viewProjectOverview',
@@ -352,7 +352,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PERFORMANCE_HEALTH_TOOL,
     description:
-      'View project health and data-quality indicators. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View project health and data-quality indicators. ⚠️ Not yet available — coming in a future release.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachPerformanceService',
     methodName: 'viewProjectHealth',
@@ -360,7 +360,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SCENARIOS_LIST_TOOL,
     description:
-      'List all scenarios in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all scenarios in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -387,7 +387,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SCENARIOS_VIEW_TOOL,
     description:
-      'View details of a specific scenario. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View details of a specific scenario. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -398,7 +398,7 @@ const tools: ToolRoute[] = [
         },
         scenarioId: {
           type: 'string',
-          description: 'Identifier for the target resource (scenarioId).',
+          description: 'ID of the scenario. Use bloomreach.scenarios.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -410,7 +410,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SCENARIOS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new scenario for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new scenario. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -421,7 +421,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new scenario.',
         },
       },
       required: ['project'],
@@ -433,7 +433,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SCENARIOS_PREPARE_START_TOOL,
     description:
-      'Stage starting a scenario for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Start a scenario. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -444,7 +444,7 @@ const tools: ToolRoute[] = [
         },
         scenarioId: {
           type: 'string',
-          description: 'Identifier for the target resource (scenarioId).',
+          description: 'ID of the scenario. Use bloomreach.scenarios.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -456,7 +456,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SCENARIOS_PREPARE_STOP_TOOL,
     description:
-      'Stage stopping a scenario for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Stop a scenario. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -467,7 +467,7 @@ const tools: ToolRoute[] = [
         },
         scenarioId: {
           type: 'string',
-          description: 'Identifier for the target resource (scenarioId).',
+          description: 'ID of the scenario. Use bloomreach.scenarios.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -479,7 +479,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SCENARIOS_PREPARE_CLONE_TOOL,
     description:
-      'Stage cloning a scenario for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a copy of an existing scenario. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -490,7 +490,7 @@ const tools: ToolRoute[] = [
         },
         scenarioId: {
           type: 'string',
-          description: 'Identifier for the target resource (scenarioId).',
+          description: 'ID of the scenario. Use bloomreach.scenarios.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -502,7 +502,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SCENARIOS_PREPARE_ARCHIVE_TOOL,
     description:
-      'Stage archiving a scenario for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Archive a scenario, removing it from active views. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -513,7 +513,7 @@ const tools: ToolRoute[] = [
         },
         scenarioId: {
           type: 'string',
-          description: 'Identifier for the target resource (scenarioId).',
+          description: 'ID of the scenario. Use bloomreach.scenarios.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -525,7 +525,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EMAIL_CAMPAIGNS_LIST_TOOL,
     description:
-      'List all email campaigns in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all email campaigns in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -552,7 +552,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EMAIL_CAMPAIGNS_VIEW_RESULTS_TOOL,
     description:
-      'View delivery and engagement metrics for an email campaign. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View delivery and engagement metrics for an email campaign. ⚠️ Not yet available — coming in a future release.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachEmailCampaignsService',
     methodName: 'viewCampaignResults',
@@ -560,7 +560,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EMAIL_CAMPAIGNS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new email campaign for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new email campaign. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -571,7 +571,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new email campaign.',
         },
       },
       required: ['project'],
@@ -583,7 +583,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EMAIL_CAMPAIGNS_PREPARE_SEND_TOOL,
     description:
-      'Stage sending an email campaign for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Send an email campaign. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -594,7 +594,7 @@ const tools: ToolRoute[] = [
         },
         campaignId: {
           type: 'string',
-          description: 'Identifier for the target resource (campaignId).',
+          description: 'ID of the email campaign. Use bloomreach.email_campaigns.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -606,7 +606,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EMAIL_CAMPAIGNS_PREPARE_CLONE_TOOL,
     description:
-      'Stage cloning an email campaign for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a copy of an existing email campaign. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -617,7 +617,7 @@ const tools: ToolRoute[] = [
         },
         campaignId: {
           type: 'string',
-          description: 'Identifier for the target resource (campaignId).',
+          description: 'ID of the email campaign. Use bloomreach.email_campaigns.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -629,7 +629,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EMAIL_CAMPAIGNS_PREPARE_ARCHIVE_TOOL,
     description:
-      'Stage archiving an email campaign for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Archive an email campaign, removing it from active views. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -640,7 +640,7 @@ const tools: ToolRoute[] = [
         },
         campaignId: {
           type: 'string',
-          description: 'Identifier for the target resource (campaignId).',
+          description: 'ID of the email campaign. Use bloomreach.email_campaigns.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -688,7 +688,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EMAIL_CAMPAIGNS_PREPARE_SEND_TRANSACTIONAL_TOOL,
     description:
-      'Stage a transactional email for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes integration ID, recipient, email content, and campaign name.',
+      'Send a transactional email (order confirmation, password reset, welcome, etc.). Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -724,7 +724,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SURVEYS_LIST_TOOL,
     description:
-      'List all surveys in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all surveys in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -751,7 +751,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SURVEYS_VIEW_RESULTS_TOOL,
     description:
-      'View responses and analytics for a survey. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View responses and analytics for a survey. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -762,7 +762,7 @@ const tools: ToolRoute[] = [
         },
         surveyId: {
           type: 'string',
-          description: 'Identifier for the target resource (surveyId).',
+          description: 'ID of the survey. Use bloomreach.surveys.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -774,7 +774,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SURVEYS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new on-site survey for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new on-site survey. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -785,7 +785,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new survey.',
         },
       },
       required: ['project'],
@@ -797,7 +797,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SURVEYS_PREPARE_START_TOOL,
     description:
-      'Stage starting a survey for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Start a survey. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -808,7 +808,7 @@ const tools: ToolRoute[] = [
         },
         surveyId: {
           type: 'string',
-          description: 'Identifier for the target resource (surveyId).',
+          description: 'ID of the survey. Use bloomreach.surveys.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -820,7 +820,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SURVEYS_PREPARE_STOP_TOOL,
     description:
-      'Stage stopping a survey for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Stop a survey. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -831,7 +831,7 @@ const tools: ToolRoute[] = [
         },
         surveyId: {
           type: 'string',
-          description: 'Identifier for the target resource (surveyId).',
+          description: 'ID of the survey. Use bloomreach.surveys.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -843,7 +843,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SURVEYS_PREPARE_ARCHIVE_TOOL,
     description:
-      'Stage archiving a survey for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Archive a survey, removing it from active views. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -854,7 +854,7 @@ const tools: ToolRoute[] = [
         },
         surveyId: {
           type: 'string',
-          description: 'Identifier for the target resource (surveyId).',
+          description: 'ID of the survey. Use bloomreach.surveys.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -866,7 +866,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGNS_CALENDAR_VIEW_TOOL,
     description:
-      'View campaign calendar for a date range. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View campaign calendar for a date range. ⚠️ Not yet available — coming in a future release.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachCampaignCalendarService',
     methodName: 'viewCampaignCalendar',
@@ -874,7 +874,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGNS_CALENDAR_FILTER_TOOL,
     description:
-      'Filter campaign calendar by type, status, or channel. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'Filter campaign calendar by type, status, or channel. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -905,7 +905,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGNS_CALENDAR_PREPARE_EXPORT_TOOL,
     description:
-      'Stage export of campaign calendar data for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Export campaign calendar data. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -916,7 +916,7 @@ const tools: ToolRoute[] = [
         },
         exportId: {
           type: 'string',
-          description: 'Identifier for the target resource (exportId).',
+          description: 'ID of the export configuration.',
         },
       },
       required: ['project'],
@@ -928,7 +928,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_TRENDS_LIST_TOOL,
     description:
-      'List all trend analyses in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all trend analyses in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -955,7 +955,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_TRENDS_VIEW_RESULTS_TOOL,
     description:
-      'View time-series data for a trend analysis. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View time-series data for a trend analysis. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -966,7 +966,7 @@ const tools: ToolRoute[] = [
         },
         analysisId: {
           type: 'string',
-          description: 'Identifier for the target resource (analysisId).',
+          description: 'ID of the analysis. Use the corresponding list tool to find available IDs.',
         },
       },
       required: ['project'],
@@ -978,7 +978,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_TRENDS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new trend analysis for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new trend analysis. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -989,7 +989,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new trend analysis.',
         },
       },
       required: ['project'],
@@ -1001,7 +1001,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_TRENDS_PREPARE_CLONE_TOOL,
     description:
-      'Stage cloning a trend analysis for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a copy of an existing trend analysis. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1012,7 +1012,7 @@ const tools: ToolRoute[] = [
         },
         analysisId: {
           type: 'string',
-          description: 'Identifier for the target resource (analysisId).',
+          description: 'ID of the analysis. Use the corresponding list tool to find available IDs.',
         },
       },
       required: ['project'],
@@ -1024,7 +1024,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_TRENDS_PREPARE_ARCHIVE_TOOL,
     description:
-      'Stage archiving a trend analysis for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Archive a trend analysis, removing it from active views. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1035,7 +1035,7 @@ const tools: ToolRoute[] = [
         },
         analysisId: {
           type: 'string',
-          description: 'Identifier for the target resource (analysisId).',
+          description: 'ID of the analysis. Use the corresponding list tool to find available IDs.',
         },
       },
       required: ['project'],
@@ -1047,7 +1047,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_FUNNELS_LIST_TOOL,
     description:
-      'List all funnel analyses in the project. Use when you need live data from Bloomreach Engagement APIs. Returns an array of matching records; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+      'List all funnel analyses in the project. Requires API credentials (BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1074,7 +1074,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_FUNNELS_VIEW_RESULTS_TOOL,
     description:
-      'View conversion rates and drop-off data for a funnel analysis. Use when you need live data from Bloomreach Engagement APIs. Returns an object with detailed fields; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+      'View conversion rates and drop-off data for a funnel analysis. Requires API credentials (BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1085,7 +1085,7 @@ const tools: ToolRoute[] = [
         },
         analysisId: {
           type: 'string',
-          description: 'Identifier for the target resource (analysisId).',
+          description: 'ID of the analysis. Use the corresponding list tool to find available IDs.',
         },
       },
       required: ['project'],
@@ -1097,7 +1097,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_FUNNELS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new funnel analysis for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new funnel analysis. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1108,7 +1108,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new funnel analysis.',
         },
       },
       required: ['project'],
@@ -1120,7 +1120,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_FUNNELS_PREPARE_CLONE_TOOL,
     description:
-      'Stage cloning a funnel analysis for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a copy of an existing funnel analysis. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1131,7 +1131,7 @@ const tools: ToolRoute[] = [
         },
         analysisId: {
           type: 'string',
-          description: 'Identifier for the target resource (analysisId).',
+          description: 'ID of the analysis. Use the corresponding list tool to find available IDs.',
         },
       },
       required: ['project'],
@@ -1143,7 +1143,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_FUNNELS_PREPARE_ARCHIVE_TOOL,
     description:
-      'Stage archiving a funnel analysis for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Archive a funnel analysis, removing it from active views. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1154,7 +1154,7 @@ const tools: ToolRoute[] = [
         },
         analysisId: {
           type: 'string',
-          description: 'Identifier for the target resource (analysisId).',
+          description: 'ID of the analysis. Use the corresponding list tool to find available IDs.',
         },
       },
       required: ['project'],
@@ -1166,7 +1166,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_RETENTIONS_LIST_TOOL,
     description:
-      'List all retention analyses in the project. Use when you need live data from Bloomreach Engagement APIs. Returns an array of matching records; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+      'List all retention analyses in the project. Requires API credentials (BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1193,7 +1193,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_RETENTIONS_VIEW_RESULTS_TOOL,
     description:
-      'View cohort retention data for a retention analysis. Use when you need live data from Bloomreach Engagement APIs. Returns an object with detailed fields; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+      'View cohort retention data for a retention analysis. Requires API credentials (BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1204,7 +1204,7 @@ const tools: ToolRoute[] = [
         },
         analysisId: {
           type: 'string',
-          description: 'Identifier for the target resource (analysisId).',
+          description: 'ID of the analysis. Use the corresponding list tool to find available IDs.',
         },
       },
       required: ['project'],
@@ -1216,7 +1216,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_RETENTIONS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new retention analysis for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new retention analysis. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1227,7 +1227,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new retention analysis.',
         },
       },
       required: ['project'],
@@ -1239,7 +1239,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_RETENTIONS_PREPARE_CLONE_TOOL,
     description:
-      'Stage cloning a retention analysis for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a copy of an existing retention analysis. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1250,7 +1250,7 @@ const tools: ToolRoute[] = [
         },
         analysisId: {
           type: 'string',
-          description: 'Identifier for the target resource (analysisId).',
+          description: 'ID of the analysis. Use the corresponding list tool to find available IDs.',
         },
       },
       required: ['project'],
@@ -1262,7 +1262,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_RETENTIONS_PREPARE_ARCHIVE_TOOL,
     description:
-      'Stage archiving a retention analysis for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Archive a retention analysis, removing it from active views. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1273,7 +1273,7 @@ const tools: ToolRoute[] = [
         },
         analysisId: {
           type: 'string',
-          description: 'Identifier for the target resource (analysisId).',
+          description: 'ID of the analysis. Use the corresponding list tool to find available IDs.',
         },
       },
       required: ['project'],
@@ -1285,7 +1285,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_FLOWS_LIST_TOOL,
     description:
-      'List all flow analyses in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all flow analyses in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1312,7 +1312,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_FLOWS_VIEW_RESULTS_TOOL,
     description:
-      'View journey paths, volumes and drop-offs for a flow analysis. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View journey paths, volumes and drop-offs for a flow analysis. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1323,7 +1323,7 @@ const tools: ToolRoute[] = [
         },
         analysisId: {
           type: 'string',
-          description: 'Identifier for the target resource (analysisId).',
+          description: 'ID of the analysis. Use the corresponding list tool to find available IDs.',
         },
       },
       required: ['project'],
@@ -1335,7 +1335,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_FLOWS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new flow analysis for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new flow analysis. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1346,7 +1346,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new flow analysis.',
         },
       },
       required: ['project'],
@@ -1358,7 +1358,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_FLOWS_PREPARE_CLONE_TOOL,
     description:
-      'Stage cloning a flow analysis for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a copy of an existing flow analysis. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1369,7 +1369,7 @@ const tools: ToolRoute[] = [
         },
         analysisId: {
           type: 'string',
-          description: 'Identifier for the target resource (analysisId).',
+          description: 'ID of the analysis. Use the corresponding list tool to find available IDs.',
         },
       },
       required: ['project'],
@@ -1381,7 +1381,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_FLOWS_PREPARE_ARCHIVE_TOOL,
     description:
-      'Stage archiving a flow analysis for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Archive a flow analysis, removing it from active views. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1392,7 +1392,7 @@ const tools: ToolRoute[] = [
         },
         analysisId: {
           type: 'string',
-          description: 'Identifier for the target resource (analysisId).',
+          description: 'ID of the analysis. Use the corresponding list tool to find available IDs.',
         },
       },
       required: ['project'],
@@ -1404,7 +1404,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_GEO_ANALYSES_LIST_TOOL,
     description:
-      'List all geo analyses in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all geo analyses in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1431,7 +1431,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_GEO_ANALYSES_VIEW_RESULTS_TOOL,
     description:
-      'View geographic distribution data for a geo analysis. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View geographic distribution data for a geo analysis. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1442,7 +1442,7 @@ const tools: ToolRoute[] = [
         },
         analysisId: {
           type: 'string',
-          description: 'Identifier for the target resource (analysisId).',
+          description: 'ID of the analysis. Use the corresponding list tool to find available IDs.',
         },
       },
       required: ['project'],
@@ -1454,7 +1454,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_GEO_ANALYSES_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new geo analysis for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new geo analysis. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1465,7 +1465,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new geo analysis.',
         },
       },
       required: ['project'],
@@ -1477,7 +1477,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_GEO_ANALYSES_PREPARE_CLONE_TOOL,
     description:
-      'Stage cloning a geo analysis for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a copy of an existing geo analysis. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1488,7 +1488,7 @@ const tools: ToolRoute[] = [
         },
         analysisId: {
           type: 'string',
-          description: 'Identifier for the target resource (analysisId).',
+          description: 'ID of the analysis. Use the corresponding list tool to find available IDs.',
         },
       },
       required: ['project'],
@@ -1500,7 +1500,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_GEO_ANALYSES_PREPARE_ARCHIVE_TOOL,
     description:
-      'Stage archiving a geo analysis for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Archive a geo analysis, removing it from active views. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1511,7 +1511,7 @@ const tools: ToolRoute[] = [
         },
         analysisId: {
           type: 'string',
-          description: 'Identifier for the target resource (analysisId).',
+          description: 'ID of the analysis. Use the corresponding list tool to find available IDs.',
         },
       },
       required: ['project'],
@@ -1523,7 +1523,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CUSTOMERS_LIST_TOOL,
     description:
-      'List customer profiles in the project. Use when you need live data from Bloomreach Engagement APIs. Returns an array of matching records; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+      'List customer profiles in the project. Requires API credentials (BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1554,7 +1554,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CUSTOMERS_SEARCH_TOOL,
     description:
-      'Search customer profiles by query. Use when you need live data from Bloomreach Engagement APIs. Returns an array of matching records; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+      'Search customer profiles by query. Requires API credentials (BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1589,7 +1589,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CUSTOMERS_VIEW_TOOL,
     description:
-      'View details for a customer profile. Use when you need live data from Bloomreach Engagement APIs. Returns an object with detailed fields; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+      'View details for a customer profile. Requires API credentials (BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1600,7 +1600,7 @@ const tools: ToolRoute[] = [
         },
         customerId: {
           type: 'string',
-          description: 'Identifier for the target resource (customerId).',
+          description: 'Customer identifier (e.g., registered ID or email).',
         },
         idType: {
           type: 'string',
@@ -1616,7 +1616,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CUSTOMERS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a customer profile for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a customer profile. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1627,7 +1627,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new customer profile.',
         },
         idType: {
           type: 'string',
@@ -1651,7 +1651,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CUSTOMERS_PREPARE_UPDATE_TOOL,
     description:
-      'Stage update of a customer profile for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update an existing customer profile. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1662,7 +1662,7 @@ const tools: ToolRoute[] = [
         },
         customerId: {
           type: 'string',
-          description: 'Identifier for the target resource (customerId).',
+          description: 'Customer identifier (e.g., registered ID or email).',
         },
         idType: {
           type: 'string',
@@ -1682,7 +1682,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CUSTOMERS_PREPARE_DELETE_TOOL,
     description:
-      'Stage deletion of a customer profile for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete a customer profile. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1693,7 +1693,7 @@ const tools: ToolRoute[] = [
         },
         customerId: {
           type: 'string',
-          description: 'Identifier for the target resource (customerId).',
+          description: 'Customer identifier (e.g., registered ID or email).',
         },
         idType: {
           type: 'string',
@@ -1822,7 +1822,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_VOUCHERS_LIST_TOOL,
     description:
-      'List all voucher pools in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all voucher pools in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1849,7 +1849,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_VOUCHERS_VIEW_STATUS_TOOL,
     description:
-      'View redemption status of vouchers in a pool. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View redemption status of vouchers in a pool. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1860,7 +1860,7 @@ const tools: ToolRoute[] = [
         },
         voucherPoolId: {
           type: 'string',
-          description: 'Identifier for the target resource (voucherPoolId).',
+          description: 'ID of the voucher pool. Use bloomreach.vouchers.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -1872,7 +1872,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_VOUCHERS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new voucher pool for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new voucher pool. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1883,7 +1883,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new voucher pool.',
         },
       },
       required: ['project'],
@@ -1895,7 +1895,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_VOUCHERS_PREPARE_ADD_TOOL,
     description:
-      'Stage adding voucher codes to an existing pool for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Add voucher codes to an existing pool. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1906,7 +1906,7 @@ const tools: ToolRoute[] = [
         },
         voucherPoolId: {
           type: 'string',
-          description: 'Identifier for the target resource (voucherPoolId).',
+          description: 'ID of the voucher pool. Use bloomreach.vouchers.list to find available IDs.',
         },
         vouchers: {
           type: 'array',
@@ -1922,7 +1922,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_VOUCHERS_PREPARE_DELETE_TOOL,
     description:
-      'Stage deletion of a voucher pool for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete a voucher pool. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1933,7 +1933,7 @@ const tools: ToolRoute[] = [
         },
         voucherPoolId: {
           type: 'string',
-          description: 'Identifier for the target resource (voucherPoolId).',
+          description: 'ID of the voucher pool. Use bloomreach.vouchers.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -1945,7 +1945,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ASSETS_EMAIL_TEMPLATES_LIST_TOOL,
     description:
-      'List all email templates in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all email templates in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1972,7 +1972,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ASSETS_EMAIL_TEMPLATES_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of an email template for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create an email template. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1983,7 +1983,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new email template.',
         },
       },
       required: ['project'],
@@ -1995,7 +1995,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ASSETS_WEBLAYER_TEMPLATES_LIST_TOOL,
     description:
-      'List all weblayer templates in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all weblayer templates in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2022,7 +2022,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ASSETS_WEBLAYER_TEMPLATES_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a weblayer template for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a weblayer template. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2033,7 +2033,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new weblayer template.',
         },
       },
       required: ['project'],
@@ -2045,7 +2045,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ASSETS_BLOCKS_LIST_TOOL,
     description:
-      'List all blocks in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all blocks in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2072,7 +2072,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ASSETS_BLOCKS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a block for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a block. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2083,7 +2083,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new block.',
         },
       },
       required: ['project'],
@@ -2095,7 +2095,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ASSETS_CUSTOM_ROWS_LIST_TOOL,
     description:
-      'List all custom rows in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all custom rows in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2122,7 +2122,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ASSETS_CUSTOM_ROWS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a custom row for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a custom row. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2133,7 +2133,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new custom row.',
         },
       },
       required: ['project'],
@@ -2145,7 +2145,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ASSETS_SNIPPETS_LIST_TOOL,
     description:
-      'List all snippets in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all snippets in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2172,7 +2172,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ASSETS_SNIPPETS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a snippet for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a snippet. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2183,7 +2183,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new snippet.',
         },
       },
       required: ['project'],
@@ -2195,7 +2195,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ASSETS_SNIPPETS_PREPARE_EDIT_TOOL,
     description:
-      'Stage editing a snippet for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update an existing snippet. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachAssetManagerService',
     methodName: 'prepareEditSnippet',
@@ -2203,7 +2203,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ASSETS_FILES_LIST_TOOL,
     description:
-      'List all files in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all files in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2230,7 +2230,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ASSETS_FILES_PREPARE_UPLOAD_TOOL,
     description:
-      'Stage uploading a file for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Upload a file. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachAssetManagerService',
     methodName: 'prepareUploadFile',
@@ -2238,7 +2238,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ASSETS_FILES_PREPARE_DELETE_TOOL,
     description:
-      'Stage deleting a file for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete a file. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachAssetManagerService',
     methodName: 'prepareDeleteFile',
@@ -2246,7 +2246,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ASSETS_PREPARE_CLONE_TOOL,
     description:
-      'Stage cloning a template for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a copy of an existing template. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachAssetManagerService',
     methodName: 'prepareCloneTemplate',
@@ -2254,7 +2254,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ASSETS_PREPARE_ARCHIVE_TOOL,
     description:
-      'Stage archiving a template for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Archive a template, removing it from active views. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachAssetManagerService',
     methodName: 'prepareArchiveTemplate',
@@ -2262,7 +2262,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_TAG_MANAGER_LIST_TOOL,
     description:
-      'List all managed JavaScript tags. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all managed JavaScript tags. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2289,7 +2289,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_TAG_MANAGER_VIEW_TOOL,
     description:
-      'View details of a specific managed tag. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View details of a specific managed tag. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2300,7 +2300,7 @@ const tools: ToolRoute[] = [
         },
         tagId: {
           type: 'string',
-          description: 'Identifier for the target resource (tagId).',
+          description: 'ID of the managed tag. Use bloomreach.tag_manager.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -2312,7 +2312,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_TAG_MANAGER_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new managed JavaScript tag for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new managed JavaScript tag. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2323,7 +2323,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new managed tag.',
         },
       },
       required: ['project'],
@@ -2335,7 +2335,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_TAG_MANAGER_PREPARE_ENABLE_TOOL,
     description:
-      'Stage enabling a managed tag for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Enable a managed tag. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2346,7 +2346,7 @@ const tools: ToolRoute[] = [
         },
         tagId: {
           type: 'string',
-          description: 'Identifier for the target resource (tagId).',
+          description: 'ID of the managed tag. Use bloomreach.tag_manager.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -2358,7 +2358,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_TAG_MANAGER_PREPARE_DISABLE_TOOL,
     description:
-      'Stage disabling a managed tag for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Disable a managed tag. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2369,7 +2369,7 @@ const tools: ToolRoute[] = [
         },
         tagId: {
           type: 'string',
-          description: 'Identifier for the target resource (tagId).',
+          description: 'ID of the managed tag. Use bloomreach.tag_manager.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -2381,7 +2381,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_TAG_MANAGER_PREPARE_EDIT_TOOL,
     description:
-      'Stage editing a managed tag for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update an existing managed tag. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2392,7 +2392,7 @@ const tools: ToolRoute[] = [
         },
         tagId: {
           type: 'string',
-          description: 'Identifier for the target resource (tagId).',
+          description: 'ID of the managed tag. Use bloomreach.tag_manager.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -2404,7 +2404,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_TAG_MANAGER_PREPARE_DELETE_TOOL,
     description:
-      'Stage deletion of a managed tag for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete a managed tag. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2415,7 +2415,7 @@ const tools: ToolRoute[] = [
         },
         tagId: {
           type: 'string',
-          description: 'Identifier for the target resource (tagId).',
+          description: 'ID of the managed tag. Use bloomreach.tag_manager.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -2427,7 +2427,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_METRICS_LIST_TOOL,
     description:
-      'List all custom computed metrics in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all custom computed metrics in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2454,7 +2454,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_METRICS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a custom metric for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a custom metric. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2465,7 +2465,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new metric.',
         },
       },
       required: ['project'],
@@ -2477,7 +2477,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_METRICS_PREPARE_EDIT_TOOL,
     description:
-      'Stage editing a custom metric for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update an existing custom metric. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2488,7 +2488,7 @@ const tools: ToolRoute[] = [
         },
         metricId: {
           type: 'string',
-          description: 'Identifier for the target resource (metricId).',
+          description: 'ID of the metric. Use bloomreach.metrics.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -2500,7 +2500,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_METRICS_PREPARE_DELETE_TOOL,
     description:
-      'Stage deletion of a custom metric for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete a custom metric. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2511,7 +2511,7 @@ const tools: ToolRoute[] = [
         },
         metricId: {
           type: 'string',
-          description: 'Identifier for the target resource (metricId).',
+          description: 'ID of the metric. Use bloomreach.metrics.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -2523,7 +2523,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_DATA_MANAGER_LIST_PROPERTIES_TOOL,
     description:
-      'List all customer property definitions. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all customer property definitions. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2554,7 +2554,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_DATA_MANAGER_PREPARE_ADD_PROPERTY_TOOL,
     description:
-      'Stage addition of a new customer property for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Add a new customer property. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2565,7 +2565,7 @@ const tools: ToolRoute[] = [
         },
         customerId: {
           type: 'string',
-          description: 'Identifier for the target resource (customerId).',
+          description: 'Customer identifier (e.g., registered ID or email).',
         },
         idType: {
           type: 'string',
@@ -2581,7 +2581,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_DATA_MANAGER_PREPARE_EDIT_PROPERTY_TOOL,
     description:
-      'Stage editing an existing customer property for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update an existing customer property. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2592,7 +2592,7 @@ const tools: ToolRoute[] = [
         },
         customerId: {
           type: 'string',
-          description: 'Identifier for the target resource (customerId).',
+          description: 'Customer identifier (e.g., registered ID or email).',
         },
         idType: {
           type: 'string',
@@ -2608,7 +2608,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_DATA_MANAGER_LIST_EVENTS_TOOL,
     description:
-      'List all event definitions. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all event definitions. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2635,7 +2635,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_DATA_MANAGER_PREPARE_ADD_EVENT_TOOL,
     description:
-      'Stage addition of a new event definition for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Add a new event definition. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachDataManagerService',
     methodName: 'prepareAddEventDefinition',
@@ -2643,7 +2643,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_DATA_MANAGER_LIST_DEFINITIONS_TOOL,
     description:
-      'List all data definitions. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all data definitions. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2670,7 +2670,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_DATA_MANAGER_PREPARE_ADD_DEFINITION_TOOL,
     description:
-      'Stage addition of a new definition for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Add a new definition. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachDataManagerService',
     methodName: 'prepareAddFieldDefinition',
@@ -2678,7 +2678,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_DATA_MANAGER_PREPARE_EDIT_DEFINITION_TOOL,
     description:
-      'Stage editing an existing definition for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update an existing definition. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachDataManagerService',
     methodName: 'prepareEditFieldDefinition',
@@ -2686,7 +2686,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_DATA_MANAGER_LIST_MAPPINGS_TOOL,
     description:
-      'List all source-to-target mappings. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all source-to-target mappings. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2713,7 +2713,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_DATA_MANAGER_PREPARE_CONFIGURE_MAPPING_TOOL,
     description:
-      'Stage mapping configuration between source and target fields for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Configure mapping between source and target fields. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2724,7 +2724,7 @@ const tools: ToolRoute[] = [
         },
         configuration: {
           type: 'object',
-          description: 'Configuration payload for the target resource.',
+          description: 'Configuration object that defines source-to-target field mappings.',
         },
       },
       required: ['project'],
@@ -2736,7 +2736,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_DATA_MANAGER_LIST_CONTENT_SOURCES_TOOL,
     description:
-      'List all content sources. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all content sources. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2763,7 +2763,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_DATA_MANAGER_PREPARE_ADD_CONTENT_SOURCE_TOOL,
     description:
-      'Stage addition of a content source for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Add a content source. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachDataManagerService',
     methodName: 'prepareAddContentSource',
@@ -2771,7 +2771,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_DATA_MANAGER_PREPARE_EDIT_CONTENT_SOURCE_TOOL,
     description:
-      'Stage editing of an existing content source for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update an existing content source. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachDataManagerService',
     methodName: 'prepareEditContentSource',
@@ -2779,7 +2779,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_DATA_MANAGER_PREPARE_SAVE_CHANGES_TOOL,
     description:
-      'Stage saving pending Data Manager changes for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Save pending Data Manager changes. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachDataManagerService',
     methodName: 'prepareSaveChanges',
@@ -2806,7 +2806,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EXPORTS_LIST_TOOL,
     description:
-      'List all configured exports. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all configured exports. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2833,7 +2833,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EXPORTS_STATUS_TOOL,
     description:
-      'View export status. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View export status. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2844,7 +2844,7 @@ const tools: ToolRoute[] = [
         },
         exportId: {
           type: 'string',
-          description: 'Identifier for the target resource (exportId).',
+          description: 'ID of the export configuration.',
         },
       },
       required: ['project'],
@@ -2856,7 +2856,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EXPORTS_HISTORY_TOOL,
     description:
-      'View export history. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View export history. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2867,7 +2867,7 @@ const tools: ToolRoute[] = [
         },
         exportId: {
           type: 'string',
-          description: 'Identifier for the target resource (exportId).',
+          description: 'ID of the export configuration.',
         },
       },
       required: ['project'],
@@ -2879,7 +2879,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EXPORTS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new export for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new export. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2890,7 +2890,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new export configuration.',
         },
       },
       required: ['project'],
@@ -2902,7 +2902,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EXPORTS_PREPARE_RUN_TOOL,
     description:
-      'Stage triggering an immediate export for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Run an export immediately. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2913,7 +2913,7 @@ const tools: ToolRoute[] = [
         },
         exportId: {
           type: 'string',
-          description: 'Identifier for the target resource (exportId).',
+          description: 'ID of the export configuration.',
         },
       },
       required: ['project'],
@@ -2925,7 +2925,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EXPORTS_PREPARE_SCHEDULE_TOOL,
     description:
-      'Stage configuring a recurring schedule for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Configure a recurring schedule. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2936,7 +2936,7 @@ const tools: ToolRoute[] = [
         },
         exportId: {
           type: 'string',
-          description: 'Identifier for the target resource (exportId).',
+          description: 'ID of the export configuration.',
         },
         schedule: {
           type: 'object',
@@ -2952,7 +2952,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EXPORTS_PREPARE_DELETE_TOOL,
     description:
-      'Stage deletion of an export for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete an export. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2963,7 +2963,7 @@ const tools: ToolRoute[] = [
         },
         exportId: {
           type: 'string',
-          description: 'Identifier for the target resource (exportId).',
+          description: 'ID of the export configuration.',
         },
       },
       required: ['project'],
@@ -2975,7 +2975,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_INTEGRATIONS_LIST_TOOL,
     description:
-      'List all configured integrations in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all configured integrations in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3002,7 +3002,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_INTEGRATIONS_VIEW_TOOL,
     description:
-      'View details of a specific integration. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View details of a specific integration. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3013,7 +3013,7 @@ const tools: ToolRoute[] = [
         },
         integrationId: {
           type: 'string',
-          description: 'Identifier for the target resource (integrationId).',
+          description: 'ID of the integration. Use bloomreach.integrations.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -3025,7 +3025,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_INTEGRATIONS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new integration for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new integration. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3036,7 +3036,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new integration.',
         },
       },
       required: ['project'],
@@ -3048,7 +3048,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_INTEGRATIONS_PREPARE_CONFIGURE_TOOL,
     description:
-      'Stage configuration update of an integration for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update an integration configuration. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3059,11 +3059,11 @@ const tools: ToolRoute[] = [
         },
         integrationId: {
           type: 'string',
-          description: 'Identifier for the target resource (integrationId).',
+          description: 'ID of the integration. Use bloomreach.integrations.list to find available IDs.',
         },
         configuration: {
           type: 'object',
-          description: 'Configuration payload for the target resource.',
+          description: 'Configuration object with the integration settings to apply.',
         },
       },
       required: ['project'],
@@ -3075,7 +3075,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_INTEGRATIONS_PREPARE_ENABLE_TOOL,
     description:
-      'Stage enabling an integration for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Enable an integration. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3086,7 +3086,7 @@ const tools: ToolRoute[] = [
         },
         integrationId: {
           type: 'string',
-          description: 'Identifier for the target resource (integrationId).',
+          description: 'ID of the integration. Use bloomreach.integrations.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -3098,7 +3098,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_INTEGRATIONS_PREPARE_DISABLE_TOOL,
     description:
-      'Stage disabling an integration for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Disable an integration. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3109,7 +3109,7 @@ const tools: ToolRoute[] = [
         },
         integrationId: {
           type: 'string',
-          description: 'Identifier for the target resource (integrationId).',
+          description: 'ID of the integration. Use bloomreach.integrations.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -3121,7 +3121,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_INTEGRATIONS_PREPARE_DELETE_TOOL,
     description:
-      'Stage deletion of an integration for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete an integration. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3132,7 +3132,7 @@ const tools: ToolRoute[] = [
         },
         integrationId: {
           type: 'string',
-          description: 'Identifier for the target resource (integrationId).',
+          description: 'ID of the integration. Use bloomreach.integrations.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -3144,7 +3144,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_INTEGRATIONS_PREPARE_TEST_TOOL,
     description:
-      'Stage testing integration connectivity for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Test integration connectivity. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3155,7 +3155,7 @@ const tools: ToolRoute[] = [
         },
         integrationId: {
           type: 'string',
-          description: 'Identifier for the target resource (integrationId).',
+          description: 'ID of the integration. Use bloomreach.integrations.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -3167,7 +3167,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_INITIATIVES_LIST_TOOL,
     description:
-      'List all initiatives in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all initiatives in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3194,7 +3194,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_INITIATIVES_FILTER_TOOL,
     description:
-      'Filter initiatives by date, tags, owner, or status. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'Filter initiatives by date, tags, owner, or status. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3225,7 +3225,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_INITIATIVES_VIEW_TOOL,
     description:
-      'View details of a specific initiative. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View details of a specific initiative. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3236,7 +3236,7 @@ const tools: ToolRoute[] = [
         },
         initiativeId: {
           type: 'string',
-          description: 'Identifier for the target resource (initiativeId).',
+          description: 'ID of the initiative. Use bloomreach.initiatives.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -3248,7 +3248,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_INITIATIVES_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new initiative for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new initiative. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3259,7 +3259,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new initiative.',
         },
       },
       required: ['project'],
@@ -3271,7 +3271,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_INITIATIVES_PREPARE_IMPORT_TOOL,
     description:
-      'Stage importing initiative configuration for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Import initiative configuration. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3282,7 +3282,7 @@ const tools: ToolRoute[] = [
         },
         importId: {
           type: 'string',
-          description: 'Identifier for the target resource (importId).',
+          description: 'ID of the import. Use bloomreach.imports.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -3294,7 +3294,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_INITIATIVES_PREPARE_ADD_ITEMS_TOOL,
     description:
-      'Stage adding items to an initiative for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Add items to an initiative. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3317,7 +3317,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_INITIATIVES_PREPARE_ARCHIVE_TOOL,
     description:
-      'Stage archiving an initiative for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Archive an initiative, removing it from active views. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3328,7 +3328,7 @@ const tools: ToolRoute[] = [
         },
         initiativeId: {
           type: 'string',
-          description: 'Identifier for the target resource (initiativeId).',
+          description: 'ID of the initiative. Use bloomreach.initiatives.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -3340,7 +3340,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PROJECT_SETTINGS_VIEW_TOOL,
     description:
-      'View general project settings. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View general project settings. ⚠️ Not yet available — coming in a future release.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachProjectSettingsService',
     methodName: 'viewProjectSettings',
@@ -3348,7 +3348,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PROJECT_SETTINGS_TOKEN_TOOL,
     description:
-      'View the project token. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View the project token. ⚠️ Not yet available — coming in a future release.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachProjectSettingsService',
     methodName: 'viewProjectToken',
@@ -3356,7 +3356,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PROJECT_SETTINGS_TERMS_TOOL,
     description:
-      'View terms and conditions. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View terms and conditions. ⚠️ Not yet available — coming in a future release.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachProjectSettingsService',
     methodName: 'viewTermsAndConditions',
@@ -3364,7 +3364,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PROJECT_SETTINGS_PREPARE_UPDATE_NAME_TOOL,
     description:
-      'Stage project name update for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update the project name. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachProjectSettingsService',
     methodName: 'prepareUpdateProjectName',
@@ -3372,7 +3372,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PROJECT_SETTINGS_PREPARE_UPDATE_URL_TOOL,
     description:
-      'Stage custom URL update for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update the custom URL. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachProjectSettingsService',
     methodName: 'prepareUpdateCustomUrl',
@@ -3380,7 +3380,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PROJECT_SETTINGS_PREPARE_UPDATE_TERMS_TOOL,
     description:
-      'Stage terms and conditions update for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update terms and conditions. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachProjectSettingsService',
     methodName: 'prepareUpdateTermsAndConditions',
@@ -3388,7 +3388,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PROJECT_SETTINGS_TAGS_LIST_TOOL,
     description:
-      'List custom tags. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List custom tags. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3415,7 +3415,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PROJECT_SETTINGS_TAGS_PREPARE_CREATE_TOOL,
     description:
-      'Stage custom tag creation for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new custom tag. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3426,7 +3426,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new custom tag.',
         },
       },
       required: ['project'],
@@ -3438,7 +3438,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PROJECT_SETTINGS_TAGS_PREPARE_UPDATE_TOOL,
     description:
-      'Stage custom tag update for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update a custom tag. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3449,7 +3449,7 @@ const tools: ToolRoute[] = [
         },
         tagId: {
           type: 'string',
-          description: 'Identifier for the target resource (tagId).',
+          description: 'ID of the managed tag. Use bloomreach.tag_manager.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -3461,7 +3461,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PROJECT_SETTINGS_TAGS_PREPARE_DELETE_TOOL,
     description:
-      'Stage custom tag deletion for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete a custom tag. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3472,7 +3472,7 @@ const tools: ToolRoute[] = [
         },
         tagId: {
           type: 'string',
-          description: 'Identifier for the target resource (tagId).',
+          description: 'ID of the managed tag. Use bloomreach.tag_manager.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -3484,7 +3484,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PROJECT_SETTINGS_VARIABLES_LIST_TOOL,
     description:
-      'List project variables. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List project variables. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3511,7 +3511,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PROJECT_SETTINGS_VARIABLES_PREPARE_CREATE_TOOL,
     description:
-      'Stage variable creation for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new project variable. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3522,7 +3522,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new project variable.',
         },
       },
       required: ['project'],
@@ -3534,7 +3534,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PROJECT_SETTINGS_VARIABLES_PREPARE_UPDATE_TOOL,
     description:
-      'Stage variable update for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update a project variable. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3545,7 +3545,7 @@ const tools: ToolRoute[] = [
         },
         variableName: {
           type: 'string',
-          description: 'Identifier for the target resource (variableName).',
+          description: 'Name of the project variable. Use bloomreach.project_settings.variables.list to find available names.',
         },
       },
       required: ['project'],
@@ -3557,7 +3557,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_PROJECT_SETTINGS_VARIABLES_PREPARE_DELETE_TOOL,
     description:
-      'Stage variable deletion for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete a project variable. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3568,7 +3568,7 @@ const tools: ToolRoute[] = [
         },
         variableName: {
           type: 'string',
-          description: 'Identifier for the target resource (variableName).',
+          description: 'Name of the project variable. Use bloomreach.project_settings.variables.list to find available names.',
         },
       },
       required: ['project'],
@@ -3580,7 +3580,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_DEFAULTS_TOOL,
     description:
-      'View campaign defaults. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View campaign defaults. ⚠️ Not yet available — coming in a future release.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachCampaignSettingsService',
     methodName: 'viewCampaignDefaults',
@@ -3588,7 +3588,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_PREPARE_UPDATE_DEFAULTS_TOOL,
     description:
-      'Stage campaign defaults update for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update campaign defaults. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachCampaignSettingsService',
     methodName: 'prepareUpdateCampaignDefaults',
@@ -3596,7 +3596,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_TIMEZONES_LIST_TOOL,
     description:
-      'List configured timezones. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List configured timezones. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3623,7 +3623,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_TIMEZONES_PREPARE_CREATE_TOOL,
     description:
-      'Stage timezone creation for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new timezone. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3634,7 +3634,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new timezone.',
         },
       },
       required: ['project'],
@@ -3646,7 +3646,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_TIMEZONES_PREPARE_UPDATE_TOOL,
     description:
-      'Stage timezone update for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update a timezone. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3657,7 +3657,7 @@ const tools: ToolRoute[] = [
         },
         timezoneId: {
           type: 'string',
-          description: 'Identifier for the target resource (timezoneId).',
+          description: 'ID of the timezone. Use bloomreach.campaign_settings.timezones.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -3669,7 +3669,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_TIMEZONES_PREPARE_DELETE_TOOL,
     description:
-      'Stage timezone deletion for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete a timezone. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3680,7 +3680,7 @@ const tools: ToolRoute[] = [
         },
         timezoneId: {
           type: 'string',
-          description: 'Identifier for the target resource (timezoneId).',
+          description: 'ID of the timezone. Use bloomreach.campaign_settings.timezones.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -3692,7 +3692,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_LANGUAGES_LIST_TOOL,
     description:
-      'List configured languages. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List configured languages. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3719,7 +3719,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_LANGUAGES_PREPARE_CREATE_TOOL,
     description:
-      'Stage language creation for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new language. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3730,7 +3730,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new language.',
         },
       },
       required: ['project'],
@@ -3742,7 +3742,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_LANGUAGES_PREPARE_UPDATE_TOOL,
     description:
-      'Stage language update for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update a language. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3753,7 +3753,7 @@ const tools: ToolRoute[] = [
         },
         languageId: {
           type: 'string',
-          description: 'Identifier for the target resource (languageId).',
+          description: 'ID of the language. Use bloomreach.campaign_settings.languages.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -3765,7 +3765,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_LANGUAGES_PREPARE_DELETE_TOOL,
     description:
-      'Stage language deletion for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete a language. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3776,7 +3776,7 @@ const tools: ToolRoute[] = [
         },
         languageId: {
           type: 'string',
-          description: 'Identifier for the target resource (languageId).',
+          description: 'ID of the language. Use bloomreach.campaign_settings.languages.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -3788,7 +3788,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_FONTS_LIST_TOOL,
     description:
-      'List configured fonts. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List configured fonts. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3815,7 +3815,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_FONTS_PREPARE_CREATE_TOOL,
     description:
-      'Stage font creation for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new font. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3826,7 +3826,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new font.',
         },
       },
       required: ['project'],
@@ -3838,7 +3838,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_FONTS_PREPARE_UPDATE_TOOL,
     description:
-      'Stage font update for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update a font. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3849,7 +3849,7 @@ const tools: ToolRoute[] = [
         },
         fontId: {
           type: 'string',
-          description: 'Identifier for the target resource (fontId).',
+          description: 'ID of the font. Use bloomreach.campaign_settings.fonts.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -3861,7 +3861,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_FONTS_PREPARE_DELETE_TOOL,
     description:
-      'Stage font deletion for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete a font. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3872,7 +3872,7 @@ const tools: ToolRoute[] = [
         },
         fontId: {
           type: 'string',
-          description: 'Identifier for the target resource (fontId).',
+          description: 'ID of the font. Use bloomreach.campaign_settings.fonts.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -3884,7 +3884,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_THROUGHPUT_LIST_TOOL,
     description:
-      'List throughput policies. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List throughput policies. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3911,7 +3911,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_THROUGHPUT_PREPARE_CREATE_TOOL,
     description:
-      'Stage throughput policy creation for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new throughput policy. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3922,7 +3922,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new throughput policy.',
         },
       },
       required: ['project'],
@@ -3934,7 +3934,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_THROUGHPUT_PREPARE_UPDATE_TOOL,
     description:
-      'Stage throughput policy update for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update a throughput policy. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3945,7 +3945,7 @@ const tools: ToolRoute[] = [
         },
         throughputPolicyId: {
           type: 'string',
-          description: 'Identifier for the target resource (throughputPolicyId).',
+          description: 'ID of the throughput policy. Use bloomreach.campaign_settings.throughput.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -3957,7 +3957,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_THROUGHPUT_PREPARE_DELETE_TOOL,
     description:
-      'Stage throughput policy deletion for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete a throughput policy. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3968,7 +3968,7 @@ const tools: ToolRoute[] = [
         },
         throughputPolicyId: {
           type: 'string',
-          description: 'Identifier for the target resource (throughputPolicyId).',
+          description: 'ID of the throughput policy. Use bloomreach.campaign_settings.throughput.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -3980,7 +3980,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_FREQUENCY_LIST_TOOL,
     description:
-      'List frequency policies. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List frequency policies. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4007,7 +4007,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_FREQUENCY_PREPARE_CREATE_TOOL,
     description:
-      'Stage frequency policy creation for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new frequency policy. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4018,7 +4018,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new frequency policy.',
         },
       },
       required: ['project'],
@@ -4030,7 +4030,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_FREQUENCY_PREPARE_UPDATE_TOOL,
     description:
-      'Stage frequency policy update for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update a frequency policy. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4041,7 +4041,7 @@ const tools: ToolRoute[] = [
         },
         frequencyPolicyId: {
           type: 'string',
-          description: 'Identifier for the target resource (frequencyPolicyId).',
+          description: 'ID of the frequency policy. Use bloomreach.campaign_settings.frequency.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -4053,7 +4053,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_FREQUENCY_PREPARE_DELETE_TOOL,
     description:
-      'Stage frequency policy deletion for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete a frequency policy. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4064,7 +4064,7 @@ const tools: ToolRoute[] = [
         },
         frequencyPolicyId: {
           type: 'string',
-          description: 'Identifier for the target resource (frequencyPolicyId).',
+          description: 'ID of the frequency policy. Use bloomreach.campaign_settings.frequency.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -4076,7 +4076,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_CONSENTS_LIST_TOOL,
     description:
-      'List consents. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List consents. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4103,7 +4103,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_CONSENTS_PREPARE_CREATE_TOOL,
     description:
-      'Stage consent creation for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new consent. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4114,7 +4114,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new consent.',
         },
       },
       required: ['project'],
@@ -4126,7 +4126,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_CONSENTS_PREPARE_UPDATE_TOOL,
     description:
-      'Stage consent update for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update a consent. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4137,7 +4137,7 @@ const tools: ToolRoute[] = [
         },
         consentId: {
           type: 'string',
-          description: 'Identifier for the target resource (consentId).',
+          description: 'ID of the consent. Use bloomreach.campaign_settings.consents.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -4149,7 +4149,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_CONSENTS_PREPARE_DELETE_TOOL,
     description:
-      'Stage consent deletion for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete a consent. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4160,7 +4160,7 @@ const tools: ToolRoute[] = [
         },
         consentId: {
           type: 'string',
-          description: 'Identifier for the target resource (consentId).',
+          description: 'ID of the consent. Use bloomreach.campaign_settings.consents.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -4172,7 +4172,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_URL_LISTS_LIST_TOOL,
     description:
-      'List URL lists. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List URL lists. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4199,7 +4199,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_URL_LISTS_PREPARE_CREATE_TOOL,
     description:
-      'Stage URL list creation for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new URL list. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4210,7 +4210,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new URL list.',
         },
       },
       required: ['project'],
@@ -4222,7 +4222,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_URL_LISTS_PREPARE_UPDATE_TOOL,
     description:
-      'Stage URL list update for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update a URL list. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4233,7 +4233,7 @@ const tools: ToolRoute[] = [
         },
         urlListId: {
           type: 'string',
-          description: 'Identifier for the target resource (urlListId).',
+          description: 'ID of the URL list. Use bloomreach.campaign_settings.url_lists.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -4245,7 +4245,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_URL_LISTS_PREPARE_DELETE_TOOL,
     description:
-      'Stage URL list deletion for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete a URL list. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4256,7 +4256,7 @@ const tools: ToolRoute[] = [
         },
         urlListId: {
           type: 'string',
-          description: 'Identifier for the target resource (urlListId).',
+          description: 'ID of the URL list. Use bloomreach.campaign_settings.url_lists.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -4268,7 +4268,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_PAGE_VARIABLES_LIST_TOOL,
     description:
-      'List page variables. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List page variables. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4295,7 +4295,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_PAGE_VARIABLES_PREPARE_CREATE_TOOL,
     description:
-      'Stage page variable creation for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new page variable. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4306,7 +4306,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new page variable.',
         },
       },
       required: ['project'],
@@ -4318,7 +4318,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_PAGE_VARIABLES_PREPARE_UPDATE_TOOL,
     description:
-      'Stage page variable update for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update a page variable. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4329,7 +4329,7 @@ const tools: ToolRoute[] = [
         },
         variableName: {
           type: 'string',
-          description: 'Identifier for the target resource (variableName).',
+          description: 'Name of the project variable. Use bloomreach.project_settings.variables.list to find available names.',
         },
       },
       required: ['project'],
@@ -4341,7 +4341,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CAMPAIGN_SETTINGS_PAGE_VARIABLES_PREPARE_DELETE_TOOL,
     description:
-      'Stage page variable deletion for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete a page variable. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4352,7 +4352,7 @@ const tools: ToolRoute[] = [
         },
         variableName: {
           type: 'string',
-          description: 'Identifier for the target resource (variableName).',
+          description: 'Name of the project variable. Use bloomreach.project_settings.variables.list to find available names.',
         },
       },
       required: ['project'],
@@ -4364,7 +4364,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SECURITY_SETTINGS_SSH_TUNNELS_LIST_TOOL,
     description:
-      'List all configured SSH tunnels. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all configured SSH tunnels. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4391,7 +4391,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SECURITY_SETTINGS_SSH_TUNNELS_VIEW_TOOL,
     description:
-      'View details of a configured SSH tunnel. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View details of a configured SSH tunnel. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4402,7 +4402,7 @@ const tools: ToolRoute[] = [
         },
         sshTunnelId: {
           type: 'string',
-          description: 'Identifier for the target resource (sshTunnelId).',
+          description: 'ID of the SSH tunnel. Use bloomreach.security_settings.ssh_tunnels.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -4414,7 +4414,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SECURITY_SETTINGS_SSH_TUNNELS_PREPARE_CREATE_TOOL,
     description:
-      'Stage SSH tunnel creation for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new SSH tunnel. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4425,7 +4425,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new SSH tunnel.',
         },
       },
       required: ['project'],
@@ -4437,7 +4437,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SECURITY_SETTINGS_SSH_TUNNELS_PREPARE_DELETE_TOOL,
     description:
-      'Stage SSH tunnel deletion for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete an SSH tunnel. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4448,7 +4448,7 @@ const tools: ToolRoute[] = [
         },
         sshTunnelId: {
           type: 'string',
-          description: 'Identifier for the target resource (sshTunnelId).',
+          description: 'ID of the SSH tunnel. Use bloomreach.security_settings.ssh_tunnels.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -4460,7 +4460,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SECURITY_SETTINGS_TWO_STEP_VIEW_TOOL,
     description:
-      'View two-step verification settings. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View two-step verification settings. ⚠️ Not yet available — coming in a future release.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachSecuritySettingsService',
     methodName: 'viewTwoStepVerification',
@@ -4468,7 +4468,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SECURITY_SETTINGS_TWO_STEP_PREPARE_ENABLE_TOOL,
     description:
-      'Stage enabling two-step verification for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Enable two-step verification. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachSecuritySettingsService',
     methodName: 'prepareEnableTwoStep',
@@ -4476,7 +4476,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SECURITY_SETTINGS_TWO_STEP_PREPARE_DISABLE_TOOL,
     description:
-      'Stage disabling two-step verification for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Disable two-step verification. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachSecuritySettingsService',
     methodName: 'prepareDisableTwoStep',
@@ -4484,7 +4484,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EVALUATION_SETTINGS_REVENUE_ATTRIBUTION_VIEW_TOOL,
     description:
-      'View revenue attribution settings. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View revenue attribution settings. ⚠️ Not yet available — coming in a future release.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachEvaluationSettingsService',
     methodName: 'viewRevenueAttribution',
@@ -4492,7 +4492,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EVALUATION_SETTINGS_REVENUE_ATTRIBUTION_PREPARE_CONFIGURE_TOOL,
     description:
-      'Stage revenue attribution configuration for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Configure revenue attribution settings. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4503,7 +4503,7 @@ const tools: ToolRoute[] = [
         },
         configuration: {
           type: 'object',
-          description: 'Configuration payload for the target resource.',
+          description: 'Configuration object with revenue attribution settings to apply.',
         },
       },
       required: ['project'],
@@ -4515,7 +4515,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EVALUATION_SETTINGS_CURRENCY_VIEW_TOOL,
     description:
-      'View currency settings. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View currency settings. ⚠️ Not yet available — coming in a future release.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachEvaluationSettingsService',
     methodName: 'viewCurrency',
@@ -4523,7 +4523,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EVALUATION_SETTINGS_CURRENCY_PREPARE_SET_TOOL,
     description:
-      'Stage currency update for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update currency settings. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachEvaluationSettingsService',
     methodName: 'prepareSetCurrency',
@@ -4531,7 +4531,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EVALUATION_SETTINGS_DASHBOARDS_VIEW_TOOL,
     description:
-      'View evaluation dashboard settings. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View evaluation dashboard settings. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4542,7 +4542,7 @@ const tools: ToolRoute[] = [
         },
         dashboardId: {
           type: 'string',
-          description: 'Identifier for the target resource (dashboardId).',
+          description: 'ID of the dashboard. Use bloomreach.dashboards.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -4554,7 +4554,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EVALUATION_SETTINGS_DASHBOARDS_PREPARE_CONFIGURE_TOOL,
     description:
-      'Stage evaluation dashboards configuration for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Configure evaluation dashboard settings. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4565,11 +4565,11 @@ const tools: ToolRoute[] = [
         },
         dashboardId: {
           type: 'string',
-          description: 'Identifier for the target resource (dashboardId).',
+          description: 'ID of the dashboard. Use bloomreach.dashboards.list to find available IDs.',
         },
         configuration: {
           type: 'object',
-          description: 'Configuration payload for the target resource.',
+          description: 'Configuration object with evaluation dashboard settings to apply.',
         },
       },
       required: ['project'],
@@ -4581,7 +4581,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EVALUATION_SETTINGS_VOUCHER_MAPPING_VIEW_TOOL,
     description:
-      'View voucher mapping settings. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View voucher mapping settings. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4592,7 +4592,7 @@ const tools: ToolRoute[] = [
         },
         voucherPoolId: {
           type: 'string',
-          description: 'Identifier for the target resource (voucherPoolId).',
+          description: 'ID of the voucher pool. Use bloomreach.vouchers.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -4604,7 +4604,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_EVALUATION_SETTINGS_VOUCHER_MAPPING_PREPARE_CONFIGURE_TOOL,
     description:
-      'Stage voucher mapping configuration for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Configure voucher mapping settings. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4615,11 +4615,11 @@ const tools: ToolRoute[] = [
         },
         voucherPoolId: {
           type: 'string',
-          description: 'Identifier for the target resource (voucherPoolId).',
+          description: 'ID of the voucher pool. Use bloomreach.vouchers.list to find available IDs.',
         },
         configuration: {
           type: 'object',
-          description: 'Configuration payload for the target resource.',
+          description: 'Configuration object with voucher mapping settings to apply.',
         },
       },
       required: ['project'],
@@ -4631,7 +4631,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_WEBLAYERS_LIST_TOOL,
     description:
-      'List all weblayers in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all weblayers in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4658,7 +4658,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_WEBLAYERS_VIEW_PERFORMANCE_TOOL,
     description:
-      'View impressions, clicks and conversions for a weblayer. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View impressions, clicks and conversions for a weblayer. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4669,7 +4669,7 @@ const tools: ToolRoute[] = [
         },
         weblayerId: {
           type: 'string',
-          description: 'Identifier for the target resource (weblayerId).',
+          description: 'ID of the weblayer. Use bloomreach.weblayers.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -4681,7 +4681,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_WEBLAYERS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new weblayer for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new weblayer. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4692,7 +4692,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new weblayer.',
         },
       },
       required: ['project'],
@@ -4704,7 +4704,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_WEBLAYERS_PREPARE_START_TOOL,
     description:
-      'Stage starting a weblayer for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Start a weblayer. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4715,7 +4715,7 @@ const tools: ToolRoute[] = [
         },
         weblayerId: {
           type: 'string',
-          description: 'Identifier for the target resource (weblayerId).',
+          description: 'ID of the weblayer. Use bloomreach.weblayers.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -4727,7 +4727,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_WEBLAYERS_PREPARE_STOP_TOOL,
     description:
-      'Stage stopping a weblayer for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Stop a weblayer. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4738,7 +4738,7 @@ const tools: ToolRoute[] = [
         },
         weblayerId: {
           type: 'string',
-          description: 'Identifier for the target resource (weblayerId).',
+          description: 'ID of the weblayer. Use bloomreach.weblayers.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -4750,7 +4750,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_WEBLAYERS_PREPARE_CLONE_TOOL,
     description:
-      'Stage cloning a weblayer for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a copy of an existing weblayer. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4761,7 +4761,7 @@ const tools: ToolRoute[] = [
         },
         weblayerId: {
           type: 'string',
-          description: 'Identifier for the target resource (weblayerId).',
+          description: 'ID of the weblayer. Use bloomreach.weblayers.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -4773,7 +4773,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_WEBLAYERS_PREPARE_ARCHIVE_TOOL,
     description:
-      'Stage archiving a weblayer for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Archive a weblayer, removing it from active views. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4784,7 +4784,7 @@ const tools: ToolRoute[] = [
         },
         weblayerId: {
           type: 'string',
-          description: 'Identifier for the target resource (weblayerId).',
+          description: 'ID of the weblayer. Use bloomreach.weblayers.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -4863,7 +4863,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_REPORTS_LIST_TOOL,
     description:
-      'List all reports in the project. Use when you need live data from Bloomreach Engagement APIs. Returns an array of matching records; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+      'List all reports in the project. Requires API credentials (BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4890,7 +4890,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_REPORTS_VIEW_RESULTS_TOOL,
     description:
-      'View results of a specific report. Use when you need live data from Bloomreach Engagement APIs. Returns an object with detailed fields; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+      'View results of a specific report. Requires API credentials (BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4901,7 +4901,7 @@ const tools: ToolRoute[] = [
         },
         reportId: {
           type: 'string',
-          description: 'Identifier for the target resource (reportId).',
+          description: 'ID of the report. Use bloomreach.reports.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -4913,7 +4913,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_REPORTS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new report for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new report. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4924,7 +4924,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new report.',
         },
       },
       required: ['project'],
@@ -4936,7 +4936,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_REPORTS_PREPARE_EXPORT_TOOL,
     description:
-      'Stage export of a report for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Export a report. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4947,7 +4947,7 @@ const tools: ToolRoute[] = [
         },
         exportId: {
           type: 'string',
-          description: 'Identifier for the target resource (exportId).',
+          description: 'ID of the export configuration.',
         },
       },
       required: ['project'],
@@ -4959,7 +4959,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_REPORTS_PREPARE_CLONE_TOOL,
     description:
-      'Stage cloning of a report for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a copy of an existing report. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4970,7 +4970,7 @@ const tools: ToolRoute[] = [
         },
         reportId: {
           type: 'string',
-          description: 'Identifier for the target resource (reportId).',
+          description: 'ID of the report. Use bloomreach.reports.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -4982,7 +4982,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_REPORTS_PREPARE_ARCHIVE_TOOL,
     description:
-      'Stage archiving of a report for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Archive a report, removing it from active views. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -4993,7 +4993,7 @@ const tools: ToolRoute[] = [
         },
         reportId: {
           type: 'string',
-          description: 'Identifier for the target resource (reportId).',
+          description: 'ID of the report. Use bloomreach.reports.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -5005,7 +5005,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SEGMENTATIONS_LIST_TOOL,
     description:
-      'List all segmentations in the project. Use when you need live data from Bloomreach Engagement APIs. Returns an array of matching records; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+      'List all segmentations in the project. Requires API credentials (BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5032,7 +5032,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SEGMENTATIONS_VIEW_SIZE_TOOL,
     description:
-      'View the number of customers matching a segmentation. Use when you need live data from Bloomreach Engagement APIs. Returns an object with detailed fields; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+      'View the number of customers matching a segmentation. Requires API credentials (BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET).',
     inputSchema: createInputSchema(true),
     serviceClass: 'BloomreachSegmentationsService',
     methodName: 'viewSegmentSize',
@@ -5040,7 +5040,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SEGMENTATIONS_VIEW_CUSTOMERS_TOOL,
     description:
-      'Browse customers matching a segmentation. Use when you need live data from Bloomreach Engagement APIs. Returns an array of records; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+      'Browse customers matching a segmentation. Requires API credentials (BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5051,7 +5051,7 @@ const tools: ToolRoute[] = [
         },
         customerId: {
           type: 'string',
-          description: 'Identifier for the target resource (customerId).',
+          description: 'Customer identifier (e.g., registered ID or email).',
         },
         idType: {
           type: 'string',
@@ -5067,7 +5067,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SEGMENTATIONS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new segmentation for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new segmentation. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5078,7 +5078,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new segmentation.',
         },
       },
       required: ['project'],
@@ -5090,7 +5090,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SEGMENTATIONS_PREPARE_CLONE_TOOL,
     description:
-      'Stage cloning a segmentation for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a copy of an existing segmentation. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5101,7 +5101,7 @@ const tools: ToolRoute[] = [
         },
         segmentationId: {
           type: 'string',
-          description: 'Identifier for the target resource (segmentationId).',
+          description: 'ID of the segmentation. Use bloomreach.segmentations.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -5113,7 +5113,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SEGMENTATIONS_PREPARE_ARCHIVE_TOOL,
     description:
-      'Stage archiving a segmentation for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Archive a segmentation, removing it from active views. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5124,7 +5124,7 @@ const tools: ToolRoute[] = [
         },
         segmentationId: {
           type: 'string',
-          description: 'Identifier for the target resource (segmentationId).',
+          description: 'ID of the segmentation. Use bloomreach.segmentations.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -5136,7 +5136,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SQL_REPORTS_LIST_TOOL,
     description:
-      'List all SQL reports in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all SQL reports in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5163,7 +5163,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SQL_REPORTS_VIEW_TOOL,
     description:
-      'View details of a specific SQL report. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View details of a specific SQL report. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5174,7 +5174,7 @@ const tools: ToolRoute[] = [
         },
         sqlReportId: {
           type: 'string',
-          description: 'Identifier for the target resource (sqlReportId).',
+          description: 'ID of the SQL report. Use bloomreach.sql_reports.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -5186,7 +5186,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SQL_REPORTS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new SQL report for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new SQL report. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5197,7 +5197,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new SQL report.',
         },
       },
       required: ['project'],
@@ -5209,7 +5209,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SQL_REPORTS_PREPARE_EXECUTE_TOOL,
     description:
-      'Stage execution of a SQL report for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Run a SQL report. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5220,7 +5220,7 @@ const tools: ToolRoute[] = [
         },
         sqlReportId: {
           type: 'string',
-          description: 'Identifier for the target resource (sqlReportId).',
+          description: 'ID of the SQL report. Use bloomreach.sql_reports.list to find available IDs.',
         },
         parameters: {
           type: 'object',
@@ -5236,7 +5236,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SQL_REPORTS_PREPARE_EXPORT_RESULTS_TOOL,
     description:
-      'Stage export of SQL report results for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Export SQL report results. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5247,7 +5247,7 @@ const tools: ToolRoute[] = [
         },
         exportId: {
           type: 'string',
-          description: 'Identifier for the target resource (exportId).',
+          description: 'ID of the export configuration.',
         },
         parameters: {
           type: 'object',
@@ -5263,7 +5263,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SQL_REPORTS_PREPARE_CLONE_TOOL,
     description:
-      'Stage cloning a SQL report for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a copy of an existing SQL report. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5274,7 +5274,7 @@ const tools: ToolRoute[] = [
         },
         sqlReportId: {
           type: 'string',
-          description: 'Identifier for the target resource (sqlReportId).',
+          description: 'ID of the SQL report. Use bloomreach.sql_reports.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -5286,7 +5286,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_SQL_REPORTS_PREPARE_ARCHIVE_TOOL,
     description:
-      'Stage archiving a SQL report for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Archive a SQL report, removing it from active views. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5297,7 +5297,7 @@ const tools: ToolRoute[] = [
         },
         sqlReportId: {
           type: 'string',
-          description: 'Identifier for the target resource (sqlReportId).',
+          description: 'ID of the SQL report. Use bloomreach.sql_reports.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -5309,7 +5309,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CATALOGS_LIST_TOOL,
     description:
-      'List all catalogs in the project. Use when you need live data from Bloomreach Engagement APIs. Returns an array of matching records; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+      'List all catalogs in the project. Requires API credentials (BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5336,7 +5336,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CATALOGS_VIEW_ITEMS_TOOL,
     description:
-      'View items in a specific catalog. Use when you need live data from Bloomreach Engagement APIs. Returns an object with detailed fields; requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+      'View items in a specific catalog. Requires API credentials (BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5347,7 +5347,7 @@ const tools: ToolRoute[] = [
         },
         catalogId: {
           type: 'string',
-          description: 'Identifier for the target resource (catalogId).',
+          description: 'ID of the catalog. Use bloomreach.catalogs.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -5359,7 +5359,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CATALOGS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new catalog for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new catalog. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5370,7 +5370,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new catalog.',
         },
       },
       required: ['project'],
@@ -5382,7 +5382,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CATALOGS_PREPARE_ADD_ITEMS_TOOL,
     description:
-      'Stage adding items to a catalog for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Add items to a catalog. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5393,7 +5393,7 @@ const tools: ToolRoute[] = [
         },
         catalogId: {
           type: 'string',
-          description: 'Identifier for the target resource (catalogId).',
+          description: 'ID of the catalog. Use bloomreach.catalogs.list to find available IDs.',
         },
         items: {
           type: 'array',
@@ -5409,7 +5409,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CATALOGS_PREPARE_UPDATE_ITEMS_TOOL,
     description:
-      'Stage updating catalog items for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update catalog items. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5420,7 +5420,7 @@ const tools: ToolRoute[] = [
         },
         catalogId: {
           type: 'string',
-          description: 'Identifier for the target resource (catalogId).',
+          description: 'ID of the catalog. Use bloomreach.catalogs.list to find available IDs.',
         },
         items: {
           type: 'array',
@@ -5436,7 +5436,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_CATALOGS_PREPARE_DELETE_TOOL,
     description:
-      'Stage deletion of a catalog for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete a catalog. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5447,7 +5447,7 @@ const tools: ToolRoute[] = [
         },
         catalogId: {
           type: 'string',
-          description: 'Identifier for the target resource (catalogId).',
+          description: 'ID of the catalog. Use bloomreach.catalogs.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -5459,7 +5459,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_IMPORTS_LIST_TOOL,
     description:
-      'List all data imports in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all data imports in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5486,7 +5486,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_IMPORTS_VIEW_STATUS_TOOL,
     description:
-      'View detailed status of a specific import. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View detailed status of a specific import. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5497,7 +5497,7 @@ const tools: ToolRoute[] = [
         },
         importId: {
           type: 'string',
-          description: 'Identifier for the target resource (importId).',
+          description: 'ID of the import. Use bloomreach.imports.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -5509,7 +5509,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_IMPORTS_PREPARE_CREATE_TOOL,
     description:
-      'Stage creation of a new data import for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create a new data import. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5520,7 +5520,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new import.',
         },
       },
       required: ['project'],
@@ -5532,7 +5532,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_IMPORTS_PREPARE_SCHEDULE_TOOL,
     description:
-      'Stage scheduling a recurring data import for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Schedule a recurring data import. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5543,7 +5543,7 @@ const tools: ToolRoute[] = [
         },
         importId: {
           type: 'string',
-          description: 'Identifier for the target resource (importId).',
+          description: 'ID of the import. Use bloomreach.imports.list to find available IDs.',
         },
         schedule: {
           type: 'object',
@@ -5559,7 +5559,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_IMPORTS_PREPARE_CANCEL_TOOL,
     description:
-      'Stage cancellation of an in-progress import for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Cancel an in-progress import. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5570,7 +5570,7 @@ const tools: ToolRoute[] = [
         },
         importId: {
           type: 'string',
-          description: 'Identifier for the target resource (importId).',
+          description: 'ID of the import. Use bloomreach.imports.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -5582,7 +5582,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_USE_CASES_LIST_TOOL,
     description:
-      'List all available use case templates. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all available use case templates. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5609,7 +5609,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_USE_CASES_SEARCH_TOOL,
     description:
-      'Search use case templates by keyword. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'Search use case templates by keyword. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5640,7 +5640,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_USE_CASES_VIEW_TOOL,
     description:
-      'View details of a specific use case template. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'View details of a specific use case template. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5651,7 +5651,7 @@ const tools: ToolRoute[] = [
         },
         useCaseId: {
           type: 'string',
-          description: 'Identifier for the target resource (useCaseId).',
+          description: 'ID of the use case template. Use bloomreach.use_cases.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -5663,7 +5663,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_USE_CASES_PROJECT_LIST_TOOL,
     description:
-      'List use cases deployed in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List use cases deployed in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5690,7 +5690,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_USE_CASES_PREPARE_DEPLOY_TOOL,
     description:
-      'Stage deployment of a use case template for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Deploy a use case template. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5701,7 +5701,7 @@ const tools: ToolRoute[] = [
         },
         useCaseId: {
           type: 'string',
-          description: 'Identifier for the target resource (useCaseId).',
+          description: 'ID of the use case template. Use bloomreach.use_cases.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -5713,7 +5713,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_USE_CASES_PREPARE_FAVORITE_TOOL,
     description:
-      'Stage favoriting a use case for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Favorite a use case. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5724,7 +5724,7 @@ const tools: ToolRoute[] = [
         },
         useCaseId: {
           type: 'string',
-          description: 'Identifier for the target resource (useCaseId).',
+          description: 'ID of the use case template. Use bloomreach.use_cases.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -5736,7 +5736,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_USE_CASES_PREPARE_UNFAVORITE_TOOL,
     description:
-      'Stage unfavoriting a use case for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Unfavorite a use case. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5747,7 +5747,7 @@ const tools: ToolRoute[] = [
         },
         useCaseId: {
           type: 'string',
-          description: 'Identifier for the target resource (useCaseId).',
+          description: 'ID of the use case template. Use bloomreach.use_cases.list to find available IDs.',
         },
       },
       required: ['project'],
@@ -5759,7 +5759,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ACCESS_LIST_MEMBERS_TOOL,
     description:
-      'List all team members in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all team members in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5786,7 +5786,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ACCESS_PREPARE_INVITE_TOOL,
     description:
-      'Stage inviting a team member for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Invite a team member. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5797,7 +5797,7 @@ const tools: ToolRoute[] = [
         },
         memberId: {
           type: 'string',
-          description: 'Identifier for the target resource (memberId).',
+          description: 'ID of the team member. Use bloomreach.access.list_members to find available IDs.',
         },
         email: {
           type: 'string',
@@ -5817,7 +5817,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ACCESS_PREPARE_UPDATE_ROLE_TOOL,
     description:
-      'Stage updating a team member role for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Update a team member role. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5828,7 +5828,7 @@ const tools: ToolRoute[] = [
         },
         memberId: {
           type: 'string',
-          description: 'Identifier for the target resource (memberId).',
+          description: 'ID of the team member. Use bloomreach.access.list_members to find available IDs.',
         },
         role: {
           type: 'string',
@@ -5844,7 +5844,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ACCESS_PREPARE_REMOVE_MEMBER_TOOL,
     description:
-      'Stage removing a team member for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Remove a team member. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5855,7 +5855,7 @@ const tools: ToolRoute[] = [
         },
         memberId: {
           type: 'string',
-          description: 'Identifier for the target resource (memberId).',
+          description: 'ID of the team member. Use bloomreach.access.list_members to find available IDs.',
         },
       },
       required: ['project'],
@@ -5867,7 +5867,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ACCESS_LIST_API_KEYS_TOOL,
     description:
-      'List all API keys in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
+      'List all API keys in the project. ⚠️ Not yet available — coming in a future release.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5894,7 +5894,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ACCESS_PREPARE_CREATE_API_KEY_TOOL,
     description:
-      'Stage creating an API key for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Create an API key. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5905,7 +5905,7 @@ const tools: ToolRoute[] = [
         },
         name: {
           type: 'string',
-          description: 'Human-readable name for the resource being created.',
+          description: 'Display name for the new API key.',
         },
         scopes: {
           type: 'array',
@@ -5921,7 +5921,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_ACCESS_PREPARE_DELETE_API_KEY_TOOL,
     description:
-      'Stage deleting an API key for two-phase commit. Returns a confirmToken that must be confirmed to execute. Preview: includes action type, project, target identifiers, and submitted fields.',
+      'Permanently delete an API key. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -5932,7 +5932,7 @@ const tools: ToolRoute[] = [
         },
         apiKeyId: {
           type: 'string',
-          description: 'Identifier for the target resource (apiKeyId).',
+          description: 'ID of the API key. Use bloomreach.access.list_api_keys to find available IDs.',
         },
       },
       required: ['project'],
@@ -5945,7 +5945,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_TRACKING_TRACK_EVENT_TOOL,
     description:
-      'Track a customer event (purchase, page_view, session_start, etc.) via the Bloomreach Tracking API. Use when you need to record customer activity. Requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+      'Track a customer event (purchase, page_view, session_start, etc.) via the Bloomreach Tracking API. Requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -6006,7 +6006,7 @@ const tools: ToolRoute[] = [
   {
     name: toolNames.BLOOMREACH_TRACKING_TRACK_CUSTOMER_TOOL,
     description:
-      'Update customer properties via the Bloomreach Tracking API. Use when you need to set or update customer attributes. Requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+      'Update customer properties via the Bloomreach Tracking API. Requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
     inputSchema: {
       type: 'object',
       properties: {
