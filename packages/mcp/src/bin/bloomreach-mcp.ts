@@ -4628,6 +4628,245 @@ const tools: ToolRoute[] = [
     serviceClass: 'BloomreachEvaluationSettingsService',
     methodName: 'prepareConfigureVoucherMapping',
   },
+  // --- Channel settings tools (issue #183) ---
+  {
+    name: toolNames.BLOOMREACH_CHANNEL_SETTINGS_EMAIL_VIEW_TOOL,
+    description:
+      'View email channel settings including sender domains, DKIM/SPF configuration status, and default from address. ⚠️ Not yet available — coming in a future release.',
+    inputSchema: createInputSchema(true),
+    serviceClass: 'BloomreachChannelSettingsService',
+    methodName: 'viewEmailSettings',
+  },
+  {
+    name: toolNames.BLOOMREACH_CHANNEL_SETTINGS_EMAIL_PREPARE_CONFIGURE_TOOL,
+    description:
+      'Configure an email sending domain. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        domain: {
+          type: 'string',
+          description: 'Email domain to configure (e.g. "mail.example.com").',
+        },
+        operatorNote: {
+          type: 'string',
+          description: 'Optional note describing the reason for this action.',
+        },
+      },
+      required: ['project', 'domain'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachChannelSettingsService',
+    methodName: 'prepareConfigureEmailDomain',
+  },
+  {
+    name: toolNames.BLOOMREACH_CHANNEL_SETTINGS_PUSH_VIEW_TOOL,
+    description:
+      'View push notification settings including provider and Firebase/APNs configuration status. ⚠️ Not yet available — coming in a future release.',
+    inputSchema: createInputSchema(true),
+    serviceClass: 'BloomreachChannelSettingsService',
+    methodName: 'viewPushNotificationSettings',
+  },
+  {
+    name: toolNames.BLOOMREACH_CHANNEL_SETTINGS_PUSH_PREPARE_CONFIGURE_TOOL,
+    description:
+      'Configure push notification provider. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        provider: {
+          type: 'string',
+          description: 'Push notification provider name (e.g. "firebase", "apns").',
+        },
+        firebaseCredentials: {
+          type: 'string',
+          description: 'Firebase Cloud Messaging credentials JSON.',
+        },
+        apnsCertificate: {
+          type: 'string',
+          description: 'Apple Push Notification service certificate.',
+        },
+        operatorNote: {
+          type: 'string',
+          description: 'Optional note describing the reason for this action.',
+        },
+      },
+      required: ['project', 'provider'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachChannelSettingsService',
+    methodName: 'prepareConfigurePushProvider',
+  },
+  {
+    name: toolNames.BLOOMREACH_CHANNEL_SETTINGS_SMS_VIEW_TOOL,
+    description:
+      'View SMS channel settings including provider and sender number. ⚠️ Not yet available — coming in a future release.',
+    inputSchema: createInputSchema(true),
+    serviceClass: 'BloomreachChannelSettingsService',
+    methodName: 'viewSmsSettings',
+  },
+  {
+    name: toolNames.BLOOMREACH_CHANNEL_SETTINGS_SMS_PREPARE_CONFIGURE_TOOL,
+    description:
+      'Configure SMS provider. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        provider: {
+          type: 'string',
+          description: 'SMS provider name.',
+        },
+        senderNumber: {
+          type: 'string',
+          description: 'Sender phone number for outbound SMS.',
+        },
+        operatorNote: {
+          type: 'string',
+          description: 'Optional note describing the reason for this action.',
+        },
+      },
+      required: ['project', 'provider'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachChannelSettingsService',
+    methodName: 'prepareConfigureSmsProvider',
+  },
+  {
+    name: toolNames.BLOOMREACH_CHANNEL_SETTINGS_MOBILE_MESSAGING_VIEW_TOOL,
+    description:
+      'View mobile messaging settings including WhatsApp and RCS configuration status. ⚠️ Not yet available — coming in a future release.',
+    inputSchema: createInputSchema(true),
+    serviceClass: 'BloomreachChannelSettingsService',
+    methodName: 'viewMobileMessagingSettings',
+  },
+  {
+    name: toolNames.BLOOMREACH_CHANNEL_SETTINGS_MOBILE_MESSAGING_PREPARE_CONFIGURE_TOOL,
+    description:
+      'Configure mobile messaging channels (WhatsApp, RCS). Returns a confirmToken — call bloomreach.actions.confirm to execute.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        provider: {
+          type: 'string',
+          description: 'Mobile messaging provider name.',
+        },
+        whatsappEnabled: {
+          type: 'boolean',
+          description: 'Whether to enable WhatsApp messaging.',
+        },
+        rcsEnabled: {
+          type: 'boolean',
+          description: 'Whether to enable RCS messaging.',
+        },
+        operatorNote: {
+          type: 'string',
+          description: 'Optional note describing the reason for this action.',
+        },
+      },
+      required: ['project', 'provider'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachChannelSettingsService',
+    methodName: 'prepareConfigureMobileMessaging',
+  },
+  {
+    name: toolNames.BLOOMREACH_CHANNEL_SETTINGS_PAYMENT_TRACKING_VIEW_TOOL,
+    description:
+      'View payment tracking settings including provider and enabled status. ⚠️ Not yet available — coming in a future release.',
+    inputSchema: createInputSchema(true),
+    serviceClass: 'BloomreachChannelSettingsService',
+    methodName: 'viewPaymentTrackingSettings',
+  },
+  {
+    name: toolNames.BLOOMREACH_CHANNEL_SETTINGS_PAYMENT_TRACKING_PREPARE_CONFIGURE_TOOL,
+    description:
+      'Configure payment tracking integration. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        provider: {
+          type: 'string',
+          description: 'Payment tracking provider name.',
+        },
+        enabled: {
+          type: 'boolean',
+          description: 'Whether to enable payment tracking.',
+        },
+        operatorNote: {
+          type: 'string',
+          description: 'Optional note describing the reason for this action.',
+        },
+      },
+      required: ['project', 'provider'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachChannelSettingsService',
+    methodName: 'prepareConfigurePaymentTracking',
+  },
+  {
+    name: toolNames.BLOOMREACH_CHANNEL_SETTINGS_FACEBOOK_MESSAGING_VIEW_TOOL,
+    description:
+      'View Facebook Messenger settings including page connection status and page name. ⚠️ Not yet available — coming in a future release.',
+    inputSchema: createInputSchema(true),
+    serviceClass: 'BloomreachChannelSettingsService',
+    methodName: 'viewFacebookMessagingSettings',
+  },
+  {
+    name: toolNames.BLOOMREACH_CHANNEL_SETTINGS_FACEBOOK_MESSAGING_PREPARE_CONFIGURE_TOOL,
+    description:
+      'Configure Facebook Messenger integration. Returns a confirmToken — call bloomreach.actions.confirm to execute.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        pageId: {
+          type: 'string',
+          description: 'Facebook Page ID to connect.',
+        },
+        accessToken: {
+          type: 'string',
+          description: 'Facebook Page access token.',
+        },
+        operatorNote: {
+          type: 'string',
+          description: 'Optional note describing the reason for this action.',
+        },
+      },
+      required: ['project', 'pageId'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachChannelSettingsService',
+    methodName: 'prepareConfigureFacebookMessaging',
+  },
   {
     name: toolNames.BLOOMREACH_WEBLAYERS_LIST_TOOL,
     description:
