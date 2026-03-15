@@ -24,7 +24,9 @@ export type BloomreachErrorCode =
   | 'AUTH_REQUIRED'
   | 'CAPTCHA_OR_CHALLENGE'
   | 'SESSION_EXPIRED'
-  | 'PROFILE_LOCKED';
+  | 'PROFILE_LOCKED'
+  | 'ACTION_PRECONDITION_FAILED'
+  | 'TARGET_NOT_FOUND';
 
 /**
  * Base error class for all Bloomreach Buddy errors.

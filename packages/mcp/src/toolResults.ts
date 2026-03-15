@@ -39,6 +39,10 @@ export function buildRecoveryHint(error: unknown): string {
       return 'Bloomreach rate limit reached. Wait for the rate-limit window to reset before retrying.';
     case 'API_ERROR':
       return 'Bloomreach API returned an error response. Check input parameters and project permissions, then retry.';
+    case 'ACTION_PRECONDITION_FAILED':
+      return 'Action precondition not met. The confirm token may be expired, already used, or invalid. Prepare a new action and retry.';
+    case 'TARGET_NOT_FOUND':
+      return 'The requested resource was not found. Verify the identifier and retry.';
     case 'NETWORK_ERROR':
       return 'A network error occurred. Verify connectivity to Bloomreach API endpoints and retry.';
     case 'AUTH_REQUIRED':

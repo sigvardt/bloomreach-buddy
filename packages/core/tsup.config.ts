@@ -6,4 +6,5 @@ export default defineConfig({
   dts: { compilerOptions: { composite: false } },
   clean: true,
   sourcemap: true,
+  external: ['better-sqlite3'],
 });

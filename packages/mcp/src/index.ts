@@ -357,6 +357,8 @@ export const BLOOMREACH_ACCESS_PREPARE_CREATE_API_KEY_TOOL =
   'bloomreach.access.prepare_create_api_key';
 export const BLOOMREACH_ACCESS_PREPARE_DELETE_API_KEY_TOOL =
   'bloomreach.access.prepare_delete_api_key';
+export const BLOOMREACH_ACTIONS_CONFIRM_TOOL = 'bloomreach.actions.confirm';
+export const BLOOMREACH_ACTIONS_LIST_TOOL = 'bloomreach.actions.list';
 
 
 // --- Tracking tools (issue #177) ---
@@ -626,6 +628,8 @@ export const BLOOMREACH_MCP_TOOL_NAMES = [
   BLOOMREACH_TRACKING_TRACK_CUSTOMER_TOOL,
   BLOOMREACH_TRACKING_TRACK_CONSENT_TOOL,
   BLOOMREACH_TRACKING_TRACK_CAMPAIGN_TOOL,
+  BLOOMREACH_ACTIONS_CONFIRM_TOOL,
+  BLOOMREACH_ACTIONS_LIST_TOOL,
 ] as const;
 
 export type BloomreachMcpToolName = (typeof BLOOMREACH_MCP_TOOL_NAMES)[number];
