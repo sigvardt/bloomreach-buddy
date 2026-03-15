@@ -1,3 +1,6 @@
+import type { BloomreachApiConfig } from './bloomreachApiClient.js';
+import { validateCredentials } from './bloomreachSetup.js';
+
 export * from './bloomreachCampaignCalendar.js';
 export * from './bloomreachCampaignSettings.js';
 export * from './bloomreachCatalogs.js';
@@ -40,6 +43,16 @@ export interface BloomreachClientConfig {
   environment: string;
   /** API token for authentication */
   apiToken: string;
+  apiConfig?: BloomreachApiConfig;
+}
+
+export interface BloomreachStatusResult {
+  connected: boolean;
+  environment: string;
+  project?: string;
+  apiConfigured: boolean;
+  apiBaseUrl?: string;
+  error?: string;
 }
 
 /**
@@ -64,10 +77,47 @@ export class BloomreachClient {
    * Check connectivity to the Bloomreach API.
    * @returns status object with connection information
    */
-  async status(): Promise<{ connected: boolean; environment: string }> {
-    return {
+  async status(): Promise<BloomreachStatusResult> {
+    const apiConfig = this.config.apiConfig;
+    const apiConfigured = apiConfig != null;
+    const base: BloomreachStatusResult = {
       connected: false,
       environment: this.config.environment,
+      apiConfigured,
+      apiBaseUrl: apiConfig?.baseUrl,
     };
+
+    if (!apiConfigured || !apiConfig) {
+      return {
+        ...base,
+        error:
+          'API credentials not configured. Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+      };
+    }
+
+    try {
+      const result = await validateCredentials({
+        projectToken: apiConfig.projectToken,
+        apiKeyId: apiConfig.apiKeyId,
+        apiSecret: apiConfig.apiSecret,
+        baseUrl: apiConfig.baseUrl,
+      });
+
+      if (result.valid) {
+        return {
+          ...base,
+          connected: true,
+          project: apiConfig.projectToken,
+        };
+      }
+
+      return {
+        ...base,
+        error: result.message ?? 'Connection verification failed',
+      };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { ...base, error: message };
+    }
   }
 }
