@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   CREATE_EMAIL_CAMPAIGN_ACTION_TYPE,
   SEND_EMAIL_CAMPAIGN_ACTION_TYPE,
+  SEND_TRANSACTIONAL_EMAIL_ACTION_TYPE,
   CLONE_EMAIL_CAMPAIGN_ACTION_TYPE,
   ARCHIVE_EMAIL_CAMPAIGN_ACTION_TYPE,
   EMAIL_CAMPAIGN_RATE_LIMIT_WINDOW_MS,
@@ -18,6 +19,9 @@ import {
   validateABTestConfig,
   validateCampaignId,
   validateSchedule,
+  validateEmailIntegrationId,
+  validateEmailAddress,
+  validateTransactionalEmailContent,
   buildEmailCampaignsUrl,
   createEmailCampaignActionExecutors,
   BloomreachEmailCampaignsService,
@@ -615,9 +619,9 @@ describe('buildEmailCampaignsUrl', () => {
 });
 
 describe('createEmailCampaignActionExecutors', () => {
-  it('returns executors for all four action types', () => {
+  it('returns executors for all five action types', () => {
     const executors = createEmailCampaignActionExecutors();
-    expect(Object.keys(executors)).toHaveLength(4);
+    expect(Object.keys(executors)).toHaveLength(5);
     expect(executors[CREATE_EMAIL_CAMPAIGN_ACTION_TYPE]).toBeDefined();
     expect(executors[SEND_EMAIL_CAMPAIGN_ACTION_TYPE]).toBeDefined();
     expect(executors[CLONE_EMAIL_CAMPAIGN_ACTION_TYPE]).toBeDefined();
@@ -634,40 +638,46 @@ describe('createEmailCampaignActionExecutors', () => {
   it('create executor throws "not yet implemented" with UI-only context', async () => {
     const executors = createEmailCampaignActionExecutors();
     await expect(executors[CREATE_EMAIL_CAMPAIGN_ACTION_TYPE].execute({})).rejects.toThrow(
-      'only available through the Bloomreach Engagement UI',
+      'Bloomreach Engagement UI',
     );
   });
 
   it('send executor throws "not yet implemented" with UI-only context', async () => {
     const executors = createEmailCampaignActionExecutors();
     await expect(executors[SEND_EMAIL_CAMPAIGN_ACTION_TYPE].execute({})).rejects.toThrow(
-      'only available through the Bloomreach Engagement UI',
+      'Bloomreach Engagement UI',
     );
   });
 
   it('clone executor throws "not yet implemented" with UI-only context', async () => {
     const executors = createEmailCampaignActionExecutors();
     await expect(executors[CLONE_EMAIL_CAMPAIGN_ACTION_TYPE].execute({})).rejects.toThrow(
-      'only available through the Bloomreach Engagement UI',
+      'Bloomreach Engagement UI',
     );
   });
 
   it('archive executor throws "not yet implemented" with UI-only context', async () => {
     const executors = createEmailCampaignActionExecutors();
     await expect(executors[ARCHIVE_EMAIL_CAMPAIGN_ACTION_TYPE].execute({})).rejects.toThrow(
-      'only available through the Bloomreach Engagement UI',
+      'Bloomreach Engagement UI',
     );
   });
 
   it('accepts optional apiConfig parameter', () => {
     const executors = createEmailCampaignActionExecutors(TEST_API_CONFIG);
-    expect(Object.keys(executors)).toHaveLength(4);
+    expect(Object.keys(executors)).toHaveLength(5);
   });
 
-  it('executors still throw not-yet-implemented with apiConfig', async () => {
+  it('stub executors still throw not-yet-implemented with apiConfig', async () => {
     const executors = createEmailCampaignActionExecutors(TEST_API_CONFIG);
-    for (const executor of Object.values(executors)) {
-      await expect(executor.execute({})).rejects.toThrow('not yet implemented');
+    const stubTypes = [
+      CREATE_EMAIL_CAMPAIGN_ACTION_TYPE,
+      SEND_EMAIL_CAMPAIGN_ACTION_TYPE,
+      CLONE_EMAIL_CAMPAIGN_ACTION_TYPE,
+      ARCHIVE_EMAIL_CAMPAIGN_ACTION_TYPE,
+    ];
+    for (const actionType of stubTypes) {
+      await expect(executors[actionType].execute({})).rejects.toThrow('not yet implemented');
     }
   });
 });
@@ -1354,6 +1364,161 @@ describe('BloomreachEmailCampaignsService', () => {
       expect(result.preparedActionId).toMatch(/^pa_/);
       expect(result.confirmToken).toMatch(/^ct_stub_/);
       expect(result.expiresAtMs).toBeGreaterThan(Date.now());
+    });
+  });
+});
+
+describe('SEND_TRANSACTIONAL_EMAIL_ACTION_TYPE', () => {
+  it('exports correct value', () => {
+    expect(SEND_TRANSACTIONAL_EMAIL_ACTION_TYPE).toBe('email_campaigns.send_transactional');
+  });
+});
+
+describe('validateEmailIntegrationId', () => {
+  it('returns trimmed ID', () => {
+    expect(validateEmailIntegrationId('  int-123  ')).toBe('int-123');
+  });
+
+  it('throws for empty string', () => {
+    expect(() => validateEmailIntegrationId('')).toThrow('Integration ID must not be empty');
+  });
+});
+
+describe('validateEmailAddress', () => {
+  it('returns trimmed email', () => {
+    expect(validateEmailAddress('  user@example.com  ')).toBe('user@example.com');
+  });
+
+  it('throws for empty string', () => {
+    expect(() => validateEmailAddress('')).toThrow('Email address must not be empty');
+  });
+
+  it('throws for missing @', () => {
+    expect(() => validateEmailAddress('invalid')).toThrow('must contain an @ symbol');
+  });
+});
+
+describe('validateTransactionalEmailContent', () => {
+  it('returns content with templateId', () => {
+    const content = { templateId: 'tpl-1' };
+    expect(validateTransactionalEmailContent(content)).toEqual(content);
+  });
+
+  it('returns content with html', () => {
+    const content = { html: '<p>Hello</p>' };
+    expect(validateTransactionalEmailContent(content)).toEqual(content);
+  });
+
+  it('throws when neither templateId nor html', () => {
+    expect(() => validateTransactionalEmailContent({})).toThrow('either a templateId or raw html');
+  });
+});
+
+describe('createEmailCampaignActionExecutors - transactional', () => {
+  it('includes SendTransactionalEmailExecutor', () => {
+    const executors = createEmailCampaignActionExecutors();
+    expect(executors[SEND_TRANSACTIONAL_EMAIL_ACTION_TYPE]).toBeDefined();
+  });
+
+  it('SendTransactionalEmailExecutor requires API credentials', async () => {
+    const executors = createEmailCampaignActionExecutors();
+    await expect(executors[SEND_TRANSACTIONAL_EMAIL_ACTION_TYPE].execute({})).rejects.toThrow('requires API credentials');
+  });
+
+  it('SendTransactionalEmailExecutor calls email API', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    const executors = createEmailCampaignActionExecutors(TEST_API_CONFIG);
+    await executors[SEND_TRANSACTIONAL_EMAIL_ACTION_TYPE].execute({
+      integrationId: 'int-1',
+      recipient: { customerIds: { registered: 'user@test.com' }, email: 'user@test.com' },
+      emailContent: { templateId: 'tpl-1' },
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const url = fetchSpy.mock.calls[0][0] as string;
+    expect(url).toContain('/email/v2/projects/');
+    expect(url).toContain('/sync');
+  });
+});
+
+describe('BloomreachEmailCampaignsService - transactional', () => {
+  describe('sendTransactionalEmail', () => {
+    it('throws API credential error when no apiConfig', async () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      await expect(
+        service.sendTransactionalEmail({
+          project: 'test',
+          integrationId: 'int-1',
+          recipient: { customerIds: { registered: 'u@t.com' }, email: 'u@t.com' },
+          emailContent: { templateId: 'tpl-1' },
+        }),
+      ).rejects.toThrow('requires API credentials');
+    });
+
+    it('sends email via API with valid input', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+      const service = new BloomreachEmailCampaignsService('test', TEST_API_CONFIG);
+      const result = await service.sendTransactionalEmail({
+        project: 'test',
+        integrationId: 'int-1',
+        recipient: { customerIds: { registered: 'u@t.com' }, email: 'u@t.com' },
+        emailContent: { templateId: 'tpl-1' },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('validates integrationId', async () => {
+      const service = new BloomreachEmailCampaignsService('test', TEST_API_CONFIG);
+      await expect(
+        service.sendTransactionalEmail({
+          project: 'test',
+          integrationId: '',
+          recipient: { customerIds: { registered: 'u@t.com' }, email: 'u@t.com' },
+          emailContent: { templateId: 'tpl-1' },
+        }),
+      ).rejects.toThrow('Integration ID must not be empty');
+    });
+
+    it('validates email address', async () => {
+      const service = new BloomreachEmailCampaignsService('test', TEST_API_CONFIG);
+      await expect(
+        service.sendTransactionalEmail({
+          project: 'test',
+          integrationId: 'int-1',
+          recipient: { customerIds: { registered: 'u' }, email: 'invalid' },
+          emailContent: { templateId: 'tpl-1' },
+        }),
+      ).rejects.toThrow('must contain an @ symbol');
+    });
+  });
+
+  describe('prepareSendTransactionalEmail', () => {
+    it('returns prepared action with valid input', () => {
+      const service = new BloomreachEmailCampaignsService('test');
+      const result = service.prepareSendTransactionalEmail({
+        project: 'test',
+        integrationId: 'int-1',
+        recipient: { customerIds: { registered: 'u@t.com' }, email: 'u@t.com' },
+        emailContent: { templateId: 'tpl-1' },
+        operatorNote: 'Test email',
+      });
+      expect(result.preparedActionId).toMatch(/^pa_/);
+      expect(result.confirmToken).toMatch(/^ct_stub_/);
+      expect(result.preview).toEqual(
+        expect.objectContaining({
+          action: 'email_campaigns.send_transactional',
+          integrationId: 'int-1',
+        }),
+      );
     });
   });
 });

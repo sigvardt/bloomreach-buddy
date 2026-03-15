@@ -1702,3 +1702,53 @@ describe('BloomreachDataManagerService', () => {
     });
   });
 });
+
+describe('BloomreachDataManagerService - consent categories', () => {
+  describe('listConsentCategories', () => {
+    it('throws API credential error when no apiConfig', async () => {
+      const service = new BloomreachDataManagerService('test');
+      await expect(service.listConsentCategories({ project: 'test' })).rejects.toThrow('requires API credentials');
+    });
+
+    it('returns consent categories from API', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify([
+            {
+              id: 'cat-1',
+              name: 'Marketing',
+              description: 'Marketing consent',
+              legitimate_interest: false,
+            },
+            { id: 'cat-2', name: 'Analytics', legitimate_interest: true },
+          ]),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        ),
+      );
+      const service = new BloomreachDataManagerService('test', TEST_API_CONFIG);
+      const result = await service.listConsentCategories({ project: 'test' });
+      expect(result.success).toBe(true);
+      expect(result.categories).toHaveLength(2);
+      expect(result.categories[0]).toEqual({
+        id: 'cat-1',
+        name: 'Marketing',
+        description: 'Marketing consent',
+        legitimateInterest: false,
+      });
+      expect(result.categories[1]).toEqual({
+        id: 'cat-2',
+        name: 'Analytics',
+        description: undefined,
+        legitimateInterest: true,
+      });
+    });
+
+    it('validates project', async () => {
+      const service = new BloomreachDataManagerService('test', TEST_API_CONFIG);
+      await expect(service.listConsentCategories({ project: '' })).rejects.toThrow('must not be empty');
+    });
+  });
+});

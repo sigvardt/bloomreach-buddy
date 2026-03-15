@@ -1,10 +1,12 @@
 import { validateProject } from './bloomreachDashboards.js';
+import { bloomreachApiFetch, buildEmailPath } from './bloomreachApiClient.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const CREATE_EMAIL_CAMPAIGN_ACTION_TYPE = 'email_campaigns.create_campaign';
 export const SEND_EMAIL_CAMPAIGN_ACTION_TYPE = 'email_campaigns.send_campaign';
 export const CLONE_EMAIL_CAMPAIGN_ACTION_TYPE = 'email_campaigns.clone_campaign';
 export const ARCHIVE_EMAIL_CAMPAIGN_ACTION_TYPE = 'email_campaigns.archive_campaign';
+export const SEND_TRANSACTIONAL_EMAIL_ACTION_TYPE = 'email_campaigns.send_transactional';
 
 /** Rate limit window for email campaign operations (1 hour in ms). */
 export const EMAIL_CAMPAIGN_RATE_LIMIT_WINDOW_MS = 3_600_000;
@@ -128,6 +130,34 @@ export interface PreparedEmailCampaignAction {
   preview: Record<string, unknown>;
 }
 
+export interface TransactionalEmailRecipient {
+  customerIds: Record<string, string>;
+  email: string;
+}
+
+export interface TransactionalEmailContent {
+  templateId?: string;
+  html?: string;
+  subject?: string;
+  senderAddress?: string;
+  senderName?: string;
+  params?: Record<string, unknown>;
+}
+
+export interface SendTransactionalEmailInput {
+  project: string;
+  integrationId: string;
+  campaignName?: string;
+  recipient: TransactionalEmailRecipient;
+  emailContent: TransactionalEmailContent;
+  operatorNote?: string;
+}
+
+export interface SendTransactionalEmailResult {
+  success: boolean;
+  response: unknown;
+}
+
 const MAX_CAMPAIGN_NAME_LENGTH = 200;
 const MIN_CAMPAIGN_NAME_LENGTH = 1;
 const MAX_SUBJECT_LINE_LENGTH = 998;
@@ -235,8 +265,51 @@ export function validateSchedule(schedule: EmailCampaignSchedule): EmailCampaign
   return schedule;
 }
 
+export function validateEmailIntegrationId(id: string): string {
+  const trimmed = id.trim();
+  if (trimmed.length === 0) {
+    throw new Error('Integration ID must not be empty.');
+  }
+  return trimmed;
+}
+
+export function validateEmailAddress(email: string): string {
+  const trimmed = email.trim();
+  if (trimmed.length === 0) {
+    throw new Error('Email address must not be empty.');
+  }
+  if (!trimmed.includes('@')) {
+    throw new Error('Email address must contain an @ symbol.');
+  }
+  return trimmed;
+}
+
+export function validateTransactionalEmailContent(
+  content: TransactionalEmailContent,
+): TransactionalEmailContent {
+  if (!content.templateId && !content.html) {
+    throw new Error(
+      'Email content must include either a templateId or raw html.',
+    );
+  }
+  return content;
+}
+
 export function buildEmailCampaignsUrl(project: string): string {
   return `/p/${encodeURIComponent(project)}/campaigns/email-campaigns`;
+}
+
+function requireApiConfig(
+  config: BloomreachApiConfig | undefined,
+  operation: string,
+): BloomreachApiConfig {
+  if (!config) {
+    throw new Error(
+      `${operation} requires API credentials. ` +
+        'Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET environment variables.',
+    );
+  }
+  return config;
 }
 
 export interface EmailCampaignActionExecutor {
@@ -256,7 +329,8 @@ class CreateEmailCampaignExecutor implements EmailCampaignActionExecutor {
     void this.apiConfig;
     throw new Error(
       'CreateEmailCampaignExecutor: not yet implemented. ' +
-        'Email campaign creation is only available through the Bloomreach Engagement UI.',
+        'Use the Bloomreach Engagement UI: Campaigns > Email campaigns. ' +
+        'For sending individual transactional emails via API, use the sendTransactionalEmail method.',
     );
   }
 }
@@ -273,7 +347,8 @@ class SendEmailCampaignExecutor implements EmailCampaignActionExecutor {
     void this.apiConfig;
     throw new Error(
       'SendEmailCampaignExecutor: not yet implemented. ' +
-        'Email campaign sending is only available through the Bloomreach Engagement UI.',
+        'Use the Bloomreach Engagement UI: Campaigns > Email campaigns. ' +
+        'For sending individual transactional emails via API, use the sendTransactionalEmail method.',
     );
   }
 }
@@ -290,7 +365,8 @@ class CloneEmailCampaignExecutor implements EmailCampaignActionExecutor {
     void this.apiConfig;
     throw new Error(
       'CloneEmailCampaignExecutor: not yet implemented. ' +
-        'Email campaign cloning is only available through the Bloomreach Engagement UI.',
+        'Use the Bloomreach Engagement UI: Campaigns > Email campaigns. ' +
+        'For sending individual transactional emails via API, use the sendTransactionalEmail method.',
     );
   }
 }
@@ -307,8 +383,49 @@ class ArchiveEmailCampaignExecutor implements EmailCampaignActionExecutor {
     void this.apiConfig;
     throw new Error(
       'ArchiveEmailCampaignExecutor: not yet implemented. ' +
-        'Email campaign archiving is only available through the Bloomreach Engagement UI.',
+        'Use the Bloomreach Engagement UI: Campaigns > Email campaigns. ' +
+        'For sending individual transactional emails via API, use the sendTransactionalEmail method.',
     );
+  }
+}
+
+class SendTransactionalEmailExecutor implements EmailCampaignActionExecutor {
+  readonly actionType = SEND_TRANSACTIONAL_EMAIL_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const config = requireApiConfig(this.apiConfig, 'SendTransactionalEmailExecutor');
+    const integrationId = payload.integrationId as string;
+    const campaignName = payload.campaignName as string | undefined;
+    const recipient = payload.recipient as TransactionalEmailRecipient;
+    const emailContent = payload.emailContent as TransactionalEmailContent;
+
+    const path = buildEmailPath(config, '/sync');
+    const body: Record<string, unknown> = {
+      integration_id: integrationId,
+      recipient: {
+        customer_ids: recipient.customerIds,
+        email: recipient.email,
+      },
+      email_content: {},
+    };
+    if (campaignName) {
+      body.campaign_name = campaignName;
+    }
+    const content = body.email_content as Record<string, unknown>;
+    if (emailContent.templateId) content.template_id = emailContent.templateId;
+    if (emailContent.html) content.html = emailContent.html;
+    if (emailContent.subject) content.subject = emailContent.subject;
+    if (emailContent.senderAddress) content.sender_address = emailContent.senderAddress;
+    if (emailContent.senderName) content.sender_name = emailContent.senderName;
+    if (emailContent.params) content.params = emailContent.params;
+
+    const response = await bloomreachApiFetch(config, path, { body });
+    return { success: true, response };
   }
 }
 
@@ -320,6 +437,7 @@ export function createEmailCampaignActionExecutors(
     [SEND_EMAIL_CAMPAIGN_ACTION_TYPE]: new SendEmailCampaignExecutor(apiConfig),
     [CLONE_EMAIL_CAMPAIGN_ACTION_TYPE]: new CloneEmailCampaignExecutor(apiConfig),
     [ARCHIVE_EMAIL_CAMPAIGN_ACTION_TYPE]: new ArchiveEmailCampaignExecutor(apiConfig),
+    [SEND_TRANSACTIONAL_EMAIL_ACTION_TYPE]: new SendTransactionalEmailExecutor(apiConfig),
   };
 }
 
@@ -361,7 +479,8 @@ export class BloomreachEmailCampaignsService {
     void this.apiConfig;
     throw new Error(
       'listEmailCampaigns: the Bloomreach API does not provide a list endpoint for email campaigns. ' +
-        'Email campaign management is only available through the Bloomreach Engagement UI.',
+        'Use the Bloomreach Engagement UI: Campaigns > Email campaigns. ' +
+        'For sending individual emails via API, use the sendTransactionalEmail method instead.',
     );
   }
 
@@ -376,7 +495,7 @@ export class BloomreachEmailCampaignsService {
     void this.apiConfig;
     throw new Error(
       'viewCampaignResults: the Bloomreach API does not provide a campaign results endpoint for email campaigns. ' +
-        'Email campaign analytics are only available through the Bloomreach Engagement UI.',
+        'Use the Bloomreach Engagement UI: Campaigns > Email campaigns > [campaign] > Results.',
     );
   }
 
@@ -466,6 +585,65 @@ export class BloomreachEmailCampaignsService {
       action: ARCHIVE_EMAIL_CAMPAIGN_ACTION_TYPE,
       project,
       campaignId,
+      operatorNote: input.operatorNote,
+    };
+
+    return {
+      preparedActionId: `pa_${Date.now()}`,
+      confirmToken: `ct_stub_${Date.now()}`,
+      expiresAtMs: Date.now() + 30 * 60 * 1000,
+      preview,
+    };
+  }
+
+  async sendTransactionalEmail(
+    input: SendTransactionalEmailInput,
+  ): Promise<SendTransactionalEmailResult> {
+    validateProject(input.project);
+    validateEmailIntegrationId(input.integrationId);
+    validateEmailAddress(input.recipient.email);
+    validateTransactionalEmailContent(input.emailContent);
+
+    const config = requireApiConfig(this.apiConfig, 'sendTransactionalEmail');
+    const path = buildEmailPath(config, '/sync');
+    const body: Record<string, unknown> = {
+      integration_id: input.integrationId,
+      recipient: {
+        customer_ids: input.recipient.customerIds,
+        email: input.recipient.email,
+      },
+      email_content: {},
+    };
+    if (input.campaignName) {
+      body.campaign_name = input.campaignName;
+    }
+    const content = body.email_content as Record<string, unknown>;
+    if (input.emailContent.templateId) content.template_id = input.emailContent.templateId;
+    if (input.emailContent.html) content.html = input.emailContent.html;
+    if (input.emailContent.subject) content.subject = input.emailContent.subject;
+    if (input.emailContent.senderAddress) content.sender_address = input.emailContent.senderAddress;
+    if (input.emailContent.senderName) content.sender_name = input.emailContent.senderName;
+    if (input.emailContent.params) content.params = input.emailContent.params;
+
+    const response = await bloomreachApiFetch(config, path, { body });
+    return { success: true, response };
+  }
+
+  prepareSendTransactionalEmail(
+    input: SendTransactionalEmailInput,
+  ): PreparedEmailCampaignAction {
+    const project = validateProject(input.project);
+    validateEmailIntegrationId(input.integrationId);
+    validateEmailAddress(input.recipient.email);
+    validateTransactionalEmailContent(input.emailContent);
+
+    const preview = {
+      action: SEND_TRANSACTIONAL_EMAIL_ACTION_TYPE,
+      project,
+      integrationId: input.integrationId,
+      recipient: input.recipient,
+      emailContent: input.emailContent,
+      campaignName: input.campaignName,
       operatorNote: input.operatorNote,
     };
 

@@ -16,6 +16,9 @@ import {
   validateWeblayerDisplayType,
   validateWeblayerABTestConfig,
   validateDisplayConditions,
+  validateBanditId,
+  validateVariants,
+  validateVariantId,
   buildWeblayersUrl,
   createWeblayerActionExecutors,
   BloomreachWeblayersService,
@@ -1081,6 +1084,143 @@ describe('BloomreachWeblayersService', () => {
       expect(() =>
         service.prepareArchiveWeblayer({ project: '   ', weblayerId: 'weblayer-900' }),
       ).toThrow('must not be empty');
+    });
+  });
+});
+
+describe('validateBanditId', () => {
+  it('returns trimmed ID', () => {
+    expect(validateBanditId('  bandit-1  ')).toBe('bandit-1');
+  });
+
+  it('throws for empty string', () => {
+    expect(() => validateBanditId('')).toThrow('Bandit ID must not be empty');
+  });
+});
+
+describe('validateVariants', () => {
+  it('returns valid variants', () => {
+    const variants = [{ id: 'a' }, { id: 'b' }];
+    expect(validateVariants(variants)).toEqual(variants);
+  });
+
+  it('throws for empty array', () => {
+    expect(() => validateVariants([])).toThrow('At least one variant');
+  });
+
+  it('throws for variant with empty id', () => {
+    expect(() => validateVariants([{ id: '' }])).toThrow('non-empty id');
+  });
+});
+
+describe('validateVariantId', () => {
+  it('returns trimmed ID', () => {
+    expect(validateVariantId('  var-1  ')).toBe('var-1');
+  });
+
+  it('throws for empty string', () => {
+    expect(() => validateVariantId('')).toThrow('Variant ID must not be empty');
+  });
+});
+
+describe('BloomreachWeblayersService - personalization methods', () => {
+  describe('getBestVariant', () => {
+    it('throws API credential error when no apiConfig', async () => {
+      const service = new BloomreachWeblayersService('test');
+      await expect(
+        service.getBestVariant({
+          project: 'test',
+          banditId: 'b-1',
+          customerIds: { cookie: 'abc' },
+          variants: [{ id: 'a' }],
+        }),
+      ).rejects.toThrow('requires API credentials');
+    });
+
+    it('returns best variant from API', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify({ best_variant: 'a' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+      const service = new BloomreachWeblayersService('test', TEST_API_CONFIG);
+      const result = await service.getBestVariant({
+        project: 'test',
+        banditId: 'b-1',
+        customerIds: { cookie: 'abc' },
+        variants: [{ id: 'a' }, { id: 'b' }],
+      });
+      expect(result.success).toBe(true);
+      expect(result.bestVariant).toBe('a');
+    });
+
+    it('validates banditId', async () => {
+      const service = new BloomreachWeblayersService('test', TEST_API_CONFIG);
+      await expect(
+        service.getBestVariant({
+          project: 'test',
+          banditId: '',
+          customerIds: { cookie: 'abc' },
+          variants: [{ id: 'a' }],
+        }),
+      ).rejects.toThrow('Bandit ID must not be empty');
+    });
+
+    it('validates variants', async () => {
+      const service = new BloomreachWeblayersService('test', TEST_API_CONFIG);
+      await expect(
+        service.getBestVariant({
+          project: 'test',
+          banditId: 'b-1',
+          customerIds: { cookie: 'abc' },
+          variants: [],
+        }),
+      ).rejects.toThrow('At least one variant');
+    });
+  });
+
+  describe('reportReward', () => {
+    it('throws API credential error when no apiConfig', async () => {
+      const service = new BloomreachWeblayersService('test');
+      await expect(
+        service.reportReward({
+          project: 'test',
+          banditId: 'b-1',
+          customerIds: { cookie: 'abc' },
+          variantId: 'a',
+        }),
+      ).rejects.toThrow('requires API credentials');
+    });
+
+    it('reports reward via API', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+      const service = new BloomreachWeblayersService('test', TEST_API_CONFIG);
+      const result = await service.reportReward({
+        project: 'test',
+        banditId: 'b-1',
+        customerIds: { cookie: 'abc' },
+        variantId: 'a',
+        reward: 1.5,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('validates variantId', async () => {
+      const service = new BloomreachWeblayersService('test', TEST_API_CONFIG);
+      await expect(
+        service.reportReward({
+          project: 'test',
+          banditId: 'b-1',
+          customerIds: { cookie: 'abc' },
+          variantId: '',
+        }),
+      ).rejects.toThrow('Variant ID must not be empty');
     });
   });
 });

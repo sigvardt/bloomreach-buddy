@@ -1,4 +1,8 @@
 import { validateProject } from './bloomreachDashboards.js';
+import {
+  bloomreachApiFetch,
+  buildWebxpPath,
+} from './bloomreachApiClient.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const CREATE_WEBLAYER_ACTION_TYPE = 'weblayers.create_weblayer';
@@ -109,6 +113,36 @@ export interface PreparedWeblayerAction {
   preview: Record<string, unknown>;
 }
 
+export interface WeblayerVariant {
+  id: string;
+}
+
+export interface GetBestVariantInput {
+  project: string;
+  banditId: string;
+  customerIds: Record<string, string>;
+  variants: WeblayerVariant[];
+}
+
+export interface GetBestVariantResult {
+  success: boolean;
+  bestVariant: unknown;
+  response: unknown;
+}
+
+export interface ReportRewardInput {
+  project: string;
+  banditId: string;
+  customerIds: Record<string, string>;
+  variantId: string;
+  reward?: number;
+}
+
+export interface ReportRewardResult {
+  success: boolean;
+  response: unknown;
+}
+
 const MAX_WEBLAYER_NAME_LENGTH = 200;
 const MIN_WEBLAYER_NAME_LENGTH = 1;
 const MIN_AB_TEST_VARIANTS = 2;
@@ -140,6 +174,34 @@ export function validateWeblayerId(id: string): string {
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new Error('Weblayer ID must not be empty.');
+  }
+  return trimmed;
+}
+
+export function validateBanditId(id: string): string {
+  const trimmed = id.trim();
+  if (trimmed.length === 0) {
+    throw new Error('Bandit ID must not be empty.');
+  }
+  return trimmed;
+}
+
+export function validateVariants(variants: WeblayerVariant[]): WeblayerVariant[] {
+  if (!Array.isArray(variants) || variants.length === 0) {
+    throw new Error('At least one variant must be provided.');
+  }
+  for (const v of variants) {
+    if (typeof v.id !== 'string' || v.id.trim().length === 0) {
+      throw new Error('Each variant must have a non-empty id.');
+    }
+  }
+  return variants;
+}
+
+export function validateVariantId(id: string): string {
+  const trimmed = id.trim();
+  if (trimmed.length === 0) {
+    throw new Error('Variant ID must not be empty.');
   }
   return trimmed;
 }
@@ -211,8 +273,6 @@ function requireApiConfig(
   return config;
 }
 
-void requireApiConfig;
-
 export interface WeblayerActionExecutor {
   readonly actionType: string;
   execute(payload: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -232,7 +292,8 @@ class CreateWeblayerExecutor implements WeblayerActionExecutor {
     void this.apiConfig;
     throw new Error(
       'CreateWeblayerExecutor: not yet implemented. ' +
-        'Weblayer creation is only available through the Bloomreach Engagement UI.',
+        'Weblayer creation is only available through the Bloomreach Engagement UI: Campaigns > Web layers. ' +
+        'For real-time personalization, use getBestVariant and reportReward methods.',
     );
   }
 }
@@ -251,7 +312,8 @@ class StartWeblayerExecutor implements WeblayerActionExecutor {
     void this.apiConfig;
     throw new Error(
       'StartWeblayerExecutor: not yet implemented. ' +
-        'Weblayer activation is only available through the Bloomreach Engagement UI.',
+        'Weblayer activation is only available through the Bloomreach Engagement UI: Campaigns > Web layers. ' +
+        'For real-time personalization, use getBestVariant and reportReward methods.',
     );
   }
 }
@@ -270,7 +332,8 @@ class StopWeblayerExecutor implements WeblayerActionExecutor {
     void this.apiConfig;
     throw new Error(
       'StopWeblayerExecutor: not yet implemented. ' +
-        'Weblayer deactivation is only available through the Bloomreach Engagement UI.',
+        'Weblayer deactivation is only available through the Bloomreach Engagement UI: Campaigns > Web layers. ' +
+        'For real-time personalization, use getBestVariant and reportReward methods.',
     );
   }
 }
@@ -289,7 +352,8 @@ class CloneWeblayerExecutor implements WeblayerActionExecutor {
     void this.apiConfig;
     throw new Error(
       'CloneWeblayerExecutor: not yet implemented. ' +
-        'Weblayer cloning is only available through the Bloomreach Engagement UI.',
+        'Weblayer cloning is only available through the Bloomreach Engagement UI: Campaigns > Web layers. ' +
+        'For real-time personalization, use getBestVariant and reportReward methods.',
     );
   }
 }
@@ -308,7 +372,8 @@ class ArchiveWeblayerExecutor implements WeblayerActionExecutor {
     void this.apiConfig;
     throw new Error(
       'ArchiveWeblayerExecutor: not yet implemented. ' +
-        'Weblayer archiving is only available through the Bloomreach Engagement UI.',
+        'Weblayer archiving is only available through the Bloomreach Engagement UI: Campaigns > Web layers. ' +
+        'For real-time personalization, use getBestVariant and reportReward methods.',
     );
   }
 }
@@ -349,7 +414,8 @@ export class BloomreachWeblayersService {
     void this.apiConfig;
     throw new Error(
       'listWeblayers: the Bloomreach API does not provide a weblayer listing endpoint. ' +
-        'Weblayer management is only available through the Bloomreach Engagement UI.',
+        'Use the Bloomreach Engagement UI: Campaigns > Web layers. ' +
+        'For personalization, use getBestVariant and reportReward methods (API-backed).',
     );
   }
 
@@ -362,7 +428,7 @@ export class BloomreachWeblayersService {
     void this.apiConfig;
     throw new Error(
       'viewWeblayerPerformance: the Bloomreach API does not provide a weblayer performance endpoint. ' +
-        'Weblayer analytics are only available through the Bloomreach Engagement UI.',
+        'Use the Bloomreach Engagement UI: Campaigns > Web layers > [weblayer] > Results.',
     );
   }
 
@@ -476,5 +542,56 @@ export class BloomreachWeblayersService {
       expiresAtMs: Date.now() + 30 * 60 * 1000,
       preview,
     };
+  }
+
+  /**
+   * Get the best weblayer variant for a customer using contextual bandits.
+   * Uses the Bloomreach Web Experience API (real REST endpoint).
+   */
+  async getBestVariant(input: GetBestVariantInput): Promise<GetBestVariantResult> {
+    validateProject(input.project);
+    validateBanditId(input.banditId);
+    validateVariants(input.variants);
+
+    const config = requireApiConfig(this.apiConfig, 'getBestVariant');
+    const path = buildWebxpPath('/bandits/best-variant');
+    const response = await bloomreachApiFetch(config, path, {
+      body: {
+        project_id: config.projectToken,
+        bandit_id: input.banditId,
+        customer_ids: input.customerIds,
+        variants: input.variants,
+      },
+    });
+    const data = response as Record<string, unknown>;
+    return {
+      success: true,
+      bestVariant: data.best_variant ?? data.variant ?? response,
+      response,
+    };
+  }
+
+  /**
+   * Report a reward/conversion for a weblayer variant.
+   * Uses the Bloomreach Web Experience API (real REST endpoint).
+   */
+  async reportReward(input: ReportRewardInput): Promise<ReportRewardResult> {
+    validateProject(input.project);
+    validateBanditId(input.banditId);
+    validateVariantId(input.variantId);
+
+    const config = requireApiConfig(this.apiConfig, 'reportReward');
+    const path = buildWebxpPath('/bandits/reward');
+    const body: Record<string, unknown> = {
+      project_id: config.projectToken,
+      bandit_id: input.banditId,
+      customer_ids: input.customerIds,
+      variant_id: input.variantId,
+    };
+    if (input.reward !== undefined) {
+      body.reward = input.reward;
+    }
+    const response = await bloomreachApiFetch(config, path, { body });
+    return { success: true, response };
   }
 }

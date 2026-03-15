@@ -438,3 +438,21 @@ export function buildDataPath(
 ): string {
   return `/data/v2/projects/${encodeURIComponent(config.projectToken)}${suffix}`;
 }
+
+export function buildEmailPath(
+  config: BloomreachApiConfig,
+  suffix: string,
+): string {
+  return `/email/v2/projects/${encodeURIComponent(config.projectToken)}${suffix}`;
+}
+
+export function buildSmsPath(
+  config: BloomreachApiConfig,
+  suffix: string,
+): string {
+  return `/sms/v1/projects/${encodeURIComponent(config.projectToken)}${suffix}`;
+}
+
+export function buildWebxpPath(suffix: string): string {
+  return `/webxp${suffix}`;
+}

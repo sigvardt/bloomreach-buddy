@@ -9,6 +9,8 @@ import {
 export const CREATE_CUSTOMER_ACTION_TYPE = 'customers.create_customer';
 export const UPDATE_CUSTOMER_ACTION_TYPE = 'customers.update_customer';
 export const DELETE_CUSTOMER_ACTION_TYPE = 'customers.delete_customer';
+export const TRACK_EVENT_ACTION_TYPE = 'customers.track_event';
+export const BATCH_COMMANDS_ACTION_TYPE = 'customers.batch_commands';
 
 export const CUSTOMER_RATE_LIMIT_WINDOW_MS = 3_600_000;
 export const CUSTOMER_CREATE_RATE_LIMIT = 50;
@@ -89,6 +91,56 @@ export interface DeleteCustomerInput {
   operatorNote?: string;
 }
 
+export interface TrackEventInput {
+  project: string;
+  customerIds: CustomerIds;
+  eventType: string;
+  timestamp?: number;
+  properties?: Record<string, unknown>;
+}
+
+export interface TrackEventResult {
+  success: boolean;
+  response: unknown;
+}
+
+export interface BatchCommandInput {
+  project: string;
+  commands: BatchCommand[];
+}
+
+export interface BatchCommand {
+  name: string;
+  data: Record<string, unknown>;
+}
+
+export interface BatchCommandResult {
+  success: boolean;
+  response: unknown;
+}
+
+export interface ExportCustomerEventsInput {
+  project: string;
+  customerIds: CustomerIds;
+  eventTypes?: string[];
+}
+
+export interface ExportCustomerEventsResult {
+  success: boolean;
+  events: unknown[];
+}
+
+export interface ExportSingleCustomerInput {
+  project: string;
+  customerIds: CustomerIds;
+  attributes?: Array<{ type: string; [key: string]: unknown }>;
+}
+
+export interface ExportSingleCustomerResult {
+  success: boolean;
+  customer: unknown;
+}
+
 export interface PreparedCustomerAction {
   preparedActionId: string;
   confirmToken: string;
@@ -128,6 +180,43 @@ export function validateCustomerIds(ids: CustomerIds): CustomerIds {
     }
   }
   return validated;
+}
+
+export function validateEventType(eventType: string): string {
+  const trimmed = eventType.trim();
+  if (trimmed.length === 0) {
+    throw new Error('Event type must not be empty.');
+  }
+  if (trimmed.length > 256) {
+    throw new Error(
+      `Event type must not exceed 256 characters (got ${trimmed.length}).`,
+    );
+  }
+  return trimmed;
+}
+
+export function validateBatchCommands(commands: BatchCommand[]): BatchCommand[] {
+  if (!Array.isArray(commands) || commands.length === 0) {
+    throw new Error('At least one batch command must be provided.');
+  }
+  if (commands.length > 50) {
+    throw new Error(
+      `Batch commands must not exceed 50 (got ${commands.length}).`,
+    );
+  }
+  for (const cmd of commands) {
+    if (typeof cmd.name !== 'string' || cmd.name.trim().length === 0) {
+      throw new Error('Each batch command must have a non-empty name.');
+    }
+    if (
+      typeof cmd.data !== 'object' ||
+      cmd.data === null ||
+      Array.isArray(cmd.data)
+    ) {
+      throw new Error('Each batch command must have a non-null data object.');
+    }
+  }
+  return commands;
 }
 
 export function validateSearchQuery(query: string): string {
@@ -283,6 +372,54 @@ class DeleteCustomerExecutor implements CustomerActionExecutor {
   }
 }
 
+class TrackEventExecutor implements CustomerActionExecutor {
+  readonly actionType = TRACK_EVENT_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const config = requireApiConfig(this.apiConfig, 'TrackEventExecutor');
+    const customerIds = payload.customerIds as CustomerIds;
+    const eventType = payload.eventType as string;
+    const timestamp = payload.timestamp as number | undefined;
+    const properties = payload.properties as Record<string, unknown> | undefined;
+
+    const path = buildTrackingPath(config, '/customers/events');
+    const body: Record<string, unknown> = {
+      customer_ids: customerIds,
+      event_type: eventType,
+    };
+    if (timestamp !== undefined) body.timestamp = timestamp;
+    if (properties !== undefined) body.properties = properties;
+
+    const response = await bloomreachApiFetch(config, path, { body });
+    return { success: true, response };
+  }
+}
+
+class BatchCommandsExecutor implements CustomerActionExecutor {
+  readonly actionType = BATCH_COMMANDS_ACTION_TYPE;
+  private readonly apiConfig?: BloomreachApiConfig;
+
+  constructor(apiConfig?: BloomreachApiConfig) {
+    this.apiConfig = apiConfig;
+  }
+
+  async execute(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const config = requireApiConfig(this.apiConfig, 'BatchCommandsExecutor');
+    const commands = payload.commands as BatchCommand[];
+
+    const path = buildTrackingPath(config, '/batch');
+    const response = await bloomreachApiFetch(config, path, {
+      body: { commands },
+    });
+    return { success: true, response };
+  }
+}
+
 export function createCustomerActionExecutors(
   apiConfig?: BloomreachApiConfig,
 ): Record<string, CustomerActionExecutor> {
@@ -290,6 +427,8 @@ export function createCustomerActionExecutors(
     [CREATE_CUSTOMER_ACTION_TYPE]: new CreateCustomerExecutor(apiConfig),
     [UPDATE_CUSTOMER_ACTION_TYPE]: new UpdateCustomerExecutor(apiConfig),
     [DELETE_CUSTOMER_ACTION_TYPE]: new DeleteCustomerExecutor(apiConfig),
+    [TRACK_EVENT_ACTION_TYPE]: new TrackEventExecutor(apiConfig),
+    [BATCH_COMMANDS_ACTION_TYPE]: new BatchCommandsExecutor(apiConfig),
   };
 }
 
@@ -533,5 +672,75 @@ export class BloomreachCustomersService {
       expiresAtMs: Date.now() + 30 * 60 * 1000,
       preview,
     };
+  }
+
+  async trackEvent(input: TrackEventInput): Promise<TrackEventResult> {
+    validateProject(input.project);
+    validateCustomerIds(input.customerIds);
+    validateEventType(input.eventType);
+
+    const config = requireApiConfig(this.apiConfig, 'trackEvent');
+    const path = buildTrackingPath(config, '/customers/events');
+    const body: Record<string, unknown> = {
+      customer_ids: input.customerIds,
+      event_type: input.eventType,
+    };
+    if (input.timestamp !== undefined) {
+      body.timestamp = input.timestamp;
+    }
+    if (input.properties !== undefined) {
+      body.properties = input.properties;
+    }
+    const response = await bloomreachApiFetch(config, path, { body });
+    return { success: true, response };
+  }
+
+  async trackBatchCommands(input: BatchCommandInput): Promise<BatchCommandResult> {
+    validateProject(input.project);
+    validateBatchCommands(input.commands);
+
+    const config = requireApiConfig(this.apiConfig, 'trackBatchCommands');
+    const path = buildTrackingPath(config, '/batch');
+    const response = await bloomreachApiFetch(config, path, {
+      body: { commands: input.commands },
+    });
+    return { success: true, response };
+  }
+
+  async exportCustomerEvents(
+    input: ExportCustomerEventsInput,
+  ): Promise<ExportCustomerEventsResult> {
+    validateProject(input.project);
+    validateCustomerIds(input.customerIds);
+
+    const config = requireApiConfig(this.apiConfig, 'exportCustomerEvents');
+    const path = buildDataPath(config, '/customers/events');
+    const body: Record<string, unknown> = {
+      customer_ids: input.customerIds,
+    };
+    if (input.eventTypes !== undefined && input.eventTypes.length > 0) {
+      body.event_types = input.eventTypes;
+    }
+    const response = await bloomreachApiFetch(config, path, { body });
+    const events = Array.isArray(response) ? response : [];
+    return { success: true, events };
+  }
+
+  async exportSingleCustomer(
+    input: ExportSingleCustomerInput,
+  ): Promise<ExportSingleCustomerResult> {
+    validateProject(input.project);
+    validateCustomerIds(input.customerIds);
+
+    const config = requireApiConfig(this.apiConfig, 'exportSingleCustomer');
+    const path = buildDataPath(config, '/customers/export-one');
+    const body: Record<string, unknown> = {
+      customer_ids: input.customerIds,
+    };
+    if (input.attributes !== undefined && input.attributes.length > 0) {
+      body.attributes = input.attributes;
+    }
+    const response = await bloomreachApiFetch(config, path, { body });
+    return { success: true, customer: response };
   }
 }

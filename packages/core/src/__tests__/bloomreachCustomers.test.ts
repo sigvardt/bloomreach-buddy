@@ -4,6 +4,8 @@ import {
   CREATE_CUSTOMER_ACTION_TYPE,
   UPDATE_CUSTOMER_ACTION_TYPE,
   DELETE_CUSTOMER_ACTION_TYPE,
+  TRACK_EVENT_ACTION_TYPE,
+  BATCH_COMMANDS_ACTION_TYPE,
   CUSTOMER_RATE_LIMIT_WINDOW_MS,
   CUSTOMER_CREATE_RATE_LIMIT,
   CUSTOMER_UPDATE_RATE_LIMIT,
@@ -15,6 +17,8 @@ import {
   validateListOffset,
   validateIdType,
   validateProperties,
+  validateEventType,
+  validateBatchCommands,
   buildCustomersUrl,
   createCustomerActionExecutors,
   BloomreachCustomersService,
@@ -231,9 +235,9 @@ describe('buildCustomersUrl', () => {
 });
 
 describe('createCustomerActionExecutors', () => {
-  it('returns executors for all 3 action types', () => {
+  it('returns executors for all 5 action types', () => {
     const executors = createCustomerActionExecutors();
-    expect(Object.keys(executors)).toHaveLength(3);
+    expect(Object.keys(executors)).toHaveLength(5);
     expect(executors[CREATE_CUSTOMER_ACTION_TYPE]).toBeDefined();
     expect(executors[UPDATE_CUSTOMER_ACTION_TYPE]).toBeDefined();
     expect(executors[DELETE_CUSTOMER_ACTION_TYPE]).toBeDefined();
@@ -654,6 +658,259 @@ describe('BloomreachCustomersService', () => {
           customerId: 'cust-3',
         }),
       ).toThrow('must not be empty');
+    });
+  });
+});
+
+describe('new action type constants', () => {
+  it('exports TRACK_EVENT_ACTION_TYPE', () => {
+    expect(TRACK_EVENT_ACTION_TYPE).toBe('customers.track_event');
+  });
+
+  it('exports BATCH_COMMANDS_ACTION_TYPE', () => {
+    expect(BATCH_COMMANDS_ACTION_TYPE).toBe('customers.batch_commands');
+  });
+});
+
+describe('validateEventType', () => {
+  it('returns trimmed event type', () => {
+    expect(validateEventType('  purchase  ')).toBe('purchase');
+  });
+
+  it('throws for empty string', () => {
+    expect(() => validateEventType('')).toThrow('Event type must not be empty');
+  });
+
+  it('throws for whitespace-only', () => {
+    expect(() => validateEventType('   ')).toThrow('Event type must not be empty');
+  });
+
+  it('throws for exceeding 256 characters', () => {
+    expect(() => validateEventType('x'.repeat(257))).toThrow('must not exceed 256 characters');
+  });
+});
+
+describe('validateBatchCommands', () => {
+  it('returns valid commands', () => {
+    const cmds = [{ name: 'customers/events', data: { foo: 1 } }];
+    expect(validateBatchCommands(cmds)).toEqual(cmds);
+  });
+
+  it('throws for empty array', () => {
+    expect(() => validateBatchCommands([])).toThrow('At least one batch command');
+  });
+
+  it('throws for exceeding 50 commands', () => {
+    const cmds = Array.from({ length: 51 }, (_, i) => ({ name: `cmd-${i}`, data: { i } }));
+    expect(() => validateBatchCommands(cmds)).toThrow('must not exceed 50');
+  });
+
+  it('throws for command with empty name', () => {
+    expect(() => validateBatchCommands([{ name: '', data: { a: 1 } }])).toThrow('non-empty name');
+  });
+
+  it('throws for command with null data', () => {
+    expect(() =>
+      validateBatchCommands([{ name: 'test', data: null as unknown as Record<string, unknown> }]),
+    ).toThrow('non-null data object');
+  });
+});
+
+describe('createCustomerActionExecutors - new executors', () => {
+  it('returns executors for new action types', () => {
+    const executors = createCustomerActionExecutors();
+    expect(executors[TRACK_EVENT_ACTION_TYPE]).toBeDefined();
+    expect(executors[BATCH_COMMANDS_ACTION_TYPE]).toBeDefined();
+  });
+
+  it('new executors require API credentials', async () => {
+    const executors = createCustomerActionExecutors();
+    await expect(executors[TRACK_EVENT_ACTION_TYPE].execute({})).rejects.toThrow('requires API credentials');
+    await expect(executors[BATCH_COMMANDS_ACTION_TYPE].execute({})).rejects.toThrow('requires API credentials');
+  });
+
+  it('TrackEventExecutor calls tracking API', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    const executors = createCustomerActionExecutors(TEST_API_CONFIG);
+    await executors[TRACK_EVENT_ACTION_TYPE].execute({
+      customerIds: { registered: 'cust-1' },
+      eventType: 'purchase',
+      properties: { total: 99 },
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const url = fetchSpy.mock.calls[0][0] as string;
+    expect(url).toContain('/track/v2/projects/');
+    expect(url).toContain('/customers/events');
+  });
+
+  it('BatchCommandsExecutor calls batch API', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    const executors = createCustomerActionExecutors(TEST_API_CONFIG);
+    await executors[BATCH_COMMANDS_ACTION_TYPE].execute({
+      commands: [{ name: 'customers/events', data: { event_type: 'test' } }],
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const url = fetchSpy.mock.calls[0][0] as string;
+    expect(url).toContain('/track/v2/projects/');
+    expect(url).toContain('/batch');
+  });
+});
+
+describe('BloomreachCustomersService - new methods', () => {
+  describe('trackEvent', () => {
+    it('throws API credential error when no apiConfig', async () => {
+      const service = new BloomreachCustomersService('test');
+      await expect(
+        service.trackEvent({
+          project: 'test',
+          customerIds: { registered: 'cust-1' },
+          eventType: 'purchase',
+        }),
+      ).rejects.toThrow('requires API credentials');
+    });
+
+    it('calls tracking API with valid input', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+      const service = new BloomreachCustomersService('test', TEST_API_CONFIG);
+      const result = await service.trackEvent({
+        project: 'test',
+        customerIds: { registered: 'cust-1' },
+        eventType: 'purchase',
+        timestamp: 1620139769,
+        properties: { total_price: 99.99 },
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('validates eventType', async () => {
+      const service = new BloomreachCustomersService('test', TEST_API_CONFIG);
+      await expect(
+        service.trackEvent({
+          project: 'test',
+          customerIds: { registered: 'cust-1' },
+          eventType: '',
+        }),
+      ).rejects.toThrow('Event type must not be empty');
+    });
+
+    it('validates customerIds', async () => {
+      const service = new BloomreachCustomersService('test', TEST_API_CONFIG);
+      await expect(
+        service.trackEvent({
+          project: 'test',
+          customerIds: {},
+          eventType: 'purchase',
+        }),
+      ).rejects.toThrow('At least one customer identifier');
+    });
+  });
+
+  describe('trackBatchCommands', () => {
+    it('throws API credential error when no apiConfig', async () => {
+      const service = new BloomreachCustomersService('test');
+      await expect(
+        service.trackBatchCommands({
+          project: 'test',
+          commands: [{ name: 'customers/events', data: { event_type: 'test' } }],
+        }),
+      ).rejects.toThrow('requires API credentials');
+    });
+
+    it('calls batch API with valid input', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+      const service = new BloomreachCustomersService('test', TEST_API_CONFIG);
+      const result = await service.trackBatchCommands({
+        project: 'test',
+        commands: [{ name: 'customers/events', data: { event_type: 'test' } }],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('validates commands', async () => {
+      const service = new BloomreachCustomersService('test', TEST_API_CONFIG);
+      await expect(
+        service.trackBatchCommands({
+          project: 'test',
+          commands: [],
+        }),
+      ).rejects.toThrow('At least one batch command');
+    });
+  });
+
+  describe('exportCustomerEvents', () => {
+    it('throws API credential error when no apiConfig', async () => {
+      const service = new BloomreachCustomersService('test');
+      await expect(
+        service.exportCustomerEvents({
+          project: 'test',
+          customerIds: { registered: 'cust-1' },
+        }),
+      ).rejects.toThrow('requires API credentials');
+    });
+
+    it('returns events from API', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify([{ type: 'purchase', timestamp: 123 }]), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+      const service = new BloomreachCustomersService('test', TEST_API_CONFIG);
+      const result = await service.exportCustomerEvents({
+        project: 'test',
+        customerIds: { registered: 'cust-1' },
+        eventTypes: ['purchase'],
+      });
+      expect(result.success).toBe(true);
+      expect(result.events).toHaveLength(1);
+    });
+  });
+
+  describe('exportSingleCustomer', () => {
+    it('throws API credential error when no apiConfig', async () => {
+      const service = new BloomreachCustomersService('test');
+      await expect(
+        service.exportSingleCustomer({
+          project: 'test',
+          customerIds: { registered: 'cust-1' },
+        }),
+      ).rejects.toThrow('requires API credentials');
+    });
+
+    it('returns customer data from API', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify({ properties: { tier: 'gold' } }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+      const service = new BloomreachCustomersService('test', TEST_API_CONFIG);
+      const result = await service.exportSingleCustomer({
+        project: 'test',
+        customerIds: { registered: 'cust-1' },
+      });
+      expect(result.success).toBe(true);
+      expect(result.customer).toBeDefined();
     });
   });
 });

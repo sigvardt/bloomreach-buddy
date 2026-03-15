@@ -5,6 +5,9 @@ import {
   bloomreachApiFetch,
   buildTrackingPath,
   buildDataPath,
+  buildEmailPath,
+  buildSmsPath,
+  buildWebxpPath,
   BloomreachApiError,
   BloomreachBuddyError,
   _internal,
@@ -1190,6 +1193,43 @@ describe('buildTrackingPath and buildDataPath', () => {
     );
     expect(buildDataPath(config, '/customers/export')).toBe(
       '/data/v2/projects/proj%2Fwith%20space/customers/export',
+    );
+  });
+});
+
+describe('buildEmailPath', () => {
+  it('builds correct email API path', () => {
+    expect(buildEmailPath(TEST_CONFIG, '/sync')).toBe(
+      '/email/v2/projects/project-1/sync',
+    );
+  });
+
+  it('encodes special characters in project token', () => {
+    const config = { ...TEST_CONFIG, projectToken: 'my project/token' };
+    expect(buildEmailPath(config, '/sync')).toBe(
+      '/email/v2/projects/my%20project%2Ftoken/sync',
+    );
+  });
+});
+
+describe('buildSmsPath', () => {
+  it('builds correct SMS API path', () => {
+    expect(buildSmsPath(TEST_CONFIG, '/sync')).toBe(
+      '/sms/v1/projects/project-1/sync',
+    );
+  });
+});
+
+describe('buildWebxpPath', () => {
+  it('builds correct webxp API path', () => {
+    expect(buildWebxpPath('/bandits/best-variant')).toBe(
+      '/webxp/bandits/best-variant',
+    );
+  });
+
+  it('builds reward path', () => {
+    expect(buildWebxpPath('/bandits/reward')).toBe(
+      '/webxp/bandits/reward',
     );
   });
 });
