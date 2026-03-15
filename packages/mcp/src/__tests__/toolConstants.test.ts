@@ -3,7 +3,7 @@ import { BLOOMREACH_MCP_TOOL_NAMES } from '../index.js';
 
 describe('tool constants', () => {
   it('exports 245 tool name constants via BLOOMREACH_MCP_TOOL_NAMES', () => {
-    expect(BLOOMREACH_MCP_TOOL_NAMES).toHaveLength(245);
+    expect(BLOOMREACH_MCP_TOOL_NAMES).toHaveLength(250);
   });
 
   it('all tool names follow bloomreach.<domain>.<action> dot-notation', () => {
@@ -73,6 +73,7 @@ describe('tool constants', () => {
       'trends',
       'use_cases',
       'vouchers',
+      'tracking',
       'weblayers',
     ];
 

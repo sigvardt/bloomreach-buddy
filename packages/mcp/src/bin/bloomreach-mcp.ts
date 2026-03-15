@@ -5546,6 +5546,183 @@ const tools: ToolRoute[] = [
     serviceClass: 'BloomreachAccessManagementService',
     methodName: 'prepareDeleteApiKey',
   },
+  // --- Tracking tools (issue #177) ---
+  {
+    name: toolNames.BLOOMREACH_TRACKING_TRACK_EVENT_TOOL,
+    description:
+      'Track a customer event (purchase, page_view, session_start, etc.) via the Bloomreach Tracking API. Use when you need to record customer activity. Requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        customerIds: {
+          type: 'object',
+          description:
+            'Customer identifier map (e.g. { registered: "user@example.com" }). At least one ID required.',
+        },
+        eventType: {
+          type: 'string',
+          description:
+            'Event type name (e.g. "purchase", "page_visit", "session_start", "cart_update").',
+        },
+        timestamp: {
+          type: 'number',
+          description: 'Unix epoch seconds for the event. Defaults to current server time.',
+        },
+        properties: {
+          type: 'object',
+          description: 'Arbitrary event properties (e.g. price, product_id, url).',
+        },
+      },
+      required: ['project', 'customerIds', 'eventType'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachTrackingService',
+    methodName: 'prepareTrackEvent',
+  },
+  {
+    name: toolNames.BLOOMREACH_TRACKING_TRACK_BATCH_TOOL,
+    description:
+      'Track multiple events or customer updates in a single batch request via the Bloomreach Tracking API. Use for bulk operations. Requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        commands: {
+          type: 'array',
+          description:
+            'Array of batch commands. Each command has: name ("customers" or "customers/events"), optional commandId, and data object.',
+        },
+      },
+      required: ['project', 'commands'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachTrackingService',
+    methodName: 'prepareTrackBatch',
+  },
+  {
+    name: toolNames.BLOOMREACH_TRACKING_TRACK_CUSTOMER_TOOL,
+    description:
+      'Update customer properties via the Bloomreach Tracking API. Use when you need to set or update customer attributes. Requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        customerIds: {
+          type: 'object',
+          description:
+            'Customer identifier map (e.g. { registered: "user@example.com" }). At least one ID required.',
+        },
+        properties: {
+          type: 'object',
+          description: 'Customer properties to set or update.',
+        },
+        updateTimestamp: {
+          type: 'number',
+          description: 'Unix epoch seconds for the update. Defaults to current server time.',
+        },
+      },
+      required: ['project', 'customerIds', 'properties'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachTrackingService',
+    methodName: 'prepareTrackCustomer',
+  },
+  {
+    name: toolNames.BLOOMREACH_TRACKING_TRACK_CONSENT_TOOL,
+    description:
+      'Track a consent change event via the Bloomreach Tracking API. Use when recording customer consent acceptance or rejection. Requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        customerIds: {
+          type: 'object',
+          description:
+            'Customer identifier map (e.g. { registered: "user@example.com" }). At least one ID required.',
+        },
+        category: {
+          type: 'string',
+          description: 'Consent category (e.g. "email", "sms", "push", "tracking").',
+        },
+        action: {
+          type: 'string',
+          description: 'Consent action: "accept" or "reject".',
+        },
+        timestamp: {
+          type: 'number',
+          description: 'Unix epoch seconds for the consent event. Defaults to current server time.',
+        },
+        properties: {
+          type: 'object',
+          description: 'Additional consent properties.',
+        },
+      },
+      required: ['project', 'customerIds', 'category', 'action'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachTrackingService',
+    methodName: 'prepareTrackConsent',
+  },
+  {
+    name: toolNames.BLOOMREACH_TRACKING_TRACK_CAMPAIGN_TOOL,
+    description:
+      'Track a campaign interaction event (banner click, email open, push tap, etc.) via the Bloomreach Tracking API. Requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, BLOOMREACH_API_SECRET.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project: {
+          type: 'string',
+          description:
+            'Bloomreach project identifier. Defaults to BLOOMREACH_PROJECT when omitted.',
+        },
+        customerIds: {
+          type: 'object',
+          description:
+            'Customer identifier map (e.g. { registered: "user@example.com" }). At least one ID required.',
+        },
+        campaignType: {
+          type: 'string',
+          description:
+            'Campaign type (e.g. "email", "push", "sms", "in_app", "web_push", "banner").',
+        },
+        action: {
+          type: 'string',
+          description:
+            'Campaign interaction action (e.g. "click", "open", "dismiss", "convert").',
+        },
+        timestamp: {
+          type: 'number',
+          description: 'Unix epoch seconds for the event. Defaults to current server time.',
+        },
+        properties: {
+          type: 'object',
+          description:
+            'Additional campaign properties (e.g. campaign_id, variant, url).',
+        },
+      },
+      required: ['project', 'customerIds', 'campaignType', 'action'],
+      additionalProperties: true,
+    },
+    serviceClass: 'BloomreachTrackingService',
+    methodName: 'prepareTrackCampaign',
+  },
 ];
 
 const toolByName = new Map<string, ToolRoute>(tools.map((tool) => [tool.name, tool]));
