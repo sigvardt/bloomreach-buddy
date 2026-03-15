@@ -20,7 +20,11 @@ export type BloomreachErrorCode =
   | 'TIMEOUT'
   | 'RATE_LIMITED'
   | 'API_ERROR'
-  | 'NETWORK_ERROR';
+  | 'NETWORK_ERROR'
+  | 'AUTH_REQUIRED'
+  | 'CAPTCHA_OR_CHALLENGE'
+  | 'SESSION_EXPIRED'
+  | 'PROFILE_LOCKED';
 
 /**
  * Base error class for all Bloomreach Buddy errors.

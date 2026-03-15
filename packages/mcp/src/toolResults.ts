@@ -41,6 +41,14 @@ export function buildRecoveryHint(error: unknown): string {
       return 'Bloomreach API returned an error response. Check input parameters and project permissions, then retry.';
     case 'NETWORK_ERROR':
       return 'A network error occurred. Verify connectivity to Bloomreach API endpoints and retry.';
+    case 'AUTH_REQUIRED':
+      return 'Browser session is not authenticated. Run "bloomreach login" to open a browser and log in manually.';
+    case 'CAPTCHA_OR_CHALLENGE':
+      return 'A CAPTCHA or security challenge was detected. Run "bloomreach login" in headed mode to solve it manually.';
+    case 'SESSION_EXPIRED':
+      return 'The stored browser session has expired. Run "bloomreach login" to re-authenticate.';
+    case 'PROFILE_LOCKED':
+      return 'The browser profile is locked by another process. Close other instances and retry.';
     default:
       return 'The operation failed. Check the error details and retry with corrected input.';
   }

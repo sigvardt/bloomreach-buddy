@@ -98,6 +98,32 @@ const tools: ToolRoute[] = [
     inputSchema: createInputSchema(false),
   },
   {
+    name: toolNames.BLOOMREACH_SESSION_OPEN_LOGIN_TOOL,
+    description:
+      'Open a headed browser window for manual Bloomreach authentication. ' +
+      'The user must complete login (including any CAPTCHA challenges) in the visible browser window. ' +
+      'Session cookies are captured and encrypted for future headless use. ' +
+      'Returns authentication status with a timedOut flag indicating if login completed within the timeout period.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        profile: {
+          type: 'string',
+          description: 'Browser profile name (default: "default")',
+        },
+        timeoutMs: {
+          type: 'number',
+          description: 'Login timeout in milliseconds (default: 300000 — 5 minutes)',
+        },
+        loginUrl: {
+          type: 'string',
+          description: 'Override the login URL (default: https://eu.login.bloomreach.com/)',
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
     name: toolNames.BLOOMREACH_DASHBOARDS_LIST_TOOL,
     description:
       'List all dashboards in the project. Use when you need this data from Bloomreach project workflows. Returns { error: string }; currently returns an error - requires browser automation (not yet implemented).',
@@ -6010,14 +6036,44 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const args = isPlainObject(request.params.arguments) ? request.params.arguments : {};
 
   try {
-if (name === toolNames.BLOOMREACH_STATUS_TOOL) {
-  const client = new core.BloomreachClient({
-    environment: process.env.BLOOMREACH_ENVIRONMENT ?? 'not-configured',
-    apiToken: process.env.BLOOMREACH_API_TOKEN ?? '',
-    apiConfig,
-  });
-  return toToolResult(await client.status());
-}
+    if (name === toolNames.BLOOMREACH_STATUS_TOOL) {
+      const client = new core.BloomreachClient({
+        environment: process.env.BLOOMREACH_ENVIRONMENT ?? 'not-configured',
+        apiToken: process.env.BLOOMREACH_API_TOKEN ?? '',
+        apiConfig,
+      });
+      const apiStatus = await client.status();
+
+      // Also check browser session status
+      let browserSession: core.BloomreachSessionStatus | undefined;
+      try {
+        const profilesDir = core.resolveProfilesDir();
+        const profileManager = new core.BloomreachProfileManager({ profilesDir });
+        const authService = new core.BloomreachAuthService(profileManager, { profilesDir });
+        const profileName = typeof args.profile === 'string' ? args.profile : 'default';
+        browserSession = await authService.status({ profileName });
+      } catch {
+        // Browser session check is best-effort — don't fail the status tool
+      }
+
+      return toToolResult({
+        ...apiStatus,
+        browserSession:
+          browserSession ?? { authenticated: false, reason: 'Could not check browser session.' },
+      });
+    }
+
+    if (name === toolNames.BLOOMREACH_SESSION_OPEN_LOGIN_TOOL) {
+      const profilesDir = core.resolveProfilesDir();
+      const profileManager = new core.BloomreachProfileManager({ profilesDir });
+      const authService = new core.BloomreachAuthService(profileManager, { profilesDir });
+      const result = await authService.openLogin({
+        profileName: typeof args.profile === 'string' ? args.profile : undefined,
+        timeoutMs: typeof args.timeoutMs === 'number' ? args.timeoutMs : undefined,
+        loginUrl: typeof args.loginUrl === 'string' ? args.loginUrl : undefined,
+      });
+      return toToolResult(result);
+    }
 
     const route = toolByName.get(name);
     if (!route || !route.serviceClass || !route.methodName) {
