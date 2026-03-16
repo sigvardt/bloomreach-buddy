@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const DEPLOY_USE_CASE_ACTION_TYPE = 'use_cases.deploy';
@@ -91,6 +91,7 @@ export interface PreparedUseCaseAction {
 }
 
 export function validateUseCaseId(id: string): string {
+  requireString(id, 'useCaseId');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Use case ID must not be empty.');
@@ -99,6 +100,7 @@ export function validateUseCaseId(id: string): string {
 }
 
 export function validateUseCaseSearchQuery(query: string): string {
+  requireString(query, 'search query');
   const trimmed = query.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Search query must not be empty.');
@@ -107,6 +109,7 @@ export function validateUseCaseSearchQuery(query: string): string {
 }
 
 export function validateGoalCategory(category: string): UseCaseGoalCategory {
+  requireString(category, 'category');
   if (!USE_CASE_GOAL_CATEGORIES.includes(category as UseCaseGoalCategory)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `category must be one of: ${USE_CASE_GOAL_CATEGORIES.join(', ')} (got "${category}").`);
   }
@@ -114,6 +117,7 @@ export function validateGoalCategory(category: string): UseCaseGoalCategory {
 }
 
 export function validateUseCaseTag(tag: string): UseCaseTag {
+  requireString(tag, 'tag');
   if (!USE_CASE_TAGS.includes(tag as UseCaseTag)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `tag must be one of: ${USE_CASE_TAGS.join(', ')} (got "${tag}").`);
   }

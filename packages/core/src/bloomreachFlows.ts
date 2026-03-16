@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireArray, requireString } from './errors.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
@@ -106,6 +106,7 @@ const MIN_JOURNEY_DEPTH = 1;
 const MAX_JOURNEY_DEPTH = 20;
 
 export function validateFlowName(name: string): string {
+  requireString(name, 'Flow name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_FLOW_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Flow name must not be empty.');
@@ -117,6 +118,7 @@ export function validateFlowName(name: string): string {
 }
 
 export function validateFlowAnalysisId(id: string): string {
+  requireString(id, 'Flow analysis ID');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Flow analysis ID must not be empty.');
@@ -125,6 +127,7 @@ export function validateFlowAnalysisId(id: string): string {
 }
 
 export function validateStartingEvent(eventName: string): string {
+  requireString(eventName, 'Starting event');
   const trimmed = eventName.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Starting event must not be empty.');
@@ -133,6 +136,7 @@ export function validateStartingEvent(eventName: string): string {
 }
 
 export function validateFlowEvents(events: FlowEvent[]): FlowEvent[] {
+  requireArray(events, 'events');
   if (events.length < 1) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'events must contain at least one event to track.');
   }

@@ -1283,3 +1283,93 @@ describe('BloomreachRetentionsService', () => {
     });
   });
 });
+
+describe('null/undefined input guards', () => {
+  it('throws when prepareCreateRetentionAnalysis is called without name', () => {
+    const service = new BloomreachRetentionsService('test');
+    expect(() =>
+      service.prepareCreateRetentionAnalysis({
+        project: 'test',
+        name: undefined as unknown as string,
+        cohortEvent: 'sign_up',
+        returnEvent: 'purchase',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCreateRetentionAnalysis is called without cohortEvent', () => {
+    const service = new BloomreachRetentionsService('test');
+    expect(() =>
+      service.prepareCreateRetentionAnalysis({
+        project: 'test',
+        name: 'Retention Cohort',
+        cohortEvent: undefined as unknown as string,
+        returnEvent: 'purchase',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCreateRetentionAnalysis is called without returnEvent', () => {
+    const service = new BloomreachRetentionsService('test');
+    expect(() =>
+      service.prepareCreateRetentionAnalysis({
+        project: 'test',
+        name: 'Retention Cohort',
+        cohortEvent: 'sign_up',
+        returnEvent: undefined as unknown as string,
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCreateRetentionAnalysis is called without project', () => {
+    const service = new BloomreachRetentionsService('test');
+    expect(() =>
+      service.prepareCreateRetentionAnalysis({
+        project: undefined as unknown as string,
+        name: 'Retention Cohort',
+        cohortEvent: 'sign_up',
+        returnEvent: 'purchase',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCloneRetentionAnalysis is called without analysisId', () => {
+    const service = new BloomreachRetentionsService('test');
+    expect(() =>
+      service.prepareCloneRetentionAnalysis({
+        project: 'test',
+        analysisId: undefined as unknown as string,
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCloneRetentionAnalysis is called without project', () => {
+    const service = new BloomreachRetentionsService('test');
+    expect(() =>
+      service.prepareCloneRetentionAnalysis({
+        project: undefined as unknown as string,
+        analysisId: 'retention-123',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareArchiveRetentionAnalysis is called without analysisId', () => {
+    const service = new BloomreachRetentionsService('test');
+    expect(() =>
+      service.prepareArchiveRetentionAnalysis({
+        project: 'test',
+        analysisId: undefined as unknown as string,
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareArchiveRetentionAnalysis is called without project', () => {
+    const service = new BloomreachRetentionsService('test');
+    expect(() =>
+      service.prepareArchiveRetentionAnalysis({
+        project: undefined as unknown as string,
+        analysisId: 'retention-123',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+});

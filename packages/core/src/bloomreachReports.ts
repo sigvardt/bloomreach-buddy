@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireArray, requireString } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import { bloomreachApiFetch, buildDataPath } from './bloomreachApiClient.js';
 
@@ -140,6 +140,7 @@ const MIN_REPORT_LIMIT = 1;
 
 /** @throws {Error} If name is empty or exceeds 200 characters. */
 export function validateReportName(name: string): string {
+  requireString(name, 'report name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_REPORT_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Report name must not be empty.');
@@ -152,6 +153,7 @@ export function validateReportName(name: string): string {
 
 /** @throws {Error} If report ID is empty. */
 export function validateReportId(id: string): string {
+  requireString(id, 'reportId');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Report ID must not be empty.');
@@ -161,6 +163,7 @@ export function validateReportId(id: string): string {
 
 /** @throws {Error} If metrics array is empty. */
 export function validateMetrics(metrics: string[]): string[] {
+  requireArray(metrics, 'metrics');
   if (metrics.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one metric is required.');
   }
@@ -174,6 +177,7 @@ export function validateMetrics(metrics: string[]): string[] {
 }
 
 export function validateReportExportFormat(format: string): ReportExportFormat {
+  requireString(format, 'format');
   if (!REPORT_EXPORT_FORMATS.includes(format as ReportExportFormat)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Export format must be one of: ${REPORT_EXPORT_FORMATS.join(', ')} (got "${format}").`);
   }
@@ -182,6 +186,7 @@ export function validateReportExportFormat(format: string): ReportExportFormat {
 
 /** @throws {Error} If sort order is not asc or desc. */
 export function validateSortOrder(order: string): ReportSortOrder {
+  requireString(order, 'order');
   if (!REPORT_SORT_ORDERS.includes(order as ReportSortOrder)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Sort order must be one of: ${REPORT_SORT_ORDERS.join(', ')} (got "${order}").`);
   }

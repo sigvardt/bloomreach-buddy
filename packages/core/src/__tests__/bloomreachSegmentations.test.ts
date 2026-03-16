@@ -1594,3 +1594,92 @@ describe('BloomreachSegmentationsService', () => {
     });
   });
 });
+
+describe('null/undefined input guards', () => {
+  it('throws when prepareCreateSegmentation is called without name', () => {
+    const service = new BloomreachSegmentationsService('test');
+    expect(() =>
+      service.prepareCreateSegmentation({
+        project: 'test',
+        name: undefined as unknown as string,
+        conditions: [
+          {
+            type: 'customer_attribute',
+            attribute: 'country',
+            operator: 'equals',
+            value: 'DK',
+          },
+        ],
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCreateSegmentation is called without conditions', () => {
+    const service = new BloomreachSegmentationsService('test');
+    expect(() =>
+      service.prepareCreateSegmentation({
+        project: 'test',
+        name: 'VIP Segment',
+        conditions: undefined as unknown as SegmentCondition[],
+      }),
+    ).toThrow('is required and must be an array');
+  });
+
+  it('throws when prepareCreateSegmentation is called without project', () => {
+    const service = new BloomreachSegmentationsService('test');
+    expect(() =>
+      service.prepareCreateSegmentation({
+        project: undefined as unknown as string,
+        name: 'VIP Segment',
+        conditions: [
+          {
+            type: 'customer_attribute',
+            attribute: 'country',
+            operator: 'equals',
+            value: 'DK',
+          },
+        ],
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCloneSegmentation is called without segmentationId', () => {
+    const service = new BloomreachSegmentationsService('test');
+    expect(() =>
+      service.prepareCloneSegmentation({
+        project: 'test',
+        segmentationId: undefined as unknown as string,
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCloneSegmentation is called without project', () => {
+    const service = new BloomreachSegmentationsService('test');
+    expect(() =>
+      service.prepareCloneSegmentation({
+        project: undefined as unknown as string,
+        segmentationId: 'seg-123',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareArchiveSegmentation is called without segmentationId', () => {
+    const service = new BloomreachSegmentationsService('test');
+    expect(() =>
+      service.prepareArchiveSegmentation({
+        project: 'test',
+        segmentationId: undefined as unknown as string,
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareArchiveSegmentation is called without project', () => {
+    const service = new BloomreachSegmentationsService('test');
+    expect(() =>
+      service.prepareArchiveSegmentation({
+        project: undefined as unknown as string,
+        segmentationId: 'seg-123',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+});

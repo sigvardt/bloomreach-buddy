@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireArray, requireString } from './errors.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
@@ -129,6 +129,7 @@ const MAX_SEGMENTATION_NAME_LENGTH = 200;
 const MIN_SEGMENTATION_NAME_LENGTH = 1;
 
 export function validateSegmentationName(name: string): string {
+  requireString(name, 'Segmentation name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_SEGMENTATION_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Segmentation name must not be empty.');
@@ -140,6 +141,7 @@ export function validateSegmentationName(name: string): string {
 }
 
 export function validateSegmentationId(id: string): string {
+  requireString(id, 'Segmentation ID');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Segmentation ID must not be empty.');
@@ -148,6 +150,7 @@ export function validateSegmentationId(id: string): string {
 }
 
 export function validateSegmentConditionType(type: string): SegmentConditionType {
+  requireString(type, 'condition type');
   if (!(SEGMENT_CONDITION_TYPES as readonly string[]).includes(type)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Invalid condition type "${type}". Must be one of: ${SEGMENT_CONDITION_TYPES.join(', ')}.`);
   }
@@ -155,6 +158,7 @@ export function validateSegmentConditionType(type: string): SegmentConditionType
 }
 
 export function validateSegmentConditionOperator(operator: string): SegmentConditionOperator {
+  requireString(operator, 'condition operator');
   if (!(SEGMENT_CONDITION_OPERATORS as readonly string[]).includes(operator)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Invalid condition operator "${operator}". Must be one of: ${SEGMENT_CONDITION_OPERATORS.join(', ')}.`);
   }
@@ -162,6 +166,7 @@ export function validateSegmentConditionOperator(operator: string): SegmentCondi
 }
 
 export function validateLogicalOperator(operator: string): SegmentLogicalOperator {
+  requireString(operator, 'logical operator');
   if (!(SEGMENT_LOGICAL_OPERATORS as readonly string[]).includes(operator)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Invalid logical operator "${operator}". Must be one of: ${SEGMENT_LOGICAL_OPERATORS.join(', ')}.`);
   }
@@ -169,6 +174,7 @@ export function validateLogicalOperator(operator: string): SegmentLogicalOperato
 }
 
 export function validateSegmentConditions(conditions: SegmentCondition[]): SegmentCondition[] {
+  requireArray(conditions, 'conditions');
   if (conditions.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'conditions must contain at least one segment condition.');
   }

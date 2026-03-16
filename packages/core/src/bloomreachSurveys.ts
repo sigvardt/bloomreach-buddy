@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireArray, requireString } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const CREATE_SURVEY_ACTION_TYPE = 'surveys.create_survey';
@@ -113,6 +113,7 @@ const MIN_QUESTION_TEXT_LENGTH = 1;
 const MAX_QUESTION_OPTIONS = 20;
 
 export function validateSurveyName(name: string): string {
+  requireString(name, 'survey name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_SURVEY_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Survey name must not be empty.');
@@ -124,6 +125,7 @@ export function validateSurveyName(name: string): string {
 }
 
 export function validateSurveyStatus(status: string): SurveyStatus {
+  requireString(status, 'status');
   if (!SURVEY_STATUSES.includes(status as SurveyStatus)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `status must be one of: ${SURVEY_STATUSES.join(', ')} (got "${status}").`);
   }
@@ -131,6 +133,7 @@ export function validateSurveyStatus(status: string): SurveyStatus {
 }
 
 export function validateSurveyId(id: string): string {
+  requireString(id, 'surveyId');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Survey ID must not be empty.');
@@ -139,6 +142,7 @@ export function validateSurveyId(id: string): string {
 }
 
 export function validateQuestionType(type: string): SurveyQuestionType {
+  requireString(type, 'question type');
   if (!SURVEY_QUESTION_TYPES.includes(type as SurveyQuestionType)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `question type must be one of: ${SURVEY_QUESTION_TYPES.join(', ')} (got "${type}").`);
   }
@@ -146,6 +150,7 @@ export function validateQuestionType(type: string): SurveyQuestionType {
 }
 
 export function validateQuestionText(text: string): string {
+  requireString(text, 'question text');
   const trimmed = text.trim();
   if (trimmed.length < MIN_QUESTION_TEXT_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Question text must not be empty.');
@@ -157,6 +162,7 @@ export function validateQuestionText(text: string): string {
 }
 
 export function validateQuestions(questions: SurveyQuestion[]): SurveyQuestion[] {
+  requireArray(questions, 'questions');
   if (questions.length < MIN_QUESTIONS) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Survey must include at least ${MIN_QUESTIONS} question.`);
   }

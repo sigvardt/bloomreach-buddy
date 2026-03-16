@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireArray, requireString } from './errors.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
@@ -99,6 +99,7 @@ const MAX_FUNNEL_NAME_LENGTH = 200;
 const MIN_FUNNEL_NAME_LENGTH = 1;
 
 export function validateFunnelName(name: string): string {
+  requireString(name, 'Funnel name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_FUNNEL_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Funnel name must not be empty.');
@@ -110,6 +111,7 @@ export function validateFunnelName(name: string): string {
 }
 
 export function validateFunnelAnalysisId(id: string): string {
+  requireString(id, 'Funnel analysis ID');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Funnel analysis ID must not be empty.');
@@ -118,6 +120,7 @@ export function validateFunnelAnalysisId(id: string): string {
 }
 
 export function validateFunnelSteps(steps: FunnelStep[]): FunnelStep[] {
+  requireArray(steps, 'steps');
   if (steps.length < 2) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'steps must contain at least two funnel steps.');
   }

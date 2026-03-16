@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString } from './errors.js';
 
 // ---------------------------------------------------------------------------
 // Action type constants
@@ -206,6 +206,7 @@ const MIN_CUSTOM_URL_LENGTH = 1;
 
 /** @throws {Error} If name is empty or exceeds 200 characters. */
 export function validateProjectName(name: string): string {
+  requireString(name, 'project name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_PROJECT_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Project name must not be empty.');
@@ -218,6 +219,7 @@ export function validateProjectName(name: string): string {
 
 /** @throws {Error} If tag name is empty or exceeds 100 characters. */
 export function validateCustomTagName(name: string): string {
+  requireString(name, 'tag name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_TAG_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Tag name must not be empty.');
@@ -230,6 +232,7 @@ export function validateCustomTagName(name: string): string {
 
 /** @throws {Error} If tag ID is empty. */
 export function validateCustomTagId(id: string): string {
+  requireString(id, 'tagId');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Tag ID must not be empty.');
@@ -239,6 +242,7 @@ export function validateCustomTagId(id: string): string {
 
 /** @throws {Error} If colour is not a valid hex colour code. */
 export function validateTagColor(color: string): string {
+  requireString(color, 'color');
   const trimmed = color.trim();
   if (!/^#[0-9a-fA-F]{6}$/.test(trimmed)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Tag color must be a valid hex color code (e.g. "#FF5733"), got "${trimmed}".`);
@@ -248,6 +252,7 @@ export function validateTagColor(color: string): string {
 
 /** @throws {Error} If variable name is empty or exceeds 200 characters. */
 export function validateVariableName(name: string): string {
+  requireString(name, 'variable name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_VARIABLE_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Variable name must not be empty.');
@@ -260,6 +265,7 @@ export function validateVariableName(name: string): string {
 
 /** @throws {Error} If variable value exceeds 5000 characters. */
 export function validateVariableValue(value: string): string {
+  requireString(value, 'value');
   if (value.length > MAX_VARIABLE_VALUE_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Variable value must not exceed ${MAX_VARIABLE_VALUE_LENGTH} characters (got ${value.length}).`);
   }
@@ -268,6 +274,7 @@ export function validateVariableValue(value: string): string {
 
 /** @throws {Error} If custom URL is empty or exceeds 500 characters. */
 export function validateCustomUrl(url: string): string {
+  requireString(url, 'customUrl');
   const trimmed = url.trim();
   if (trimmed.length < MIN_CUSTOM_URL_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Custom URL must not be empty.');

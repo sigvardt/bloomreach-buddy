@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString } from './errors.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
@@ -102,6 +102,7 @@ const MAX_RETENTION_NAME_LENGTH = 200;
 const MIN_RETENTION_NAME_LENGTH = 1;
 
 export function validateRetentionName(name: string): string {
+  requireString(name, 'Retention name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_RETENTION_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Retention name must not be empty.');
@@ -115,6 +116,7 @@ export function validateRetentionName(name: string): string {
 export function validateRetentionGranularity(
   granularity: string,
 ): RetentionGranularity {
+  requireString(granularity, 'granularity');
   if (
     !RETENTION_GRANULARITIES.includes(granularity as RetentionGranularity)
   ) {
@@ -124,6 +126,7 @@ export function validateRetentionGranularity(
 }
 
 export function validateRetentionAnalysisId(id: string): string {
+  requireString(id, 'Retention analysis ID');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Retention analysis ID must not be empty.');
@@ -132,6 +135,7 @@ export function validateRetentionAnalysisId(id: string): string {
 }
 
 export function validateEventName(label: string, eventName: string): string {
+  requireString(eventName, label);
   const trimmed = eventName.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${label} must not be empty.`);

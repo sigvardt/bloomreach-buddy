@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString, requireArray, requireObject } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const CREATE_INITIATIVE_ACTION_TYPE = 'initiatives.create_initiative';
@@ -101,6 +101,7 @@ const MAX_INITIATIVE_DESCRIPTION_LENGTH = 2000;
 const MAX_ITEMS_PER_ADD = 100;
 
 export function validateInitiativeName(name: string): string {
+  requireString(name, 'name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_INITIATIVE_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Initiative name must not be empty.');
@@ -112,6 +113,7 @@ export function validateInitiativeName(name: string): string {
 }
 
 export function validateInitiativeDescription(description: string): string {
+  requireString(description, 'description');
   const trimmed = description.trim();
   if (trimmed.length > MAX_INITIATIVE_DESCRIPTION_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Initiative description must not exceed ${MAX_INITIATIVE_DESCRIPTION_LENGTH} characters (got ${trimmed.length}).`);
@@ -120,6 +122,7 @@ export function validateInitiativeDescription(description: string): string {
 }
 
 export function validateInitiativeStatus(status: string): InitiativeStatus {
+  requireString(status, 'status');
   if (!INITIATIVE_STATUSES.includes(status as InitiativeStatus)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `status must be one of: ${INITIATIVE_STATUSES.join(', ')} (got "${status}").`);
   }
@@ -127,6 +130,7 @@ export function validateInitiativeStatus(status: string): InitiativeStatus {
 }
 
 export function validateInitiativeId(id: string): string {
+  requireString(id, 'id');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Initiative ID must not be empty.');
@@ -135,6 +139,7 @@ export function validateInitiativeId(id: string): string {
 }
 
 export function validateInitiativeItemType(type: string): InitiativeItemType {
+  requireString(type, 'type');
   if (!INITIATIVE_ITEM_TYPES.includes(type as InitiativeItemType)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Item type must be one of: ${INITIATIVE_ITEM_TYPES.join(', ')} (got "${type}").`);
   }
@@ -144,6 +149,7 @@ export function validateInitiativeItemType(type: string): InitiativeItemType {
 export function validateInitiativeItems(
   items: InitiativeItemReference[],
 ): InitiativeItemReference[] {
+  requireArray(items, 'items');
   if (items.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Items array must not be empty.');
   }
@@ -151,6 +157,7 @@ export function validateInitiativeItems(
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Cannot add more than ${MAX_ITEMS_PER_ADD} items at once (got ${items.length}).`);
   }
   for (const item of items) {
+    requireString(item.id, 'Item ID');
     if (!item.id || item.id.trim().length === 0) {
       throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Each item must have a non-empty ID.');
     }
@@ -162,6 +169,7 @@ export function validateInitiativeItems(
 export function validateImportConfiguration(
   configuration: Record<string, unknown>,
 ): Record<string, unknown> {
+  requireObject(configuration, 'Import configuration');
   if (Object.keys(configuration).length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Import configuration must not be empty.');
   }

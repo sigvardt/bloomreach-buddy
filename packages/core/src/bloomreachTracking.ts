@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString, requireArray, requireObject } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import { bloomreachApiFetch, buildTrackingPath } from './bloomreachApiClient.js';
 
@@ -94,6 +94,7 @@ export interface BatchResponse {
 const MAX_FIELD_LENGTH = 500;
 
 export function validateTrackingCustomerIds(ids: TrackingCustomerIds): TrackingCustomerIds {
+  requireObject(ids, 'customerIds');
   const hasAtLeastOne = Object.values(ids).some(
     (value) => typeof value === 'string' && value.trim().length > 0,
   );
@@ -120,6 +121,7 @@ export function validateTrackingCustomerIds(ids: TrackingCustomerIds): TrackingC
 }
 
 export function validateEventType(eventType: string): string {
+  requireString(eventType, 'Event type');
   const trimmed = eventType.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Event type must not be empty.');
@@ -131,6 +133,7 @@ export function validateEventType(eventType: string): string {
 }
 
 export function validateBatchCommands(commands: BatchCommand[]): BatchCommand[] {
+  requireArray(commands, 'commands');
   if (!Array.isArray(commands) || commands.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one batch command must be provided.');
   }
@@ -150,6 +153,7 @@ export function validateBatchCommands(commands: BatchCommand[]): BatchCommand[] 
 
     let commandId: string | undefined;
     if (command.commandId !== undefined) {
+      requireString(command.commandId, `commands[${index}].commandId`);
       const trimmedCommandId = command.commandId.trim();
       if (trimmedCommandId.length === 0) {
         throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Batch command at index ${index} has an empty commandId.`);
@@ -169,6 +173,7 @@ export function validateBatchCommands(commands: BatchCommand[]): BatchCommand[] 
 }
 
 export function validateTrackingConsentCategory(category: string): string {
+  requireString(category, 'category');
   const trimmed = category.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Consent category must not be empty.');
@@ -180,6 +185,7 @@ export function validateTrackingConsentCategory(category: string): string {
 }
 
 export function validateConsentAction(action: string): 'accept' | 'reject' {
+  requireString(action, 'action');
   const normalized = action.trim().toLowerCase();
   if (normalized !== 'accept' && normalized !== 'reject') {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Consent action must be 'accept' or 'reject' (got '${action}').`);
@@ -188,6 +194,7 @@ export function validateConsentAction(action: string): 'accept' | 'reject' {
 }
 
 export function validateCampaignType(campaignType: string): string {
+  requireString(campaignType, 'Campaign type');
   const trimmed = campaignType.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Campaign type must not be empty.');
@@ -199,6 +206,7 @@ export function validateCampaignType(campaignType: string): string {
 }
 
 export function validateCampaignAction(action: string): string {
+  requireString(action, 'action');
   const trimmed = action.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Campaign action must not be empty.');

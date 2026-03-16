@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireArray, requireObject, requireString } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 // ---------------------------------------------------------------------------
@@ -124,6 +124,7 @@ const MAX_ATTRIBUTION_WINDOW_DAYS = 365;
 const MAX_MAPPING_FIELD_LENGTH = 200;
 
 export function validateAttributionModel(model: string): string {
+  requireString(model, 'attribution model');
   const trimmed = model.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Attribution model must not be empty.');
@@ -145,6 +146,7 @@ export function validateAttributionWindow(window: number): number {
 }
 
 export function validateCurrencyCode(code: string): string {
+  requireString(code, 'currency code');
   const trimmed = code.trim().toUpperCase();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Currency code must not be empty.');
@@ -159,6 +161,7 @@ export function validateCurrencyCode(code: string): string {
 }
 
 export function validateDashboardId(id: string): string {
+  requireString(id, 'dashboardId');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Dashboard ID must not be empty.');
@@ -167,6 +170,7 @@ export function validateDashboardId(id: string): string {
 }
 
 export function validateMappingField(field: string): string {
+  requireString(field, 'mapping field');
   const trimmed = field.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Mapping field must not be empty.');
@@ -380,7 +384,14 @@ export class BloomreachEvaluationSettingsService {
       input.attributionWindow !== undefined
         ? validateAttributionWindow(input.attributionWindow)
         : undefined;
-    const channels = input.channels?.map((channel) => channel.trim());
+    let channels: string[] | undefined;
+    if (input.channels !== undefined) {
+      requireArray(input.channels, 'channels');
+      channels = input.channels.map((channel, index) => {
+        requireString(channel, `channels[${index}]`);
+        return channel.trim();
+      });
+    }
 
     const preview = {
       action: CONFIGURE_REVENUE_ATTRIBUTION_ACTION_TYPE,
@@ -402,8 +413,11 @@ export class BloomreachEvaluationSettingsService {
   prepareSetCurrency(input: SetCurrencyInput): PreparedEvaluationSettingsAction {
     const project = validateProject(input.project);
     const currencyCode = validateCurrencyCode(input.currencyCode);
-    const currencySymbol =
-      input.currencySymbol !== undefined ? input.currencySymbol.trim() : undefined;
+    let currencySymbol: string | undefined;
+    if (input.currencySymbol !== undefined) {
+      requireString(input.currencySymbol, 'currency symbol');
+      currencySymbol = input.currencySymbol.trim();
+    }
 
     const preview = {
       action: SET_CURRENCY_ACTION_TYPE,
@@ -425,13 +439,17 @@ export class BloomreachEvaluationSettingsService {
     input: ConfigureEvaluationDashboardsInput,
   ): PreparedEvaluationSettingsAction {
     const project = validateProject(input.project);
+    requireArray(input.dashboards, 'dashboards');
     if (input.dashboards.length === 0) {
       throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one dashboard configuration must be provided.');
     }
-    const dashboards = input.dashboards.map((dashboard) => ({
-      id: validateDashboardId(dashboard.id),
-      enabled: dashboard.enabled,
-    }));
+    const dashboards = input.dashboards.map((dashboard, index) => {
+      requireObject(dashboard, `dashboards[${index}]`);
+      return {
+        id: validateDashboardId(dashboard.id),
+        enabled: dashboard.enabled,
+      };
+    });
 
     const preview = {
       action: CONFIGURE_EVALUATION_DASHBOARDS_ACTION_TYPE,
@@ -453,7 +471,11 @@ export class BloomreachEvaluationSettingsService {
   ): PreparedEvaluationSettingsAction {
     const project = validateProject(input.project);
     const mappingField = validateMappingField(input.mappingField);
-    const mappingType = input.mappingType !== undefined ? input.mappingType.trim() : undefined;
+    let mappingType: string | undefined;
+    if (input.mappingType !== undefined) {
+      requireString(input.mappingType, 'mapping type');
+      mappingType = input.mappingType.trim();
+    }
 
     const preview = {
       action: CONFIGURE_VOUCHER_MAPPING_ACTION_TYPE,

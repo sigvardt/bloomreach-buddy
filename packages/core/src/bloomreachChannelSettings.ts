@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString } from './errors.js';
 
 // ---------------------------------------------------------------------------
 // Action type constants
@@ -156,6 +156,7 @@ const MAX_PROVIDER_NAME_LENGTH = 100;
 const MAX_SENDER_NUMBER_LENGTH = 30;
 
 export function validateDomain(domain: string): string {
+  requireString(domain, 'domain');
   const trimmed = domain.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Domain must not be empty.');
@@ -167,6 +168,7 @@ export function validateDomain(domain: string): string {
 }
 
 export function validateProviderName(provider: string): string {
+  requireString(provider, 'provider');
   const trimmed = provider.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Provider name must not be empty.');
@@ -178,6 +180,7 @@ export function validateProviderName(provider: string): string {
 }
 
 export function validateSenderNumber(number: string): string {
+  requireString(number, 'sender number');
   const trimmed = number.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Sender number must not be empty.');
@@ -189,6 +192,7 @@ export function validateSenderNumber(number: string): string {
 }
 
 export function validatePageId(pageId: string): string {
+  requireString(pageId, 'pageId');
   const trimmed = pageId.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Page ID must not be empty.');
@@ -394,10 +398,17 @@ export class BloomreachChannelSettingsService {
   ): PreparedChannelSettingsAction {
     const project = validateProject(input.project);
     const provider = validateProviderName(input.provider);
-    const firebaseCredentials =
-      input.firebaseCredentials !== undefined ? input.firebaseCredentials.trim() : undefined;
-    const apnsCertificate =
-      input.apnsCertificate !== undefined ? input.apnsCertificate.trim() : undefined;
+    let firebaseCredentials: string | undefined;
+    if (input.firebaseCredentials !== undefined) {
+      requireString(input.firebaseCredentials, 'firebase credentials');
+      firebaseCredentials = input.firebaseCredentials.trim();
+    }
+
+    let apnsCertificate: string | undefined;
+    if (input.apnsCertificate !== undefined) {
+      requireString(input.apnsCertificate, 'apns certificate');
+      apnsCertificate = input.apnsCertificate.trim();
+    }
 
     const preview = {
       action: CONFIGURE_PUSH_PROVIDER_ACTION_TYPE,
@@ -488,7 +499,11 @@ export class BloomreachChannelSettingsService {
   ): PreparedChannelSettingsAction {
     const project = validateProject(input.project);
     const pageId = validatePageId(input.pageId);
-    const accessToken = input.accessToken !== undefined ? input.accessToken.trim() : undefined;
+    let accessToken: string | undefined;
+    if (input.accessToken !== undefined) {
+      requireString(input.accessToken, 'access token');
+      accessToken = input.accessToken.trim();
+    }
 
     const preview = {
       action: CONFIGURE_FACEBOOK_MESSAGING_ACTION_TYPE,

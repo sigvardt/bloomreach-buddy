@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 // ---------------------------------------------------------------------------
@@ -156,6 +156,7 @@ const MIN_INTEGRATION_NAME_LENGTH = 1;
 
 /** @throws {Error} If name is empty or exceeds 200 characters. */
 export function validateIntegrationName(name: string): string {
+  requireString(name, 'name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_INTEGRATION_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Integration name must not be empty.');
@@ -168,6 +169,7 @@ export function validateIntegrationName(name: string): string {
 
 /** @throws {Error} If project is empty. */
 export function validateIntegrationProject(project: string): string {
+  requireString(project, 'project');
   const trimmed = project.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Project identifier must not be empty.');
@@ -177,6 +179,7 @@ export function validateIntegrationProject(project: string): string {
 
 /** @throws {Error} If integrationId is empty. */
 export function validateIntegrationId(integrationId: string): string {
+  requireString(integrationId, 'Integration ID');
   const trimmed = integrationId.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Integration ID must not be empty.');
@@ -186,6 +189,7 @@ export function validateIntegrationId(integrationId: string): string {
 
 /** @throws {Error} If type is not a valid integration type. */
 export function validateIntegrationType(type: string): IntegrationType {
+  requireString(type, 'type');
   if (!INTEGRATION_TYPES.includes(type as IntegrationType)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Invalid integration type '${type}'. Must be one of: ${INTEGRATION_TYPES.join(', ')}.`);
   }
@@ -194,6 +198,7 @@ export function validateIntegrationType(type: string): IntegrationType {
 
 /** @throws {Error} If status is not a valid integration status. */
 export function validateIntegrationStatus(status: string): IntegrationStatus {
+  requireString(status, 'status');
   if (!INTEGRATION_STATUSES.includes(status as IntegrationStatus)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Invalid integration status '${status}'. Must be one of: ${INTEGRATION_STATUSES.join(', ')}.`);
   }
@@ -202,6 +207,7 @@ export function validateIntegrationStatus(status: string): IntegrationStatus {
 
 /** @throws {Error} If provider is empty. */
 export function validateProvider(provider: string): string {
+  requireString(provider, 'provider');
   const trimmed = provider.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Provider must not be empty.');

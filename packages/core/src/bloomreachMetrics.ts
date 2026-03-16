@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireObject, requireString } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
@@ -95,6 +95,7 @@ const AGGREGATION_TYPES = new Set(['sum', 'count', 'average', 'min', 'max', 'uni
 const PROPERTY_REQUIRED_AGGREGATION_TYPES = new Set(['sum', 'average', 'min', 'max']);
 
 export function validateMetricName(name: string): string {
+  requireString(name, 'Metric name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_METRIC_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Metric name must not be empty.');
@@ -106,6 +107,7 @@ export function validateMetricName(name: string): string {
 }
 
 export function validateMetricId(id: string): string {
+  requireString(id, 'Metric ID');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Metric ID must not be empty.');
@@ -114,6 +116,7 @@ export function validateMetricId(id: string): string {
 }
 
 export function validateDescription(description: string): string {
+  requireString(description, 'Description');
   const trimmed = description.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Description must not be empty.');
@@ -125,6 +128,7 @@ export function validateDescription(description: string): string {
 }
 
 export function validateAggregationType(type: string): string {
+  requireString(type, 'Aggregation type');
   const normalized = type.trim().toLowerCase();
   if (normalized.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Aggregation type must not be empty.');
@@ -136,12 +140,17 @@ export function validateAggregationType(type: string): string {
 }
 
 export function validateAggregation(aggregation: MetricAggregation): MetricAggregation {
+  requireObject(aggregation, 'aggregation');
+  requireString(aggregation.eventName, 'Aggregation eventName');
   const eventName = aggregation.eventName.trim();
   if (eventName.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Aggregation eventName must not be empty.');
   }
 
   const aggregationType = validateAggregationType(aggregation.aggregationType);
+  if (aggregation.propertyName !== undefined) {
+    requireString(aggregation.propertyName, 'Aggregation propertyName');
+  }
   const propertyName = aggregation.propertyName?.trim();
 
   if (

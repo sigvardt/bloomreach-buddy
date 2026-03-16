@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 // ---------------------------------------------------------------------------
@@ -121,6 +121,7 @@ const MAX_HOST_LENGTH = 253;
 const MAX_USERNAME_LENGTH = 200;
 
 export function validateTunnelName(name: string): string {
+  requireString(name, 'tunnel name');
   const trimmed = name.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Tunnel name must not be empty.');
@@ -132,6 +133,7 @@ export function validateTunnelName(name: string): string {
 }
 
 export function validateHost(host: string): string {
+  requireString(host, 'host');
   const trimmed = host.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Host must not be empty.');
@@ -153,6 +155,7 @@ export function validatePort(port: number): number {
 }
 
 export function validateUsername(username: string): string {
+  requireString(username, 'username');
   const trimmed = username.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Username must not be empty.');
@@ -164,6 +167,7 @@ export function validateUsername(username: string): string {
 }
 
 export function validateTunnelId(tunnelId: string): string {
+  requireString(tunnelId, 'tunnelId');
   const trimmed = tunnelId.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Tunnel ID must not be empty.');
@@ -370,9 +374,23 @@ export class BloomreachSecuritySettingsService {
     const host = validateHost(input.host);
     const port = validatePort(input.port);
     const username = validateUsername(input.username);
-    const password = input.password !== undefined ? input.password.trim() : undefined;
-    const hostKey = input.hostKey !== undefined ? input.hostKey.trim() : undefined;
-    const databaseType = input.databaseType !== undefined ? input.databaseType.trim() : undefined;
+    let password: string | undefined;
+    if (input.password !== undefined) {
+      requireString(input.password, 'password');
+      password = input.password.trim();
+    }
+
+    let hostKey: string | undefined;
+    if (input.hostKey !== undefined) {
+      requireString(input.hostKey, 'host key');
+      hostKey = input.hostKey.trim();
+    }
+
+    let databaseType: string | undefined;
+    if (input.databaseType !== undefined) {
+      requireString(input.databaseType, 'database type');
+      databaseType = input.databaseType.trim();
+    }
 
     const preview = {
       action: CREATE_SSH_TUNNEL_ACTION_TYPE,
@@ -402,8 +420,17 @@ export class BloomreachSecuritySettingsService {
     const host = input.host !== undefined ? validateHost(input.host) : undefined;
     const port = input.port !== undefined ? validatePort(input.port) : undefined;
     const username = input.username !== undefined ? validateUsername(input.username) : undefined;
-    const password = input.password !== undefined ? input.password.trim() : undefined;
-    const hostKey = input.hostKey !== undefined ? input.hostKey.trim() : undefined;
+    let password: string | undefined;
+    if (input.password !== undefined) {
+      requireString(input.password, 'password');
+      password = input.password.trim();
+    }
+
+    let hostKey: string | undefined;
+    if (input.hostKey !== undefined) {
+      requireString(input.hostKey, 'host key');
+      hostKey = input.hostKey.trim();
+    }
 
     if (
       name === undefined &&

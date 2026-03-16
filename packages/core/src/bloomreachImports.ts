@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString, requireArray } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import { bloomreachApiFetch, buildDataPath } from './bloomreachApiClient.js';
 
@@ -142,6 +142,8 @@ const MAPPING_TRANSFORMATION_TYPES = new Set([
 ]);
 
 function validateRequiredTrimmed(value: string, fieldName: string): string {
+  requireString(value, 'value');
+  requireString(fieldName, 'Field name');
   const trimmed = value.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${fieldName} must not be empty.`);
@@ -150,6 +152,7 @@ function validateRequiredTrimmed(value: string, fieldName: string): string {
 }
 
 function validateImportName(name: string): string {
+  requireString(name, 'name');
   const trimmed = validateRequiredTrimmed(name, 'Import name');
   if (trimmed.length > MAX_IMPORT_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Import name must not exceed ${MAX_IMPORT_NAME_LENGTH} characters (got ${trimmed.length}).`);
@@ -158,6 +161,7 @@ function validateImportName(name: string): string {
 }
 
 function validateImportType(type: string): string {
+  requireString(type, 'type');
   const normalized = validateRequiredTrimmed(type, 'Import type').toLowerCase();
   if (!IMPORT_TYPES.has(normalized)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Import type must be one of: ${Array.from(IMPORT_TYPES).join(', ')} (got ${normalized}).`);
@@ -166,6 +170,7 @@ function validateImportType(type: string): string {
 }
 
 function validateImportStatus(status: string): string {
+  requireString(status, 'status');
   const normalized = validateRequiredTrimmed(status, 'Import status').toLowerCase();
   if (!IMPORT_STATUSES.has(normalized)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Import status must be one of: ${Array.from(IMPORT_STATUSES).join(', ')} (got ${normalized}).`);
@@ -174,6 +179,7 @@ function validateImportStatus(status: string): string {
 }
 
 function validateImportSource(source: string): string {
+  requireString(source, 'source');
   const trimmed = validateRequiredTrimmed(source, 'Import source');
   if (trimmed.length > MAX_SOURCE_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Import source must not exceed ${MAX_SOURCE_LENGTH} characters (got ${trimmed.length}).`);
@@ -187,6 +193,7 @@ function validateImportSource(source: string): string {
 }
 
 function validateImportId(id: string): string {
+  requireString(id, 'id');
   const trimmed = validateRequiredTrimmed(id, 'Import ID');
   if (trimmed.length > MAX_IMPORT_ID_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Import ID must not exceed ${MAX_IMPORT_ID_LENGTH} characters (got ${trimmed.length}).`);
@@ -195,6 +202,7 @@ function validateImportId(id: string): string {
 }
 
 function validateColumnName(name: string): string {
+  requireString(name, 'name');
   const trimmed = validateRequiredTrimmed(name, 'Source column');
   if (trimmed.length > MAX_COLUMN_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Source column must not exceed ${MAX_COLUMN_NAME_LENGTH} characters (got ${trimmed.length}).`);
@@ -203,6 +211,7 @@ function validateColumnName(name: string): string {
 }
 
 function validatePropertyName(name: string): string {
+  requireString(name, 'name');
   const trimmed = validateRequiredTrimmed(name, 'Target property');
   if (trimmed.length > MAX_PROPERTY_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Target property must not exceed ${MAX_PROPERTY_NAME_LENGTH} characters (got ${trimmed.length}).`);
@@ -211,6 +220,7 @@ function validatePropertyName(name: string): string {
 }
 
 function validateMappingTransformationType(type: string): string {
+  requireString(type, 'type');
   const normalized = validateRequiredTrimmed(type, 'Transformation type').toLowerCase();
   if (!MAPPING_TRANSFORMATION_TYPES.has(normalized)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Transformation type must be one of: ${Array.from(MAPPING_TRANSFORMATION_TYPES).join(', ')} (got ${normalized}).`);
@@ -219,6 +229,7 @@ function validateMappingTransformationType(type: string): string {
 }
 
 function validateMapping(mapping: ImportMapping[]): ImportMapping[] {
+  requireArray(mapping, 'mapping');
   if (!Array.isArray(mapping)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Mapping must be an array.');
   }
@@ -244,6 +255,7 @@ function validateMapping(mapping: ImportMapping[]): ImportMapping[] {
 }
 
 function validateScheduleFrequency(frequency: string): string {
+  requireString(frequency, 'frequency');
   const normalized = validateRequiredTrimmed(frequency, 'Schedule frequency').toLowerCase();
   if (!SCHEDULE_FREQUENCIES.has(normalized)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Schedule frequency must be one of: ${Array.from(SCHEDULE_FREQUENCIES).join(', ')} (got ${normalized}).`);
@@ -252,6 +264,7 @@ function validateScheduleFrequency(frequency: string): string {
 }
 
 function validateCronExpression(cron: string): string {
+  requireString(cron, 'cron');
   const trimmed = validateRequiredTrimmed(cron, 'Cron expression');
   if (trimmed.length > MAX_CRON_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Cron expression must not exceed ${MAX_CRON_LENGTH} characters (got ${trimmed.length}).`);

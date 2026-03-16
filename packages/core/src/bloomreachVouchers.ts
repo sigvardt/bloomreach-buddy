@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString, requireArray } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import {
   validateListLimit as validateVoucherListLimit,
@@ -108,6 +108,7 @@ const MAX_REDEMPTIONS_LIMIT = 1_000_000;
 
 /** @throws {Error} If name is empty or exceeds 200 characters. */
 export function validatePoolName(name: string): string {
+  requireString(name, 'name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_POOL_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Pool name must not be empty.');
@@ -120,6 +121,7 @@ export function validatePoolName(name: string): string {
 
 /** @throws {Error} If pool ID is empty or exceeds 500 characters. */
 export function validatePoolId(poolId: string): string {
+  requireString(poolId, 'Pool ID');
   const trimmed = poolId.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Pool ID must not be empty.');
@@ -132,6 +134,7 @@ export function validatePoolId(poolId: string): string {
 
 /** @throws {Error} If any voucher code is empty, exceeds 200 chars, or batch exceeds 10,000. */
 export function validateVoucherCodes(codes: string[]): string[] {
+  requireArray(codes, 'codes');
   if (codes.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one voucher code must be provided.');
   }
@@ -140,6 +143,7 @@ export function validateVoucherCodes(codes: string[]): string[] {
   }
   const validated: string[] = [];
   for (const code of codes) {
+    requireString(code, 'Voucher code');
     const trimmed = code.trim();
     if (trimmed.length === 0) {
       throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Voucher code must not be empty.');
@@ -178,6 +182,7 @@ export function validateRedemptionRules(rules: RedemptionRules): RedemptionRules
     }
   }
   if (rules.expiresAt !== undefined) {
+    requireString(rules.expiresAt, 'Expiration date');
     const trimmed = rules.expiresAt.trim();
     if (trimmed.length === 0) {
       throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Expiration date must not be empty.');
@@ -195,6 +200,10 @@ export function validateVoucherSource(
   voucherCodes?: string[],
   autoGenerateCount?: number,
 ): void {
+  if (voucherCodes !== undefined) {
+    requireArray(voucherCodes, 'voucherCodes');
+  }
+
   if (
     (voucherCodes === undefined || voucherCodes.length === 0) &&
     autoGenerateCount === undefined

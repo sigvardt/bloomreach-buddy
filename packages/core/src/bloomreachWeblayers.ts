@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireArray, requireObject, requireString } from './errors.js';
 import {
   bloomreachApiFetch,
   buildWebxpPath,
@@ -150,6 +150,7 @@ const MIN_AB_TEST_VARIANTS = 2;
 const MAX_AB_TEST_VARIANTS = 10;
 
 export function validateWeblayerName(name: string): string {
+  requireString(name, 'weblayer name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_WEBLAYER_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Weblayer name must not be empty.');
@@ -161,6 +162,7 @@ export function validateWeblayerName(name: string): string {
 }
 
 export function validateWeblayerStatus(status: string): WeblayerStatus {
+  requireString(status, 'status');
   if (!WEBLAYER_STATUSES.includes(status as WeblayerStatus)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `status must be one of: ${WEBLAYER_STATUSES.join(', ')} (got "${status}").`);
   }
@@ -168,6 +170,7 @@ export function validateWeblayerStatus(status: string): WeblayerStatus {
 }
 
 export function validateWeblayerId(id: string): string {
+  requireString(id, 'weblayerId');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Weblayer ID must not be empty.');
@@ -176,6 +179,7 @@ export function validateWeblayerId(id: string): string {
 }
 
 export function validateBanditId(id: string): string {
+  requireString(id, 'banditId');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Bandit ID must not be empty.');
@@ -184,6 +188,7 @@ export function validateBanditId(id: string): string {
 }
 
 export function validateVariants(variants: WeblayerVariant[]): WeblayerVariant[] {
+  requireArray(variants, 'variants');
   if (!Array.isArray(variants) || variants.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one variant must be provided.');
   }
@@ -196,6 +201,7 @@ export function validateVariants(variants: WeblayerVariant[]): WeblayerVariant[]
 }
 
 export function validateVariantId(id: string): string {
+  requireString(id, 'variantId');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Variant ID must not be empty.');
@@ -204,6 +210,7 @@ export function validateVariantId(id: string): string {
 }
 
 export function validateWeblayerDisplayType(displayType: string): WeblayerDisplayType {
+  requireString(displayType, 'displayType');
   if (!WEBLAYER_DISPLAY_TYPES.includes(displayType as WeblayerDisplayType)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `displayType must be one of: ${WEBLAYER_DISPLAY_TYPES.join(', ')} (got "${displayType}").`);
   }
@@ -211,36 +218,40 @@ export function validateWeblayerDisplayType(displayType: string): WeblayerDispla
 }
 
 export function validateWeblayerABTestConfig(config: WeblayerABTestConfig): WeblayerABTestConfig {
+  requireObject(config, 'ab test config');
+  const validatedConfig = config as WeblayerABTestConfig;
   if (
-    !Number.isInteger(config.variants) ||
-    config.variants < MIN_AB_TEST_VARIANTS ||
-    config.variants > MAX_AB_TEST_VARIANTS
+    !Number.isInteger(validatedConfig.variants) ||
+    validatedConfig.variants < MIN_AB_TEST_VARIANTS ||
+    validatedConfig.variants > MAX_AB_TEST_VARIANTS
   ) {
-    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `A/B test variants must be an integer between ${MIN_AB_TEST_VARIANTS} and ${MAX_AB_TEST_VARIANTS} (got ${config.variants}).`);
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `A/B test variants must be an integer between ${MIN_AB_TEST_VARIANTS} and ${MAX_AB_TEST_VARIANTS} (got ${validatedConfig.variants}).`);
   }
-  if (config.splitPercentage !== undefined) {
-    if (config.splitPercentage < 0 || config.splitPercentage > 100) {
-      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `A/B test split percentage must be between 0 and 100 (got ${config.splitPercentage}).`);
+  if (validatedConfig.splitPercentage !== undefined) {
+    if (validatedConfig.splitPercentage < 0 || validatedConfig.splitPercentage > 100) {
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `A/B test split percentage must be between 0 and 100 (got ${validatedConfig.splitPercentage}).`);
     }
   }
-  return config;
+  return validatedConfig;
 }
 
 export function validateDisplayConditions(
   conditions: WeblayerDisplayConditions,
 ): WeblayerDisplayConditions {
-  if (conditions.delayMs !== undefined && conditions.delayMs < 0) {
-    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `delayMs must be greater than or equal to 0 (got ${conditions.delayMs}).`);
+  requireObject(conditions, 'display conditions');
+  const validatedConditions = conditions as WeblayerDisplayConditions;
+  if (validatedConditions.delayMs !== undefined && validatedConditions.delayMs < 0) {
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `delayMs must be greater than or equal to 0 (got ${validatedConditions.delayMs}).`);
   }
-  if (conditions.scrollPercentage !== undefined) {
-    if (conditions.scrollPercentage < 0 || conditions.scrollPercentage > 100) {
-      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `scrollPercentage must be between 0 and 100 (got ${conditions.scrollPercentage}).`);
+  if (validatedConditions.scrollPercentage !== undefined) {
+    if (validatedConditions.scrollPercentage < 0 || validatedConditions.scrollPercentage > 100) {
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `scrollPercentage must be between 0 and 100 (got ${validatedConditions.scrollPercentage}).`);
     }
   }
-  if (conditions.frequencyCap !== undefined && conditions.frequencyCap < 1) {
-    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `frequencyCap must be greater than or equal to 1 (got ${conditions.frequencyCap}).`);
+  if (validatedConditions.frequencyCap !== undefined && validatedConditions.frequencyCap < 1) {
+    throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `frequencyCap must be greater than or equal to 1 (got ${validatedConditions.frequencyCap}).`);
   }
-  return conditions;
+  return validatedConditions;
 }
 
 export function buildWeblayersUrl(project: string): string {
