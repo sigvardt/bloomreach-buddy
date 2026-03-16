@@ -6,16 +6,24 @@ import { BloomreachAuthService, isAuthenticatedPage, isLoginPage } from '../bloo
 vi.mock('../bloomreachSessionStore.js', () => ({
   loadSession: vi.fn(),
   saveSession: vi.fn(),
+  deleteSession: vi.fn(),
   isSessionExpired: vi.fn(),
   summarizeSessionCookies: vi.fn(),
+}));
+
+vi.mock('../auth/loginSelectors.js', () => ({
+  tryAutoFill: vi.fn().mockResolvedValue(false),
+  resolveAutoFillConfig: vi.fn().mockReturnValue({}),
 }));
 
 import {
   loadSession,
   saveSession,
+  deleteSession,
   isSessionExpired,
   summarizeSessionCookies,
 } from '../bloomreachSessionStore.js';
+import { tryAutoFill, resolveAutoFillConfig } from '../auth/loginSelectors.js';
 
 const mockPage = {
   goto: vi.fn(),
@@ -227,6 +235,102 @@ describe('BloomreachAuthService', () => {
     expect(result.timedOut).toBe(true);
     expect(saveSession).not.toHaveBeenCalled();
     nowSpy.mockRestore();
+  });
+
+  it('getSessionCookies returns cookies from valid session', async () => {
+    vi.mocked(loadSession).mockResolvedValue(validSession);
+    vi.mocked(isSessionExpired).mockReturnValue(false);
+
+    const auth = new BloomreachAuthService(profileManagerForAuth, {
+      profilesDir: '/profiles',
+    });
+
+    const cookies = await auth.getSessionCookies({ profileName: 'p1' });
+    expect(cookies).toEqual(validSession.storageState.cookies);
+    expect(loadSession).toHaveBeenCalledWith('/profiles', 'p1');
+  });
+
+  it('getSessionCookies returns empty array when no session exists', async () => {
+    vi.mocked(loadSession).mockResolvedValue(null);
+
+    const auth = new BloomreachAuthService(profileManagerForAuth, {
+      profilesDir: '/profiles',
+    });
+
+    const cookies = await auth.getSessionCookies();
+    expect(cookies).toEqual([]);
+  });
+
+  it('getSessionCookies returns empty array when session expired', async () => {
+    vi.mocked(loadSession).mockResolvedValue(validSession);
+    vi.mocked(isSessionExpired).mockReturnValue(true);
+
+    const auth = new BloomreachAuthService(profileManagerForAuth, {
+      profilesDir: '/profiles',
+    });
+
+    const cookies = await auth.getSessionCookies();
+    expect(cookies).toEqual([]);
+  });
+
+  it('logout clears session and returns cleared true', async () => {
+    vi.mocked(deleteSession).mockResolvedValue(true);
+
+    const auth = new BloomreachAuthService(profileManagerForAuth, {
+      profilesDir: '/profiles',
+    });
+
+    const result = await auth.logout({ profileName: 'p1' });
+    expect(result).toEqual({ cleared: true, profileName: 'p1' });
+    expect(deleteSession).toHaveBeenCalledWith('/profiles', 'p1');
+  });
+
+  it('logout returns cleared false when no session existed', async () => {
+    vi.mocked(deleteSession).mockResolvedValue(false);
+
+    const auth = new BloomreachAuthService(profileManagerForAuth, {
+      profilesDir: '/profiles',
+    });
+
+    const result = await auth.logout();
+    expect(result).toEqual({ cleared: false, profileName: 'default' });
+  });
+
+  it('openLogin attempts auto-fill when env vars are set', async () => {
+    vi.mocked(resolveAutoFillConfig).mockReturnValue({ email: 'test@example.com', password: 'secret' });
+    vi.mocked(tryAutoFill).mockResolvedValue(true);
+    mockPage.url.mockReturnValueOnce('https://app.bloomreach.com/project/123');
+    mockContext.storageState.mockResolvedValue({ cookies: validSession.storageState.cookies, origins: [] });
+
+    const auth = new BloomreachAuthService(profileManagerForAuth, {
+      profilesDir: '/profiles',
+    });
+
+    await auth.openLogin({ profileName: 'p1', timeoutMs: 60_000, pollIntervalMs: 1 });
+
+    expect(resolveAutoFillConfig).toHaveBeenCalled();
+    expect(tryAutoFill).toHaveBeenCalledWith(mockPage, {
+      email: 'test@example.com',
+      password: 'secret',
+    });
+  });
+
+  it('openLogin skips auto-fill when autoFill is false', async () => {
+    mockPage.url.mockReturnValueOnce('https://app.bloomreach.com/project/123');
+    mockContext.storageState.mockResolvedValue({ cookies: validSession.storageState.cookies, origins: [] });
+
+    const auth = new BloomreachAuthService(profileManagerForAuth, {
+      profilesDir: '/profiles',
+    });
+
+    await auth.openLogin({
+      profileName: 'p1',
+      timeoutMs: 60_000,
+      pollIntervalMs: 1,
+      autoFill: false,
+    });
+
+    expect(tryAutoFill).not.toHaveBeenCalled();
   });
 
   it('ensureAuthenticated returns status when already authenticated', async () => {

@@ -7,10 +7,16 @@ import type {
 import {
   loadSession,
   saveSession,
+  deleteSession,
   isSessionExpired,
   summarizeSessionCookies,
 } from './bloomreachSessionStore.js';
-import type { BloomreachStorageState, StoredSession } from './bloomreachSessionStore.js';
+import type {
+  BloomreachCookie,
+  BloomreachStorageState,
+  StoredSession,
+} from './bloomreachSessionStore.js';
+import { tryAutoFill, resolveAutoFillConfig } from './auth/loginSelectors.js';
 
 export const BLOOMREACH_LOGIN_URL = 'https://eu.login.bloomreach.com/';
 export const BLOOMREACH_APP_URL = 'https://app.bloomreach.com/';
@@ -36,6 +42,7 @@ export interface BloomreachOpenLoginOptions extends BloomreachSessionOptions {
   timeoutMs?: number;
   pollIntervalMs?: number;
   loginUrl?: string;
+  autoFill?: boolean;
 }
 
 export interface BloomreachOpenLoginResult extends BloomreachSessionStatus {
@@ -131,6 +138,14 @@ export class BloomreachAuthService {
 
         await page.goto(loginUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 });
 
+        const autoFill = options?.autoFill ?? true;
+        if (autoFill) {
+          const autoFillConfig = resolveAutoFillConfig();
+          if (autoFillConfig.email || autoFillConfig.password) {
+            await tryAutoFill(page, autoFillConfig);
+          }
+        }
+
         const deadline = Date.now() + timeoutMs;
         let authenticated = false;
 
@@ -186,5 +201,28 @@ export class BloomreachAuthService {
       'AUTH_REQUIRED',
       `Browser session is not authenticated: ${sessionStatus.reason}`,
     );
+  }
+
+  /**
+   * Extract session cookies from stored session.
+   * Returns empty array if no valid session exists.
+   */
+  async getSessionCookies(options?: BloomreachSessionOptions): Promise<BloomreachCookie[]> {
+    const profileName = options?.profileName ?? 'default';
+    const session = await loadSession(this.profilesDir, profileName);
+    if (!session || isSessionExpired(session)) {
+      return [];
+    }
+    return session.storageState.cookies;
+  }
+
+  /**
+   * Clear stored browser session for a profile.
+   * @returns Object indicating if a session was cleared and which profile.
+   */
+  async logout(options?: BloomreachSessionOptions): Promise<{ cleared: boolean; profileName: string }> {
+    const profileName = options?.profileName ?? 'default';
+    const cleared = await deleteSession(this.profilesDir, profileName);
+    return { cleared, profileName };
   }
 }

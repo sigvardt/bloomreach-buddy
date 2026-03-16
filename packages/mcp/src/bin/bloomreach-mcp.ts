@@ -7,6 +7,7 @@ import {
   BloomreachBuddyError,
   BloomreachDatabase,
   TwoPhaseCommitService,
+  createAuthManager,
   type ActionExecutor,
 } from '@bloomreach-buddy/core';
 import { homedir } from 'node:os';
@@ -218,6 +219,78 @@ const tools: ToolRoute[] = [
           description: 'Maximum number of actions to return (default 50).',
         },
       },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: toolNames.BLOOMREACH_AUTH_STATUS_TOOL,
+    description:
+      'Check all authentication states: API credentials (Tier 1), browser session (Tier 2/3), ' +
+      'and webapp API readiness (Tier 2). Returns a unified status object.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        profile: {
+          type: 'string',
+          description: 'Browser profile name (default: "default")',
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: toolNames.BLOOMREACH_AUTH_LOGIN_TOOL,
+    description:
+      'Open a headed browser window for Bloomreach authentication. ' +
+      'Auto-fills credentials from BLOOMREACH_EMAIL/BLOOMREACH_PASSWORD if set. ' +
+      'Session cookies are captured and encrypted for future headless use.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        profile: {
+          type: 'string',
+          description: 'Browser profile name (default: "default")',
+        },
+        timeoutMs: {
+          type: 'number',
+          description: 'Login timeout in milliseconds (default: 300000 — 5 minutes)',
+        },
+        loginUrl: {
+          type: 'string',
+          description: 'Override the login URL (default: https://eu.login.bloomreach.com/)',
+        },
+        autoFill: {
+          type: 'boolean',
+          description: 'Attempt auto-fill from env vars (default: true)',
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: toolNames.BLOOMREACH_AUTH_LOGOUT_TOOL,
+    description:
+      'Clear stored Bloomreach browser session for a profile. ' +
+      'After logout, browser-dependent features require re-authentication via login.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        profile: {
+          type: 'string',
+          description: 'Browser profile name (default: "default")',
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: toolNames.BLOOMREACH_AUTH_VERIFY_API_TOOL,
+    description:
+      'Verify Bloomreach API credentials by calling the live API endpoint. ' +
+      'Requires BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
       additionalProperties: false,
     },
   },
@@ -6594,6 +6667,37 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const limit = typeof args.limit === 'number' ? args.limit : undefined;
       const actions = twoPhaseCommit.listPreparedActions({ status, limit });
       return toToolResult(actions);
+    }
+
+    if (name === toolNames.BLOOMREACH_AUTH_STATUS_TOOL) {
+      const authManager = createAuthManager();
+      const profile = typeof args.profile === 'string' ? args.profile : undefined;
+      const result = await authManager.status({ profileName: profile });
+      return toToolResult(result);
+    }
+
+    if (name === toolNames.BLOOMREACH_AUTH_LOGIN_TOOL) {
+      const authManager = createAuthManager();
+      const result = await authManager.login({
+        profileName: typeof args.profile === 'string' ? args.profile : undefined,
+        timeoutMs: typeof args.timeoutMs === 'number' ? args.timeoutMs : undefined,
+        loginUrl: typeof args.loginUrl === 'string' ? args.loginUrl : undefined,
+        autoFill: typeof args.autoFill === 'boolean' ? args.autoFill : undefined,
+      });
+      return toToolResult(result);
+    }
+
+    if (name === toolNames.BLOOMREACH_AUTH_LOGOUT_TOOL) {
+      const authManager = createAuthManager();
+      const profile = typeof args.profile === 'string' ? args.profile : undefined;
+      const result = await authManager.logout({ profileName: profile });
+      return toToolResult(result);
+    }
+
+    if (name === toolNames.BLOOMREACH_AUTH_VERIFY_API_TOOL) {
+      const authManager = createAuthManager();
+      const result = await authManager.verifyApi();
+      return toToolResult(result);
     }
 
     const route = toolByName.get(name);

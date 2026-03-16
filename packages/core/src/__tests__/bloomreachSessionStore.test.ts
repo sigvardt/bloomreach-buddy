@@ -28,6 +28,7 @@ import {
   getSessionFilePath,
   isSessionExpired,
   loadSession,
+  deleteSession,
   saveSession,
   summarizeSessionCookies,
   type BloomreachStorageState,
@@ -247,4 +248,25 @@ describe('bloomreachSessionStore', () => {
       },
     ]);
   });
+
+  describe('deleteSession', () => {
+    it('removes existing session file and returns true', async () => {
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      const storageState = makeStorageState(nowSeconds);
+      await saveSession(tempRoot, 'to-delete', storageState, 'https://example.com/login');
+
+      const result = await deleteSession(tempRoot, 'to-delete');
+      expect(result).toBe(true);
+
+      // Verify the session is gone
+      const loaded = await loadSession(tempRoot, 'to-delete');
+      expect(loaded).toBeNull();
+    });
+
+    it('returns false when no session exists', async () => {
+      const result = await deleteSession(tempRoot, 'nonexistent');
+      expect(result).toBe(false);
+    });
+  });
+
 });
