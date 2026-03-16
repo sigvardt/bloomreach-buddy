@@ -61,7 +61,7 @@ function makeStorageState(nowSeconds: number): BloomreachStorageState {
     ],
     origins: [
       {
-        origin: 'https://app.bloomreach.com',
+        origin: 'https://app.exponea.com',
         localStorage: [{ name: 'token', value: 'abc123' }],
       },
     ],
@@ -103,7 +103,7 @@ describe('bloomreachSessionStore', () => {
       tempRoot,
       'alpha',
       storageState,
-      'https://app.bloomreach.com/login',
+      'https://app.exponea.com/login',
     );
 
     const encryptedOnDisk = await readFile(filePath, 'utf8');
@@ -118,7 +118,7 @@ describe('bloomreachSessionStore', () => {
     expect(loaded?.schemaVersion).toBe(1);
     expect(loaded?.storageState).toEqual(storageState);
     expect(loaded?.metadata.profileName).toBe('alpha');
-    expect(loaded?.metadata.loginUrl).toBe('https://app.bloomreach.com/login');
+    expect(loaded?.metadata.loginUrl).toBe('https://app.exponea.com/login');
     expect(loaded?.metadata.cookieCount).toBe(2);
     expect(loaded?.metadata.earliestCookieExpiry).toBe(
       new Date((nowSeconds + 3600) * 1000).toISOString(),

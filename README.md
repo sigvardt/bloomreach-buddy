@@ -53,7 +53,7 @@ All three values are in the Bloomreach Engagement dashboard:
 
 To create a new API key:
 
-1. Log into [Bloomreach Engagement](https://app.bloomreach.com/)
+1. Log into [Bloomreach Engagement](https://app.exponea.com/)
 2. Navigate to **Project Settings → Access Management → API**
 3. Under **Private API keys**, click **+ Add new API key**
 4. Give it a name (e.g. "bloomreach-buddy")

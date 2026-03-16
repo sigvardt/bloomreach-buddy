@@ -2,7 +2,7 @@ import type { BloomreachCookie } from '../bloomreachSessionStore.js';
 import { loadSession, isSessionExpired } from '../bloomreachSessionStore.js';
 import { BloomreachBuddyError } from '../errors.js';
 
-const DEFAULT_WEBAPP_BASE_URL = 'https://app.bloomreach.com';
+const DEFAULT_WEBAPP_BASE_URL = 'https://app.exponea.com';
 
 export interface WebappApiClientConfig {
   profilesDir: string;

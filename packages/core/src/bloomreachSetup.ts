@@ -60,7 +60,7 @@ export interface WriteEnvFileOptions {
 const DEFAULT_BASE_URL = 'https://api.exponea.com';
 
 /** URL to the Bloomreach API settings page. */
-export const BLOOMREACH_API_SETTINGS_URL = 'https://app.bloomreach.com/';
+export const BLOOMREACH_API_SETTINGS_URL = 'https://app.exponea.com/';
 
 /** Keys written to the `.env` file. */
 const ENV_KEYS = [

@@ -156,7 +156,7 @@ describe('BloomreachWebappApiClient', () => {
       headers: { 'X-Custom': 'value' },
     });
 
-    expect(fetch).toHaveBeenCalledWith('https://app.bloomreach.com/api/v1/projects', {
+    expect(fetch).toHaveBeenCalledWith('https://app.exponea.com/api/v1/projects', {
       method: 'POST',
       headers: {
         Cookie: 'sid=cookie-value',
@@ -263,7 +263,7 @@ describe('BloomreachWebappApiClient', () => {
     await defaultClient.fetch('/health');
     expect(fetch).toHaveBeenNthCalledWith(
       1,
-      'https://app.bloomreach.com/health',
+      'https://app.exponea.com/health',
       expect.objectContaining({ method: 'GET' }),
     );
 
