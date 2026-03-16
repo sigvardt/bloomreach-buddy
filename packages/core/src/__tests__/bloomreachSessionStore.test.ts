@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('node:os', async () => {
-  const actual = await vi.importActual('node:os') as Record<string, unknown>;
+  const actual = (await vi.importActual('node:os')) as Record<string, unknown>;
   return {
     ...actual,
     hostname: () => 'test-host',
@@ -16,7 +16,7 @@ vi.mock('node:os', async () => {
 });
 
 vi.mock('node:fs/promises', async () => {
-  const actual = await vi.importActual('node:fs/promises') as Record<string, unknown>;
+  const actual = (await vi.importActual('node:fs/promises')) as Record<string, unknown>;
   return {
     ...actual,
     chmod: vi.fn(async () => undefined),
@@ -24,7 +24,9 @@ vi.mock('node:fs/promises', async () => {
 });
 
 import {
+  clearSelectedProject,
   deriveEncryptionKey,
+  updateSessionMetadata,
   getSessionFilePath,
   isSessionExpired,
   loadSession,
@@ -32,6 +34,7 @@ import {
   saveSession,
   summarizeSessionCookies,
   type BloomreachStorageState,
+  type SelectedProjectMetadata,
   type StoredSession,
 } from '../bloomreachSessionStore.js';
 
@@ -269,4 +272,86 @@ describe('bloomreachSessionStore', () => {
     });
   });
 
+  describe('updateSessionMetadata', () => {
+    it('returns false when no session file exists', async () => {
+      const result = await updateSessionMetadata(tempRoot, 'nonexistent', {});
+      expect(result).toBe(false);
+    });
+
+    it('updates selectedProject in existing session metadata', async () => {
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      const mockStorageState = makeStorageState(nowSeconds);
+      await saveSession(tempRoot, 'test', mockStorageState, 'https://example.com');
+
+      const selectedProject: SelectedProjectMetadata = {
+        name: 'Kingdom of Joakim',
+        slug: 'kingdom-of-joakim',
+        url: 'https://power.bloomreach.co/p/kingdom-of-joakim/home',
+        organization: 'POWER',
+        workspace: 'POWER',
+        product: 'Engagement',
+        selectedAt: new Date().toISOString(),
+      };
+
+      const result = await updateSessionMetadata(tempRoot, 'test', { selectedProject });
+      expect(result).toBe(true);
+
+      const session = await loadSession(tempRoot, 'test');
+      expect(session?.metadata.selectedProject).toEqual(selectedProject);
+    });
+
+    it('preserves existing metadata fields when updating', async () => {
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      const mockStorageState = makeStorageState(nowSeconds);
+      await saveSession(tempRoot, 'test', mockStorageState, 'https://example.com');
+      const sessionBefore = await loadSession(tempRoot, 'test');
+
+      await updateSessionMetadata(tempRoot, 'test', {
+        selectedProject: {
+          name: 'Test',
+          slug: 'test',
+          url: 'https://test.bloomreach.co/p/test/home',
+          organization: 'ORG',
+          workspace: 'WS',
+          product: 'Engagement',
+          selectedAt: new Date().toISOString(),
+        },
+      });
+
+      const sessionAfter = await loadSession(tempRoot, 'test');
+      expect(sessionAfter?.metadata.capturedAt).toBe(sessionBefore?.metadata.capturedAt);
+      expect(sessionAfter?.metadata.loginUrl).toBe(sessionBefore?.metadata.loginUrl);
+      expect(sessionAfter?.metadata.cookieCount).toBe(sessionBefore?.metadata.cookieCount);
+    });
+  });
+
+  describe('clearSelectedProject', () => {
+    it('removes selectedProject from metadata', async () => {
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      const mockStorageState = makeStorageState(nowSeconds);
+      await saveSession(tempRoot, 'test', mockStorageState, 'https://example.com');
+      await updateSessionMetadata(tempRoot, 'test', {
+        selectedProject: {
+          name: 'Test',
+          slug: 'test',
+          url: 'https://test.bloomreach.co/p/test/home',
+          organization: 'ORG',
+          workspace: 'WS',
+          product: 'Engagement',
+          selectedAt: new Date().toISOString(),
+        },
+      });
+
+      const result = await clearSelectedProject(tempRoot, 'test');
+      expect(result).toBe(true);
+
+      const session = await loadSession(tempRoot, 'test');
+      expect(session?.metadata.selectedProject).toBeUndefined();
+    });
+
+    it('returns false when no session exists', async () => {
+      const result = await clearSelectedProject(tempRoot, 'nonexistent');
+      expect(result).toBe(false);
+    });
+  });
 });

@@ -28,12 +28,32 @@ export interface BloomreachOriginState {
   localStorage: Array<{ name: string; value: string }>;
 }
 
+/** Metadata for the currently selected Bloomreach project. */
+export interface SelectedProjectMetadata {
+  /** Human-readable project name (e.g. "Kingdom of Joakim"). */
+  name: string;
+  /** URL slug derived from the project URL (e.g. "kingdom-of-joakim"). */
+  slug: string;
+  /** Full project URL (e.g. "https://power.bloomreach.co/p/kingdom-of-joakim/home"). */
+  url: string;
+  /** Organization name (e.g. "POWER"). */
+  organization: string;
+  /** Workspace name (e.g. "POWER"). */
+  workspace: string;
+  /** Product name (e.g. "Engagement"). */
+  product: string;
+  /** ISO-8601 timestamp when this project was selected. */
+  selectedAt: string;
+}
+
 export interface SessionMetadata {
   capturedAt: string; // ISO-8601
   profileName: string;
   loginUrl: string;
   cookieCount: number;
   earliestCookieExpiry: string | null; // ISO-8601 or null if all session cookies
+  /** Currently selected Bloomreach project. Persisted across CLI invocations. */
+  selectedProject?: SelectedProjectMetadata;
 }
 
 export interface StoredSession {
@@ -83,7 +103,9 @@ function buildMetadata(
   loginUrl: string,
   cookies: BloomreachCookie[],
 ): SessionMetadata {
-  const persistentExpiries = cookies.filter((cookie) => cookie.expires > 0).map((cookie) => cookie.expires);
+  const persistentExpiries = cookies
+    .filter((cookie) => cookie.expires > 0)
+    .map((cookie) => cookie.expires);
   const earliestCookieExpiry =
     persistentExpiries.length > 0
       ? new Date(Math.min(...persistentExpiries) * 1000).toISOString()
@@ -96,6 +118,36 @@ function buildMetadata(
     cookieCount: cookies.length,
     earliestCookieExpiry,
   };
+}
+
+async function encryptAndWriteSession(
+  profilesDir: string,
+  profileName: string,
+  storedSession: StoredSession,
+): Promise<string> {
+  const key = deriveEncryptionKey(profileName);
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', key, iv);
+
+  const plaintext = Buffer.from(JSON.stringify(storedSession), 'utf8');
+  const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+  const tag = cipher.getAuthTag();
+
+  const envelope: EncryptedEnvelope = {
+    version: 1,
+    algorithm: 'aes-256-gcm',
+    ciphertext: ciphertext.toString('base64url'),
+    iv: iv.toString('base64url'),
+    tag: tag.toString('base64url'),
+    metadata: storedSession.metadata,
+  };
+
+  const filePath = getSessionFilePath(profilesDir, profileName);
+  await mkdir(path.dirname(filePath), { recursive: true });
+  await writeFile(filePath, JSON.stringify(envelope, null, 2) + '\n', 'utf8');
+  await chmod(filePath, 0o600);
+
+  return filePath;
 }
 
 // ---------------------------------------------------------------------------
@@ -115,29 +167,38 @@ export async function saveSession(
     storageState,
   };
 
-  const key = deriveEncryptionKey(profileName);
-  const iv = randomBytes(12);
-  const cipher = createCipheriv('aes-256-gcm', key, iv);
+  return encryptAndWriteSession(profilesDir, profileName, storedSession);
+}
 
-  const plaintext = Buffer.from(JSON.stringify(storedSession), 'utf8');
-  const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
-  const tag = cipher.getAuthTag();
+/**
+ * Update specific fields of an existing session's metadata without re-capturing the full session.
+ * Returns true if session was found and updated, false if no session exists.
+ */
+export async function updateSessionMetadata(
+  profilesDir: string,
+  profileName: string,
+  update: Partial<SessionMetadata>,
+): Promise<boolean> {
+  const session = await loadSession(profilesDir, profileName);
+  if (!session) {
+    return false;
+  }
 
-  const envelope: EncryptedEnvelope = {
-    version: 1,
-    algorithm: 'aes-256-gcm',
-    ciphertext: ciphertext.toString('base64url'),
-    iv: iv.toString('base64url'),
-    tag: tag.toString('base64url'),
-    metadata,
-  };
+  session.metadata = { ...session.metadata, ...update };
+  await encryptAndWriteSession(profilesDir, profileName, session);
 
-  const filePath = getSessionFilePath(profilesDir, profileName);
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, JSON.stringify(envelope, null, 2) + '\n', 'utf8');
-  await chmod(filePath, 0o600);
+  return true;
+}
 
-  return filePath;
+/**
+ * Remove the selected project from session metadata.
+ * Returns true if session was found and updated, false if no session exists.
+ */
+export async function clearSelectedProject(
+  profilesDir: string,
+  profileName: string,
+): Promise<boolean> {
+  return updateSessionMetadata(profilesDir, profileName, { selectedProject: undefined });
 }
 
 export async function loadSession(
@@ -158,7 +219,9 @@ export async function loadSession(
     const decipher = createDecipheriv('aes-256-gcm', key, iv);
     decipher.setAuthTag(tag);
 
-    const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
+    const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString(
+      'utf8',
+    );
     return JSON.parse(decrypted) as StoredSession;
   } catch {
     return null;
@@ -168,17 +231,18 @@ export async function loadSession(
  * Delete the stored session for a profile.
  * @returns `true` if a session file existed and was removed, `false` if no session was stored.
  */
-export async function deleteSession(
-  profilesDir: string,
-  profileName: string,
-): Promise<boolean> {
+export async function deleteSession(profilesDir: string, profileName: string): Promise<boolean> {
   const filePath = getSessionFilePath(profilesDir, profileName);
   try {
     await unlink(filePath);
     return true;
   } catch (error: unknown) {
     // ENOENT = file doesn't exist — that's fine, return false
-    if (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      (error as NodeJS.ErrnoException).code === 'ENOENT'
+    ) {
       return false;
     }
     throw error;

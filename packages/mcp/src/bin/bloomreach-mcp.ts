@@ -295,6 +295,77 @@ const tools: ToolRoute[] = [
     },
   },
   {
+    name: toolNames.BLOOMREACH_PROJECTS_LIST_TOOL,
+    description:
+      'List all available Bloomreach projects from the project selector page. ' +
+      'Requires an authenticated browser session. Opens a headed browser to scrape the project tree. ' +
+      'Returns projects grouped by organization, workspace, and product.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        profile: {
+          type: 'string',
+          description: 'Browser profile name (default: "default")',
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: toolNames.BLOOMREACH_PROJECTS_SELECT_TOOL,
+    description:
+      'Select a Bloomreach project to work in. Opens a headed browser, navigates to the project selector, ' +
+      'clicks the specified project, and saves the selection for future commands. ' +
+      'Accepts project name (e.g. "Kingdom of Joakim") or URL slug (e.g. "kingdom-of-joakim").',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        nameOrSlug: {
+          type: 'string',
+          description: 'Project name or URL slug to select',
+        },
+        profile: {
+          type: 'string',
+          description: 'Browser profile name (default: "default")',
+        },
+      },
+      required: ['nameOrSlug'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: toolNames.BLOOMREACH_PROJECTS_CURRENT_TOOL,
+    description:
+      'Show the currently selected Bloomreach project. ' +
+      'Reads from stored session metadata — does not open a browser.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        profile: {
+          type: 'string',
+          description: 'Browser profile name (default: "default")',
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: toolNames.BLOOMREACH_PROJECTS_CLEAR_TOOL,
+    description:
+      'Clear the currently selected Bloomreach project. ' +
+      'Removes project selection from stored session metadata — does not open a browser.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        profile: {
+          type: 'string',
+          description: 'Browser profile name (default: "default")',
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
     name: toolNames.BLOOMREACH_DASHBOARDS_LIST_TOOL,
     description:
       'List all dashboards in the project. ⚠️ Not yet available — coming in a future release.',
@@ -6697,6 +6768,47 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (name === toolNames.BLOOMREACH_AUTH_VERIFY_API_TOOL) {
       const authManager = createAuthManager();
       const result = await authManager.verifyApi();
+      return toToolResult(result);
+    }
+
+    // --- Project management tools ---
+    if (name === toolNames.BLOOMREACH_PROJECTS_LIST_TOOL) {
+      const profilesDir = core.resolveProfilesDir();
+      const profileManager = new core.BloomreachProfileManager({ profilesDir });
+      const projectsService = new core.BloomreachProjectsService(profileManager, { profilesDir });
+      const profile = typeof args.profile === 'string' ? args.profile : undefined;
+      const result = await projectsService.listProjects({ profileName: profile });
+      return toToolResult(result);
+    }
+
+    if (name === toolNames.BLOOMREACH_PROJECTS_SELECT_TOOL) {
+      const profilesDir = core.resolveProfilesDir();
+      const profileManager = new core.BloomreachProfileManager({ profilesDir });
+      const projectsService = new core.BloomreachProjectsService(profileManager, { profilesDir });
+      const nameOrSlug = typeof args.nameOrSlug === 'string' ? args.nameOrSlug : '';
+      if (!nameOrSlug) {
+        return toErrorResult(new Error('nameOrSlug is required.'));
+      }
+      const profile = typeof args.profile === 'string' ? args.profile : undefined;
+      const result = await projectsService.selectProject(nameOrSlug, { profileName: profile });
+      return toToolResult(result);
+    }
+
+    if (name === toolNames.BLOOMREACH_PROJECTS_CURRENT_TOOL) {
+      const profilesDir = core.resolveProfilesDir();
+      const profileManager = new core.BloomreachProfileManager({ profilesDir });
+      const projectsService = new core.BloomreachProjectsService(profileManager, { profilesDir });
+      const profile = typeof args.profile === 'string' ? args.profile : undefined;
+      const result = await projectsService.currentProject({ profileName: profile });
+      return toToolResult(result);
+    }
+
+    if (name === toolNames.BLOOMREACH_PROJECTS_CLEAR_TOOL) {
+      const profilesDir = core.resolveProfilesDir();
+      const profileManager = new core.BloomreachProfileManager({ profilesDir });
+      const projectsService = new core.BloomreachProjectsService(profileManager, { profilesDir });
+      const profile = typeof args.profile === 'string' ? args.profile : undefined;
+      const result = await projectsService.clearProject({ profileName: profile });
       return toToolResult(result);
     }
 

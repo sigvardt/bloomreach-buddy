@@ -17,6 +17,14 @@ import type {
   StoredSession,
 } from './bloomreachSessionStore.js';
 import { tryAutoFill, resolveAutoFillConfig } from './auth/loginSelectors.js';
+import {
+  detectCaptcha,
+  isCaptchaVisible,
+  waitForCaptchaResolution,
+} from './auth/captchaDetector.js';
+
+void isCaptchaVisible;
+void waitForCaptchaResolution;
 
 export const BLOOMREACH_LOGIN_URL = 'https://eu.login.bloomreach.com/login';
 export const BLOOMREACH_APP_URL = 'https://app.exponea.com/';
@@ -43,10 +51,16 @@ export interface BloomreachOpenLoginOptions extends BloomreachSessionOptions {
   pollIntervalMs?: number;
   loginUrl?: string;
   autoFill?: boolean;
+  /** Extended timeout when CAPTCHA is detected (ms). Default: 120_000. */
+  captchaTimeoutMs?: number;
+  /** Callback invoked when CAPTCHA challenge is detected during login. */
+  onCaptchaDetected?: () => void;
 }
 
 export interface BloomreachOpenLoginResult extends BloomreachSessionStatus {
   timedOut: boolean;
+  /** Whether a CAPTCHA challenge was detected during login. */
+  captchaDetected: boolean;
 }
 
 export interface BloomreachAuthConfig {
@@ -74,7 +88,10 @@ export function isAuthenticatedPage(url: string): boolean {
       return !LOGIN_DOMAIN_PUBLIC_PATHS.has(parsed.pathname);
     }
     // Or navigates to project pages on .bloomreach.co or .exponea.com
-    return (parsed.hostname.endsWith('.bloomreach.co') || parsed.hostname.endsWith('.exponea.com')) && parsed.pathname !== '/login';
+    return (
+      (parsed.hostname.endsWith('.bloomreach.co') || parsed.hostname.endsWith('.exponea.com')) &&
+      parsed.pathname !== '/login'
+    );
   } catch {
     return false;
   }
@@ -152,7 +169,9 @@ export class BloomreachAuthService {
           if (autoFillConfig.email || autoFillConfig.password) {
             // Wait for the login form to render (Angular SPA needs time after navigation)
             try {
-              await page.waitForSelector('input[name="username"], input[type="email"]', { timeout: 10_000 });
+              await page.waitForSelector('input[name="username"], input[type="email"]', {
+                timeout: 10_000,
+              });
             } catch {
               // Form may not appear (already authenticated, different page layout) — continue
             }
@@ -160,8 +179,9 @@ export class BloomreachAuthService {
           }
         }
 
-        const deadline = Date.now() + timeoutMs;
+        let deadline = Date.now() + timeoutMs;
         let authenticated = false;
+        let captchaDetected = false;
 
         while (Date.now() < deadline) {
           await page.waitForTimeout(pollIntervalMs);
@@ -171,6 +191,21 @@ export class BloomreachAuthService {
             authenticated = true;
             break;
           }
+
+          // Check for CAPTCHA challenge on login page
+          if (!captchaDetected && isLoginPage(currentUrl)) {
+            const captchaResult = await detectCaptcha(page);
+            if (captchaResult.detected) {
+              captchaDetected = true;
+              options?.onCaptchaDetected?.();
+              // Extend deadline if captchaTimeoutMs is specified
+              const captchaTimeoutMs = options?.captchaTimeoutMs ?? 120_000;
+              const newDeadline = Date.now() + captchaTimeoutMs;
+              if (newDeadline > deadline) {
+                deadline = newDeadline;
+              }
+            }
+          }
         }
 
         const checkedAt = new Date().toISOString();
@@ -179,11 +214,14 @@ export class BloomreachAuthService {
           return {
             authenticated: false,
             checkedAt,
-            reason: 'Login timed out. The browser was closed or login was not completed in time.',
+            reason: captchaDetected
+              ? 'CAPTCHA challenge detected but not solved within the timeout period.'
+              : 'Login timed out. The browser was closed or login was not completed in time.',
             profileName,
             sessionCookiePresent: false,
             sessionExpired: false,
             timedOut: true,
+            captchaDetected,
           };
         }
 
@@ -199,6 +237,7 @@ export class BloomreachAuthService {
           sessionCookiePresent: true,
           sessionExpired: false,
           timedOut: false,
+          captchaDetected,
           cookieSummary: summarizeSessionCookies(storageState.cookies),
         };
       },
@@ -234,7 +273,9 @@ export class BloomreachAuthService {
    * Clear stored browser session for a profile.
    * @returns Object indicating if a session was cleared and which profile.
    */
-  async logout(options?: BloomreachSessionOptions): Promise<{ cleared: boolean; profileName: string }> {
+  async logout(
+    options?: BloomreachSessionOptions,
+  ): Promise<{ cleared: boolean; profileName: string }> {
     const profileName = options?.profileName ?? 'default';
     const cleared = await deleteSession(this.profilesDir, profileName);
     return { cleared, profileName };

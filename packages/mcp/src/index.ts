@@ -391,6 +391,12 @@ export const BLOOMREACH_AUTH_LOGIN_TOOL = 'bloomreach.auth.login';
 export const BLOOMREACH_AUTH_LOGOUT_TOOL = 'bloomreach.auth.logout';
 export const BLOOMREACH_AUTH_VERIFY_API_TOOL = 'bloomreach.auth.verify_api';
 
+// --- Project management tools ---
+export const BLOOMREACH_PROJECTS_LIST_TOOL = 'bloomreach.projects.list';
+export const BLOOMREACH_PROJECTS_SELECT_TOOL = 'bloomreach.projects.select';
+export const BLOOMREACH_PROJECTS_CURRENT_TOOL = 'bloomreach.projects.current';
+export const BLOOMREACH_PROJECTS_CLEAR_TOOL = 'bloomreach.projects.clear';
+
 // --- Recommendations tools (issue #182) ---
 export const BLOOMREACH_RECOMMENDATIONS_LIST_TOOL = 'bloomreach.recommendations.list';
 export const BLOOMREACH_RECOMMENDATIONS_VIEW_PERFORMANCE_TOOL =
@@ -691,6 +697,10 @@ export const BLOOMREACH_MCP_TOOL_NAMES = [
   BLOOMREACH_AUTH_LOGIN_TOOL,
   BLOOMREACH_AUTH_LOGOUT_TOOL,
   BLOOMREACH_AUTH_VERIFY_API_TOOL,
+  BLOOMREACH_PROJECTS_LIST_TOOL,
+  BLOOMREACH_PROJECTS_SELECT_TOOL,
+  BLOOMREACH_PROJECTS_CURRENT_TOOL,
+  BLOOMREACH_PROJECTS_CLEAR_TOOL,
   BLOOMREACH_ACTIONS_CONFIRM_TOOL,
   BLOOMREACH_ACTIONS_LIST_TOOL,
 ] as const;
