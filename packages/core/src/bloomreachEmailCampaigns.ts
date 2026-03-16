@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireObject, requireString } from './errors.js';
 import { bloomreachApiFetch, buildEmailPath } from './bloomreachApiClient.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
@@ -168,6 +168,7 @@ const MAX_AB_TEST_VARIANTS = 10;
 
 /** @throws {Error} If name is empty or exceeds 200 characters. */
 export function validateCampaignName(name: string): string {
+  requireString(name, 'Campaign name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_CAMPAIGN_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Campaign name must not be empty.');
@@ -180,6 +181,7 @@ export function validateCampaignName(name: string): string {
 
 /** @throws {Error} If subject line is empty or exceeds 998 characters (RFC 2822 limit). */
 export function validateSubjectLine(subjectLine: string): string {
+  requireString(subjectLine, 'Subject line');
   const trimmed = subjectLine.trim();
   if (trimmed.length < MIN_SUBJECT_LINE_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Subject line must not be empty.');
@@ -192,6 +194,7 @@ export function validateSubjectLine(subjectLine: string): string {
 
 /** @throws {Error} If `status` is not a recognised email campaign status. */
 export function validateEmailCampaignStatus(status: string): EmailCampaignStatus {
+  requireString(status, 'status');
   if (!EMAIL_CAMPAIGN_STATUSES.includes(status as EmailCampaignStatus)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `status must be one of: ${EMAIL_CAMPAIGN_STATUSES.join(', ')} (got "${status}").`);
   }
@@ -200,6 +203,7 @@ export function validateEmailCampaignStatus(status: string): EmailCampaignStatus
 
 /** @throws {Error} If `templateType` is not a recognised template type. */
 export function validateTemplateType(templateType: string): EmailTemplateType {
+  requireString(templateType, 'templateType');
   if (!EMAIL_TEMPLATE_TYPES.includes(templateType as EmailTemplateType)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `templateType must be one of: ${EMAIL_TEMPLATE_TYPES.join(', ')} (got "${templateType}").`);
   }
@@ -208,6 +212,7 @@ export function validateTemplateType(templateType: string): EmailTemplateType {
 
 /** @throws {Error} If `scheduleType` is not a recognised schedule type. */
 export function validateScheduleType(scheduleType: string): SendScheduleType {
+  requireString(scheduleType, 'schedule type');
   if (!SEND_SCHEDULE_TYPES.includes(scheduleType as SendScheduleType)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `schedule type must be one of: ${SEND_SCHEDULE_TYPES.join(', ')} (got "${scheduleType}").`);
   }
@@ -216,6 +221,7 @@ export function validateScheduleType(scheduleType: string): SendScheduleType {
 
 /** @throws {Error} If A/B test config is invalid. */
 export function validateABTestConfig(config: EmailCampaignABTestConfig): EmailCampaignABTestConfig {
+  requireObject(config, 'AB test config');
   if (
     !Number.isInteger(config.variants) ||
     config.variants < MIN_AB_TEST_VARIANTS ||
@@ -233,6 +239,7 @@ export function validateABTestConfig(config: EmailCampaignABTestConfig): EmailCa
 
 /** @throws {Error} If campaign ID is empty. */
 export function validateCampaignId(id: string): string {
+  requireString(id, 'Campaign ID');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Campaign ID must not be empty.');
@@ -242,6 +249,7 @@ export function validateCampaignId(id: string): string {
 
 /** @throws {Error} If schedule config is invalid. */
 export function validateSchedule(schedule: EmailCampaignSchedule): EmailCampaignSchedule {
+  requireObject(schedule, 'schedule');
   validateScheduleType(schedule.type);
   if (schedule.type === 'scheduled' && schedule.scheduledAt === undefined) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'scheduledAt is required when schedule type is "scheduled".');
@@ -253,6 +261,7 @@ export function validateSchedule(schedule: EmailCampaignSchedule): EmailCampaign
 }
 
 export function validateEmailIntegrationId(id: string): string {
+  requireString(id, 'Integration ID');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Integration ID must not be empty.');
@@ -261,6 +270,7 @@ export function validateEmailIntegrationId(id: string): string {
 }
 
 export function validateEmailAddress(email: string): string {
+  requireString(email, 'Email address');
   const trimmed = email.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Email address must not be empty.');
@@ -274,6 +284,7 @@ export function validateEmailAddress(email: string): string {
 export function validateTransactionalEmailContent(
   content: TransactionalEmailContent,
 ): TransactionalEmailContent {
+  requireObject(content, 'content');
   if (!content.templateId && !content.html) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Email content must include either a templateId or raw html.');
   }

@@ -99,3 +99,50 @@ export function toErrorPayload(error: unknown): ErrorPayload {
   }
   return { code: 'UNKNOWN', message: String(error), details: {} };
 }
+
+// ---------------------------------------------------------------------------
+// Runtime input guards
+// ---------------------------------------------------------------------------
+
+/**
+ * Runtime guard — asserts that `value` is a non-null string.
+ * Throws `ACTION_PRECONDITION_FAILED` when called with null, undefined, or a
+ * non-string value.  Use at the top of validation helpers to protect against
+ * untyped MCP tool inputs (`Record<string, unknown>`).
+ */
+export function requireString(value: unknown, fieldName: string): asserts value is string {
+  if (value == null || typeof value !== 'string') {
+    throw new BloomreachBuddyError(
+      'ACTION_PRECONDITION_FAILED',
+      `${fieldName} is required and must be a string.`,
+    );
+  }
+}
+
+/**
+ * Runtime guard — asserts that `value` is a non-null array.
+ * Throws `ACTION_PRECONDITION_FAILED` when called with null, undefined, or a
+ * non-array value.
+ */
+export function requireArray(value: unknown, fieldName: string): asserts value is unknown[] {
+  if (!Array.isArray(value)) {
+    throw new BloomreachBuddyError(
+      'ACTION_PRECONDITION_FAILED',
+      `${fieldName} is required and must be an array.`,
+    );
+  }
+}
+
+/**
+ * Runtime guard — asserts that `value` is a non-null, non-array object.
+ * Throws `ACTION_PRECONDITION_FAILED` when called with null, undefined, or a
+ * non-object value.
+ */
+export function requireObject(value: unknown, fieldName: string): asserts value is Record<string, unknown> {
+  if (value == null || typeof value !== 'object' || Array.isArray(value)) {
+    throw new BloomreachBuddyError(
+      'ACTION_PRECONDITION_FAILED',
+      `${fieldName} is required and must be an object.`,
+    );
+  }
+}

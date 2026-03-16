@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString } from './errors.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
@@ -92,6 +92,7 @@ const MAX_GEO_ANALYSIS_NAME_LENGTH = 200;
 const MIN_GEO_ANALYSIS_NAME_LENGTH = 1;
 
 export function validateGeoAnalysisName(name: string): string {
+  requireString(name, 'Geo analysis name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_GEO_ANALYSIS_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Geo analysis name must not be empty.');
@@ -103,6 +104,7 @@ export function validateGeoAnalysisName(name: string): string {
 }
 
 export function validateGeoGranularity(granularity: string): GeoGranularity {
+  requireString(granularity, 'granularity');
   if (!GEO_GRANULARITIES.includes(granularity as GeoGranularity)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `granularity must be one of: ${GEO_GRANULARITIES.join(', ')} (got "${granularity}").`);
   }
@@ -110,6 +112,7 @@ export function validateGeoGranularity(granularity: string): GeoGranularity {
 }
 
 export function validateGeoAnalysisId(id: string): string {
+  requireString(id, 'Geo analysis ID');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Geo analysis ID must not be empty.');
@@ -118,6 +121,7 @@ export function validateGeoAnalysisId(id: string): string {
 }
 
 export function validateAttribute(attribute: string): string {
+  requireString(attribute, 'attribute');
   const trimmed = attribute.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'attribute must not be empty.');

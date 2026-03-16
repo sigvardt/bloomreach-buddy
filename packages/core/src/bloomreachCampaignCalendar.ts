@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const EXPORT_CALENDAR_ACTION_TYPE = 'campaign_calendar.export';
@@ -108,6 +108,7 @@ const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 /** @throws {Error} If date is not a valid ISO-8601 YYYY-MM-DD string. */
 export function validateDateFormat(date: string): string {
+  requireString(date, 'Date');
   const trimmed = date.trim();
   if (!ISO_DATE_REGEX.test(trimmed)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Date must be in YYYY-MM-DD format (got "${trimmed}").`);
@@ -124,6 +125,8 @@ export function validateDateFormat(date: string): string {
  *   or if startDate is after endDate.
  */
 export function validateCalendarDateRange(startDate: string, endDate: string): CalendarDateRange {
+  requireString(startDate, 'Start date');
+  requireString(endDate, 'End date');
   const validStart = validateDateFormat(startDate);
   const validEnd = validateDateFormat(endDate);
   if (new Date(validStart) > new Date(validEnd)) {
@@ -134,6 +137,7 @@ export function validateCalendarDateRange(startDate: string, endDate: string): C
 
 /** @throws {Error} If `type` is not a recognised campaign type. */
 export function validateCalendarCampaignType(type: string): CampaignCalendarCampaignType {
+  requireString(type, 'Campaign type');
   if (!CAMPAIGN_CALENDAR_CAMPAIGN_TYPES.includes(type as CampaignCalendarCampaignType)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Campaign type must be one of: ${CAMPAIGN_CALENDAR_CAMPAIGN_TYPES.join(', ')} (got "${type}").`);
   }
@@ -142,6 +146,7 @@ export function validateCalendarCampaignType(type: string): CampaignCalendarCamp
 
 /** @throws {Error} If `status` is not a recognised campaign calendar status. */
 export function validateCalendarCampaignStatus(status: string): CampaignCalendarStatus {
+  requireString(status, 'Campaign status');
   if (!CAMPAIGN_CALENDAR_STATUSES.includes(status as CampaignCalendarStatus)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Campaign status must be one of: ${CAMPAIGN_CALENDAR_STATUSES.join(', ')} (got "${status}").`);
   }
@@ -150,6 +155,7 @@ export function validateCalendarCampaignStatus(status: string): CampaignCalendar
 
 /** @throws {Error} If `channel` is not a recognised campaign channel. */
 export function validateCalendarChannel(channel: string): CampaignCalendarChannel {
+  requireString(channel, 'Channel');
   if (!CAMPAIGN_CALENDAR_CHANNELS.includes(channel as CampaignCalendarChannel)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Channel must be one of: ${CAMPAIGN_CALENDAR_CHANNELS.join(', ')} (got "${channel}").`);
   }
@@ -158,6 +164,7 @@ export function validateCalendarChannel(channel: string): CampaignCalendarChanne
 
 /** @throws {Error} If `format` is not a recognised export format. */
 export function validateExportFormat(format: string): CampaignCalendarExportFormat {
+  requireString(format, 'Export format');
   if (!CAMPAIGN_CALENDAR_EXPORT_FORMATS.includes(format as CampaignCalendarExportFormat)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Export format must be one of: ${CAMPAIGN_CALENDAR_EXPORT_FORMATS.join(', ')} (got "${format}").`);
   }

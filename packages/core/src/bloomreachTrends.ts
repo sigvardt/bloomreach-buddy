@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireArray, requireString } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import { validateDateRange } from './bloomreachPerformance.js';
 import type { DateRangeFilter } from './bloomreachPerformance.js';
@@ -90,6 +90,7 @@ const MAX_TREND_NAME_LENGTH = 200;
 const MIN_TREND_NAME_LENGTH = 1;
 
 export function validateTrendName(name: string): string {
+  requireString(name, 'Trend name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_TREND_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Trend name must not be empty.');
@@ -101,6 +102,7 @@ export function validateTrendName(name: string): string {
 }
 
 export function validateTrendGranularity(granularity: string): TrendGranularity {
+  requireString(granularity, 'granularity');
   if (!TREND_GRANULARITIES.includes(granularity as TrendGranularity)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `granularity must be one of: ${TREND_GRANULARITIES.join(', ')} (got "${granularity}").`);
   }
@@ -108,6 +110,7 @@ export function validateTrendGranularity(granularity: string): TrendGranularity 
 }
 
 export function validateTrendAnalysisId(id: string): string {
+  requireString(id, 'Trend analysis ID');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Trend analysis ID must not be empty.');
@@ -246,7 +249,11 @@ export class BloomreachTrendsService {
     const granularity =
       input.granularity !== undefined ? validateTrendGranularity(input.granularity) : undefined;
 
-    const events = input.events.map((event) => event.trim()).filter(Boolean);
+    requireArray(input.events, 'events');
+    const events = input.events.map((event) => {
+      requireString(event, 'event name');
+      return event.trim();
+    }).filter(Boolean);
     if (events.length === 0) {
       throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'events must contain at least one event name.');
     }

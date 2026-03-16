@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString, requireArray } from './errors.js';
 import {
   bloomreachApiFetch,
   buildDataPath,
@@ -219,6 +219,7 @@ const TRANSFORMATION_TYPES = new Set([
 ]);
 
 function validateRequiredTrimmed(value: string, fieldName: string): string {
+  requireString(value, fieldName);
   const trimmed = value.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${fieldName} must not be empty.`);
@@ -227,6 +228,7 @@ function validateRequiredTrimmed(value: string, fieldName: string): string {
 }
 
 function validatePropertyName(name: string): string {
+  requireString(name, 'name');
   const trimmed = validateRequiredTrimmed(name, 'Property name');
   if (trimmed.length > MAX_PROPERTY_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Property name must not exceed ${MAX_PROPERTY_NAME_LENGTH} characters (got ${trimmed.length}).`);
@@ -235,6 +237,7 @@ function validatePropertyName(name: string): string {
 }
 
 function validateEventName(name: string): string {
+  requireString(name, 'name');
   const trimmed = validateRequiredTrimmed(name, 'Event name');
   if (trimmed.length > MAX_EVENT_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Event name must not exceed ${MAX_EVENT_NAME_LENGTH} characters (got ${trimmed.length}).`);
@@ -243,6 +246,7 @@ function validateEventName(name: string): string {
 }
 
 function validateDefinitionName(name: string): string {
+  requireString(name, 'name');
   const trimmed = validateRequiredTrimmed(name, 'Definition name');
   if (trimmed.length > MAX_DEFINITION_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Definition name must not exceed ${MAX_DEFINITION_NAME_LENGTH} characters (got ${trimmed.length}).`);
@@ -251,6 +255,7 @@ function validateDefinitionName(name: string): string {
 }
 
 function validateDescription(description: string): string {
+  requireString(description, 'description');
   const trimmed = validateRequiredTrimmed(description, 'Description');
   if (trimmed.length > MAX_DESCRIPTION_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Description must not exceed ${MAX_DESCRIPTION_LENGTH} characters (got ${trimmed.length}).`);
@@ -259,6 +264,7 @@ function validateDescription(description: string): string {
 }
 
 function validatePropertyType(type: string): string {
+  requireString(type, 'type');
   const normalized = validateRequiredTrimmed(type, 'Property type').toLowerCase();
   if (!PROPERTY_TYPES.has(normalized)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Property type must be one of: ${Array.from(PROPERTY_TYPES).join(', ')} (got ${normalized}).`);
@@ -267,6 +273,7 @@ function validatePropertyType(type: string): string {
 }
 
 function validateEventType(type: string): string {
+  requireString(type, 'type');
   const normalized = validateRequiredTrimmed(type, 'Event type').toLowerCase();
   if (!PROPERTY_TYPES.has(normalized)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Event type must be one of: ${Array.from(PROPERTY_TYPES).join(', ')} (got ${normalized}).`);
@@ -275,6 +282,7 @@ function validateEventType(type: string): string {
 }
 
 function validateFieldType(type: string): string {
+  requireString(type, 'type');
   const normalized = validateRequiredTrimmed(type, 'Field type').toLowerCase();
   if (!PROPERTY_TYPES.has(normalized)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Field type must be one of: ${Array.from(PROPERTY_TYPES).join(', ')} (got ${normalized}).`);
@@ -283,6 +291,7 @@ function validateFieldType(type: string): string {
 }
 
 function validateSourceType(sourceType: string): string {
+  requireString(sourceType, 'Source type');
   const normalized = validateRequiredTrimmed(sourceType, 'Source type').toLowerCase();
   if (!SOURCE_TYPES.has(normalized)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Source type must be one of: ${Array.from(SOURCE_TYPES).join(', ')} (got ${normalized}).`);
@@ -291,6 +300,7 @@ function validateSourceType(sourceType: string): string {
 }
 
 function validateSourceUrl(url: string): string {
+  requireString(url, 'url');
   const trimmed = validateRequiredTrimmed(url, 'Source URL');
   if (trimmed.length > MAX_URL_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Source URL must not exceed ${MAX_URL_LENGTH} characters (got ${trimmed.length}).`);
@@ -304,6 +314,7 @@ function validateSourceUrl(url: string): string {
 }
 
 function validateSourceName(name: string): string {
+  requireString(name, 'name');
   const trimmed = validateRequiredTrimmed(name, 'Source name');
   if (trimmed.length > MAX_SOURCE_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Source name must not exceed ${MAX_SOURCE_NAME_LENGTH} characters (got ${trimmed.length}).`);
@@ -312,6 +323,7 @@ function validateSourceName(name: string): string {
 }
 
 function validateDefinitionId(id: string): string {
+  requireString(id, 'id');
   const trimmed = validateRequiredTrimmed(id, 'Definition ID');
   if (trimmed.length > MAX_FIELD_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Definition ID must not exceed ${MAX_FIELD_NAME_LENGTH} characters (got ${trimmed.length}).`);
@@ -320,6 +332,7 @@ function validateDefinitionId(id: string): string {
 }
 
 function validateSourceId(id: string): string {
+  requireString(id, 'id');
   const trimmed = validateRequiredTrimmed(id, 'Source ID');
   if (trimmed.length > MAX_FIELD_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Source ID must not exceed ${MAX_FIELD_NAME_LENGTH} characters (got ${trimmed.length}).`);
@@ -331,6 +344,8 @@ function validateMappingFields(
   sourceField: string,
   targetField: string,
 ): { sourceField: string; targetField: string } {
+  requireString(sourceField, 'Source field');
+  requireString(targetField, 'Target field');
   const validatedSourceField = validateRequiredTrimmed(sourceField, 'Source field');
   if (validatedSourceField.length > MAX_FIELD_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Source field must not exceed ${MAX_FIELD_NAME_LENGTH} characters (got ${validatedSourceField.length}).`);
@@ -348,6 +363,7 @@ function validateMappingFields(
 }
 
 function validateTransformationType(type: string): string {
+  requireString(type, 'type');
   const normalized = validateRequiredTrimmed(type, 'Transformation type').toLowerCase();
   if (!TRANSFORMATION_TYPES.has(normalized)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Transformation type must be one of: ${Array.from(TRANSFORMATION_TYPES).join(', ')} (got ${normalized}).`);
@@ -396,6 +412,8 @@ function validateEventProperties(
   if (properties === undefined) {
     return [];
   }
+
+  requireArray(properties, 'Event properties');
 
   return properties.map((property, index) => {
     const name = validatePropertyName(property.name);

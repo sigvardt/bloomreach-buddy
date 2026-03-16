@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const CREATE_SCENARIO_ACTION_TYPE = 'scenarios.create_scenario';
@@ -100,6 +100,7 @@ const MAX_SCENARIO_NAME_LENGTH = 200;
 const MIN_SCENARIO_NAME_LENGTH = 1;
 
 export function validateScenarioName(name: string): string {
+  requireString(name, 'scenario name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_SCENARIO_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Scenario name must not be empty.');
@@ -111,6 +112,7 @@ export function validateScenarioName(name: string): string {
 }
 
 export function validateScenarioStatus(status: string): ScenarioStatus {
+  requireString(status, 'status');
   if (!SCENARIO_STATUSES.includes(status as ScenarioStatus)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `status must be one of: ${SCENARIO_STATUSES.join(', ')} (got "${status}").`);
   }
@@ -118,6 +120,7 @@ export function validateScenarioStatus(status: string): ScenarioStatus {
 }
 
 export function validateScenarioId(id: string): string {
+  requireString(id, 'scenarioId');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Scenario ID must not be empty.');

@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString } from './errors.js';
 
 export const CREATE_EMAIL_TEMPLATE_ACTION_TYPE =
   'asset_manager.create_email_template';
@@ -229,6 +229,7 @@ type CloneableAssetType = (typeof CLONEABLE_ASSET_TYPES)[number];
 
 /** @throws {Error} If name is empty or exceeds 200 characters. */
 export function validateAssetName(name: string): string {
+  requireString(name, 'name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_ASSET_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Asset name must not be empty.');
@@ -241,6 +242,7 @@ export function validateAssetName(name: string): string {
 
 /** @throws {Error} If `type` is not a recognised asset type. */
 export function validateAssetType(type: string): AssetType {
+  requireString(type, 'type');
   if (!ASSET_TYPES.includes(type as AssetType)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `assetType must be one of: ${ASSET_TYPES.join(', ')} (got "${type}").`);
   }
@@ -249,6 +251,7 @@ export function validateAssetType(type: string): AssetType {
 
 /** @throws {Error} If `status` is not a recognised template status. */
 export function validateTemplateStatus(status: string): TemplateStatus {
+  requireString(status, 'status');
   if (!TEMPLATE_STATUSES.includes(status as TemplateStatus)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `status must be one of: ${TEMPLATE_STATUSES.join(', ')} (got "${status}").`);
   }
@@ -257,6 +260,7 @@ export function validateTemplateStatus(status: string): TemplateStatus {
 
 /** @throws {Error} If `category` is not a recognised file category. */
 export function validateFileCategory(category: string): FileCategory {
+  requireString(category, 'category');
   if (!FILE_CATEGORIES.includes(category as FileCategory)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `category must be one of: ${FILE_CATEGORIES.join(', ')} (got "${category}").`);
   }
@@ -265,6 +269,7 @@ export function validateFileCategory(category: string): FileCategory {
 
 /** @throws {Error} If `language` is not a recognised snippet language. */
 export function validateSnippetLanguage(language: string): SnippetLanguage {
+  requireString(language, 'language');
   if (!SNIPPET_LANGUAGES.includes(language as SnippetLanguage)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `language must be one of: ${SNIPPET_LANGUAGES.join(', ')} (got "${language}").`);
   }
@@ -273,6 +278,7 @@ export function validateSnippetLanguage(language: string): SnippetLanguage {
 
 /** @throws {Error} If `type` is not a recognised builder type. */
 export function validateBuilderType(type: string): TemplateBuilderType {
+  requireString(type, 'type');
   if (!TEMPLATE_BUILDER_TYPES.includes(type as TemplateBuilderType)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `builderType must be one of: ${TEMPLATE_BUILDER_TYPES.join(', ')} (got "${type}").`);
   }
@@ -281,6 +287,7 @@ export function validateBuilderType(type: string): TemplateBuilderType {
 
 /** @throws {Error} If snippet content is empty or exceeds 100000 characters. */
 export function validateSnippetContent(content: string): string {
+  requireString(content, 'content');
   if (content.trim().length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Snippet content must not be empty.');
   }
@@ -292,6 +299,7 @@ export function validateSnippetContent(content: string): string {
 
 /** @throws {Error} If mime type is empty or malformed. */
 export function validateMimeType(mimeType: string): string {
+  requireString(mimeType, 'MIME type');
   const trimmed = mimeType.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'MIME type must not be empty.');
@@ -304,6 +312,7 @@ export function validateMimeType(mimeType: string): string {
 
 /** @throws {Error} If asset ID is empty. */
 export function validateAssetId(id: string): string {
+  requireString(id, 'id');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Asset ID must not be empty.');
@@ -312,6 +321,7 @@ export function validateAssetId(id: string): string {
 }
 
 function validateCloneableAssetType(type: string): CloneableAssetType {
+  requireString(type, 'type');
   const assetType = validateAssetType(type);
   if (!CLONEABLE_ASSET_TYPES.includes(assetType as CloneableAssetType)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `assetType must be one of cloneable types: ${CLONEABLE_ASSET_TYPES.join(', ')} (got "${type}").`);

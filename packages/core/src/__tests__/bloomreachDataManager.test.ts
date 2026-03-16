@@ -1752,3 +1752,107 @@ describe('BloomreachDataManagerService - consent categories', () => {
     });
   });
 });
+
+describe('null/undefined input guards', () => {
+  it('throws when prepareAddCustomerProperty is called without name', () => {
+    const service = new BloomreachDataManagerService('test');
+    expect(() =>
+      service.prepareAddCustomerProperty({
+        project: 'test',
+        name: undefined as unknown as string,
+        type: 'string',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareAddCustomerProperty is called without type', () => {
+    const service = new BloomreachDataManagerService('test');
+    expect(() =>
+      service.prepareAddCustomerProperty({
+        project: 'test',
+        name: 'tier',
+        type: undefined as unknown as string,
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareAddCustomerProperty is called without project', () => {
+    const service = new BloomreachDataManagerService('test');
+    expect(() =>
+      service.prepareAddCustomerProperty({
+        project: undefined as unknown as string,
+        name: 'tier',
+        type: 'string',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareAddEventDefinition is called without name', () => {
+    const service = new BloomreachDataManagerService('test');
+    expect(() =>
+      service.prepareAddEventDefinition({
+        project: 'test',
+        name: undefined as unknown as string,
+        type: 'json',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareAddEventDefinition is called without type', () => {
+    const service = new BloomreachDataManagerService('test');
+    expect(() =>
+      service.prepareAddEventDefinition({
+        project: 'test',
+        name: 'checkout',
+        type: undefined as unknown as string,
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareAddEventDefinition is called without project', () => {
+    const service = new BloomreachDataManagerService('test');
+    expect(() =>
+      service.prepareAddEventDefinition({
+        project: undefined as unknown as string,
+        name: 'checkout',
+        type: 'json',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareConfigureMapping is called without sourceField', () => {
+    const service = new BloomreachDataManagerService('test');
+    expect(() =>
+      service.prepareConfigureMapping({
+        project: 'test',
+        sourceField: undefined as unknown as string,
+        targetField: 'target',
+        transformationType: 'direct',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareConfigureMapping is called without targetField', () => {
+    const service = new BloomreachDataManagerService('test');
+    expect(() =>
+      service.prepareConfigureMapping({
+        project: 'test',
+        sourceField: 'source',
+        targetField: undefined as unknown as string,
+        transformationType: 'direct',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareConfigureMapping is called without project', () => {
+    const service = new BloomreachDataManagerService('test');
+    expect(() =>
+      service.prepareConfigureMapping({
+        project: undefined as unknown as string,
+        sourceField: 'source',
+        targetField: 'target',
+        transformationType: 'direct',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+});

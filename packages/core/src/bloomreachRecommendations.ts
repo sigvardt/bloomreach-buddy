@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireArray, requireObject, requireString } from './errors.js';
 
 export const CREATE_RECOMMENDATION_MODEL_ACTION_TYPE = 'recommendations.create_model';
 export const CONFIGURE_RECOMMENDATION_MODEL_ACTION_TYPE = 'recommendations.configure_model';
@@ -117,6 +117,7 @@ const MIN_MAX_ITEMS = 1;
 const MAX_MAX_ITEMS = 100;
 
 export function validateModelName(name: string): string {
+  requireString(name, 'model name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_MODEL_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Model name must not be empty.');
@@ -128,6 +129,7 @@ export function validateModelName(name: string): string {
 }
 
 export function validateModelId(id: string): string {
+  requireString(id, 'modelId');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Model ID must not be empty.');
@@ -136,6 +138,7 @@ export function validateModelId(id: string): string {
 }
 
 export function validateRecommendationModelStatus(status: string): RecommendationModelStatus {
+  requireString(status, 'status');
   if (!RECOMMENDATION_MODEL_STATUSES.includes(status as RecommendationModelStatus)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `status must be one of: ${RECOMMENDATION_MODEL_STATUSES.join(', ')} (got "${status}").`);
   }
@@ -143,6 +146,7 @@ export function validateRecommendationModelStatus(status: string): Recommendatio
 }
 
 export function validateAlgorithmType(algorithm: string): RecommendationAlgorithmType {
+  requireString(algorithm, 'algorithm');
   if (!RECOMMENDATION_ALGORITHM_TYPES.includes(algorithm as RecommendationAlgorithmType)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `algorithm must be one of: ${RECOMMENDATION_ALGORITHM_TYPES.join(', ')} (got "${algorithm}").`);
   }
@@ -152,11 +156,16 @@ export function validateAlgorithmType(algorithm: string): RecommendationAlgorith
 export function validateFilterRules(
   filters: RecommendationFilterRule[],
 ): RecommendationFilterRule[] {
+  requireArray(filters, 'filters');
   if (filters.length > MAX_FILTER_RULES) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `filters must contain at most ${MAX_FILTER_RULES} rules (got ${filters.length}).`);
   }
 
   return filters.map((filter, index) => {
+    requireObject(filter, `filters[${index}]`);
+    requireString(filter.field, `filters[${index}].field`);
+    requireString(filter.operator, `filters[${index}].operator`);
+    requireString(filter.value, `filters[${index}].value`);
     const field = filter.field.trim();
     const operator = filter.operator.trim();
     const value = filter.value.trim();
@@ -182,11 +191,14 @@ export function validateFilterRules(
 export function validateBoostRules(
   boostRules: RecommendationBoostRule[],
 ): RecommendationBoostRule[] {
+  requireArray(boostRules, 'boostRules');
   if (boostRules.length > MAX_BOOST_RULES) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `boostRules must contain at most ${MAX_BOOST_RULES} rules (got ${boostRules.length}).`);
   }
 
   return boostRules.map((boostRule, index) => {
+    requireObject(boostRule, `boostRules[${index}]`);
+    requireString(boostRule.field, `boostRules[${index}].field`);
     const field = boostRule.field.trim();
     if (field.length === 0) {
       throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `boostRules[${index}].field must not be empty.`);
@@ -293,6 +305,7 @@ export class BloomreachRecommendationsService {
   ): PreparedRecommendationAction {
     const project = validateProject(input.project);
     const name = validateModelName(input.name);
+    requireString(input.modelType, 'model type');
     const modelType = input.modelType.trim();
     if (modelType.length === 0) {
       throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Model type must not be empty.');

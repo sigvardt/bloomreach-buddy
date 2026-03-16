@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 // ---------------------------------------------------------------------------
@@ -449,6 +449,7 @@ const MIN_PAGE_VARIABLE_NAME_LENGTH = 1;
 const MAX_PAGE_VARIABLE_VALUE_LENGTH = 5000;
 
 export function validateTimezoneName(name: string): string {
+  requireString(name, 'Timezone name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_TIMEZONE_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Timezone name must not be empty.');
@@ -460,6 +461,7 @@ export function validateTimezoneName(name: string): string {
 }
 
 export function validateTimezoneId(id: string): string {
+  requireString(id, 'Timezone ID');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Timezone ID must not be empty.');
@@ -468,6 +470,7 @@ export function validateTimezoneId(id: string): string {
 }
 
 export function validateLanguageCode(code: string): string {
+  requireString(code, 'Language code');
   const trimmed = code.trim();
   if (trimmed.length < MIN_LANGUAGE_CODE_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Language code must not be empty.');
@@ -479,6 +482,7 @@ export function validateLanguageCode(code: string): string {
 }
 
 export function validateLanguageName(name: string): string {
+  requireString(name, 'Language name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_LANGUAGE_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Language name must not be empty.');
@@ -490,6 +494,7 @@ export function validateLanguageName(name: string): string {
 }
 
 export function validateFontName(name: string): string {
+  requireString(name, 'Font name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_FONT_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Font name must not be empty.');
@@ -501,6 +506,7 @@ export function validateFontName(name: string): string {
 }
 
 export function validateFontId(id: string): string {
+  requireString(id, 'Font ID');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Font ID must not be empty.');
@@ -509,6 +515,7 @@ export function validateFontId(id: string): string {
 }
 
 export function validatePolicyName(name: string): string {
+  requireString(name, 'Policy name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_POLICY_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Policy name must not be empty.');
@@ -520,6 +527,7 @@ export function validatePolicyName(name: string): string {
 }
 
 export function validatePolicyId(id: string): string {
+  requireString(id, 'Policy ID');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Policy ID must not be empty.');
@@ -528,6 +536,7 @@ export function validatePolicyId(id: string): string {
 }
 
 export function validateConsentCategory(category: string): string {
+  requireString(category, 'Consent category');
   const trimmed = category.trim();
   if (trimmed.length < MIN_CONSENT_CATEGORY_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Consent category must not be empty.');
@@ -539,6 +548,7 @@ export function validateConsentCategory(category: string): string {
 }
 
 export function validateConsentId(id: string): string {
+  requireString(id, 'Consent ID');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Consent ID must not be empty.');
@@ -547,6 +557,7 @@ export function validateConsentId(id: string): string {
 }
 
 export function validateUrlListName(name: string): string {
+  requireString(name, 'URL list name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_URL_LIST_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'URL list name must not be empty.');
@@ -558,6 +569,7 @@ export function validateUrlListName(name: string): string {
 }
 
 export function validateUrlListId(id: string): string {
+  requireString(id, 'URL list ID');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'URL list ID must not be empty.');
@@ -566,6 +578,7 @@ export function validateUrlListId(id: string): string {
 }
 
 export function validatePageVariableName(name: string): string {
+  requireString(name, 'Page variable name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_PAGE_VARIABLE_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Page variable name must not be empty.');
@@ -577,6 +590,7 @@ export function validatePageVariableName(name: string): string {
 }
 
 export function validatePageVariableId(id: string): string {
+  requireString(id, 'Page variable ID');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Page variable ID must not be empty.');
@@ -585,6 +599,7 @@ export function validatePageVariableId(id: string): string {
 }
 
 export function validatePageVariableValue(value: string): string {
+  requireString(value, 'Page variable value');
   const trimmed = value.trim();
   if (trimmed.length > MAX_PAGE_VARIABLE_VALUE_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Page variable value must not exceed ${MAX_PAGE_VARIABLE_VALUE_LENGTH} characters (got ${trimmed.length}).`);
@@ -1225,14 +1240,29 @@ export class BloomreachCampaignSettingsService {
       input.defaultSenderName !== undefined
         ? validatePolicyName(input.defaultSenderName)
         : undefined;
+    if (input.defaultSenderEmail !== undefined) {
+      requireString(input.defaultSenderEmail, 'Default sender email');
+    }
     const defaultSenderEmail =
       input.defaultSenderEmail !== undefined ? input.defaultSenderEmail.trim() : undefined;
+    if (input.defaultReplyToEmail !== undefined) {
+      requireString(input.defaultReplyToEmail, 'Default reply-to email');
+    }
     const defaultReplyToEmail =
       input.defaultReplyToEmail !== undefined ? input.defaultReplyToEmail.trim() : undefined;
+    if (input.defaultUtmSource !== undefined) {
+      requireString(input.defaultUtmSource, 'Default UTM source');
+    }
     const defaultUtmSource =
       input.defaultUtmSource !== undefined ? input.defaultUtmSource.trim() : undefined;
+    if (input.defaultUtmMedium !== undefined) {
+      requireString(input.defaultUtmMedium, 'Default UTM medium');
+    }
     const defaultUtmMedium =
       input.defaultUtmMedium !== undefined ? input.defaultUtmMedium.trim() : undefined;
+    if (input.defaultUtmCampaign !== undefined) {
+      requireString(input.defaultUtmCampaign, 'Default UTM campaign');
+    }
     const defaultUtmCampaign =
       input.defaultUtmCampaign !== undefined ? input.defaultUtmCampaign.trim() : undefined;
 
@@ -1406,6 +1436,7 @@ export class BloomreachCampaignSettingsService {
   prepareCreateFont(input: CreateFontInput): PreparedCampaignSettingsAction {
     const project = validateProject(input.project);
     const name = validateFontName(input.name);
+    requireString(input.type, 'Font type');
     const type = input.type.trim();
     if (type.length === 0) {
       throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Font type must not be empty.');
@@ -1432,6 +1463,9 @@ export class BloomreachCampaignSettingsService {
     const project = validateProject(input.project);
     const fontId = validateFontId(input.fontId);
     const name = input.name !== undefined ? validateFontName(input.name) : undefined;
+    if (input.type !== undefined) {
+      requireString(input.type, 'Font type');
+    }
     const type = input.type !== undefined ? input.type.trim() : undefined;
 
     if (type !== undefined && type.length === 0) {
@@ -1720,6 +1754,7 @@ export class BloomreachCampaignSettingsService {
   prepareCreateUrlList(input: CreateUrlListInput): PreparedCampaignSettingsAction {
     const project = validateProject(input.project);
     const name = validateUrlListName(input.name);
+    requireString(input.listType, 'URL list type');
     const listType = input.listType.trim();
     if (listType.length === 0) {
       throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'URL list type must not be empty.');
@@ -1747,6 +1782,9 @@ export class BloomreachCampaignSettingsService {
     const project = validateProject(input.project);
     const urlListId = validateUrlListId(input.urlListId);
     const name = input.name !== undefined ? validateUrlListName(input.name) : undefined;
+    if (input.listType !== undefined) {
+      requireString(input.listType, 'URL list type');
+    }
     const listType = input.listType !== undefined ? input.listType.trim() : undefined;
 
     if (listType !== undefined && listType.length === 0) {

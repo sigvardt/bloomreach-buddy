@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString, requireArray, requireObject } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 /** Action type for creating a managed tag. */
@@ -132,6 +132,7 @@ const MAX_PRIORITY = 1000;
 
 /** @throws {Error} If tag name is empty or exceeds 200 characters. */
 export function validateTagName(name: string): string {
+  requireString(name, 'Tag name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_TAG_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Tag name must not be empty.');
@@ -144,6 +145,7 @@ export function validateTagName(name: string): string {
 
 /** @throws {Error} If tag ID is empty or exceeds 500 characters. */
 export function validateTagId(tagId: string): string {
+  requireString(tagId, 'Tag ID');
   const trimmed = tagId.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Tag ID must not be empty.');
@@ -156,6 +158,7 @@ export function validateTagId(tagId: string): string {
 
 /** @throws {Error} If JS code is empty or exceeds 100000 characters. */
 export function validateJsCode(code: string): string {
+  requireString(code, 'JS code');
   if (code.trim().length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'JS code must not be empty.');
   }
@@ -167,6 +170,7 @@ export function validateJsCode(code: string): string {
 
 /** @throws {Error} If status is not a recognised tag status. */
 export function validateTagStatus(status: string): TagStatus {
+  requireString(status, 'status');
   const trimmed = status.trim();
   if (!TAG_STATUSES.includes(trimmed as TagStatus)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `status must be one of: ${TAG_STATUSES.join(', ')} (got "${status}").`);
@@ -176,6 +180,7 @@ export function validateTagStatus(status: string): TagStatus {
 
 /** @throws {Error} If URL is empty or exceeds 2000 characters. */
 export function validatePageUrl(url: string): string {
+  requireString(url, 'Page URL');
   const trimmed = url.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Page URL must not be empty.');
@@ -188,6 +193,7 @@ export function validatePageUrl(url: string): string {
 
 /** @throws {Error} If events are empty, too many, invalid, or not unique. */
 export function validateEvents(events: string[]): string[] {
+  requireArray(events, 'events');
   if (events.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Events must not be empty.');
   }
@@ -197,6 +203,7 @@ export function validateEvents(events: string[]): string[] {
 
   const validated: string[] = [];
   for (const eventName of events) {
+    requireString(eventName, 'Event name');
     const trimmed = eventName.trim();
     if (trimmed.length === 0) {
       throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Event name must not be empty.');
@@ -219,6 +226,7 @@ export function validateEvents(events: string[]): string[] {
 export function validateCustomerAttributes(
   attrs: Record<string, string>,
 ): Record<string, string> {
+  requireObject(attrs, 'customerAttributes');
   const entries = Object.entries(attrs);
   if (entries.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Customer attributes must not be empty.');
@@ -229,6 +237,7 @@ export function validateCustomerAttributes(
 
   const validated: Record<string, string> = {};
   for (const [key, value] of entries) {
+    requireString(value, `customerAttributes.${key}`);
     const trimmedKey = key.trim();
     if (trimmedKey.length === 0) {
       throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Customer attribute key must not be empty.');

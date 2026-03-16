@@ -2624,3 +2624,122 @@ describe('BloomreachCampaignSettingsService', () => {
     });
   });
 });
+
+describe('null/undefined input guards', () => {
+  it('throws when prepareCreateTimezone is called without name', () => {
+    const service = new BloomreachCampaignSettingsService('test');
+    expect(() =>
+      service.prepareCreateTimezone({
+        project: 'test',
+        name: undefined as unknown as string,
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCreateTimezone is called without project', () => {
+    const service = new BloomreachCampaignSettingsService('test');
+    expect(() =>
+      service.prepareCreateTimezone({
+        project: undefined as unknown as string,
+        name: 'UTC',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCreateLanguage is called without name', () => {
+    const service = new BloomreachCampaignSettingsService('test');
+    expect(() =>
+      service.prepareCreateLanguage({
+        project: 'test',
+        code: 'en',
+        name: undefined as unknown as string,
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCreateLanguage is called without code', () => {
+    const service = new BloomreachCampaignSettingsService('test');
+    expect(() =>
+      service.prepareCreateLanguage({
+        project: 'test',
+        code: undefined as unknown as string,
+        name: 'English',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCreateLanguage is called without project', () => {
+    const service = new BloomreachCampaignSettingsService('test');
+    expect(() =>
+      service.prepareCreateLanguage({
+        project: undefined as unknown as string,
+        code: 'en',
+        name: 'English',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCreateFont is called without name', () => {
+    const service = new BloomreachCampaignSettingsService('test');
+    expect(() =>
+      service.prepareCreateFont({
+        project: 'test',
+        name: undefined as unknown as string,
+        type: 'system',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCreateFont is called without project', () => {
+    const service = new BloomreachCampaignSettingsService('test');
+    expect(() =>
+      service.prepareCreateFont({
+        project: undefined as unknown as string,
+        name: 'Inter',
+        type: 'system',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCreateThroughputPolicy is called without name', () => {
+    const service = new BloomreachCampaignSettingsService('test');
+    expect(() =>
+      service.prepareCreateThroughputPolicy({
+        project: 'test',
+        name: undefined as unknown as string,
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCreateThroughputPolicy is called without project', () => {
+    const service = new BloomreachCampaignSettingsService('test');
+    expect(() =>
+      service.prepareCreateThroughputPolicy({
+        project: undefined as unknown as string,
+        name: 'Default Throughput',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCreateUrlList is called without listType', () => {
+    const service = new BloomreachCampaignSettingsService('test');
+    expect(() =>
+      service.prepareCreateUrlList({
+        project: 'test',
+        name: 'Main URLs',
+        listType: undefined as unknown as string,
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCreatePageVariable is called without value', () => {
+    const service = new BloomreachCampaignSettingsService('test');
+    expect(() =>
+      service.prepareCreatePageVariable({
+        project: 'test',
+        name: 'hero_title',
+        value: undefined as unknown as string,
+      }),
+    ).toThrow('is required and must be a string');
+  });
+});

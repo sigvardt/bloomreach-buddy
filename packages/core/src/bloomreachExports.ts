@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString, requireArray } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import { bloomreachApiFetch, buildDataPath } from './bloomreachApiClient.js';
 
@@ -135,6 +135,8 @@ const EXPORT_TYPES = new Set(['customers', 'events']);
 const DESTINATION_TYPES = new Set(['sftp', 's3', 'email', 'webhook']);
 const SCHEDULE_FREQUENCIES = new Set(['daily', 'weekly', 'monthly']);
 function validateRequiredTrimmed(value: string, fieldName: string): string {
+  requireString(value, 'value');
+  requireString(fieldName, 'Field name');
   const trimmed = value.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${fieldName} must not be empty.`);
@@ -143,6 +145,7 @@ function validateRequiredTrimmed(value: string, fieldName: string): string {
 }
 
 function validateExportName(name: string): string {
+  requireString(name, 'name');
   const trimmed = validateRequiredTrimmed(name, 'Export name');
   if (trimmed.length > MAX_EXPORT_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Export name must not exceed ${MAX_EXPORT_NAME_LENGTH} characters (got ${trimmed.length}).`);
@@ -151,6 +154,7 @@ function validateExportName(name: string): string {
 }
 
 function validateExportType(exportType: string): string {
+  requireString(exportType, 'Export type');
   const normalized = validateRequiredTrimmed(exportType, 'Export type').toLowerCase();
   if (!EXPORT_TYPES.has(normalized)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Export type must be one of: ${Array.from(EXPORT_TYPES).join(', ')} (got ${normalized}).`);
@@ -159,6 +163,7 @@ function validateExportType(exportType: string): string {
 }
 
 function validateDestinationType(destinationType: string): string {
+  requireString(destinationType, 'Destination type');
   const normalized = validateRequiredTrimmed(destinationType, 'Destination type').toLowerCase();
   if (!DESTINATION_TYPES.has(normalized)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Destination type must be one of: ${Array.from(DESTINATION_TYPES).join(', ')} (got ${normalized}).`);
@@ -167,6 +172,7 @@ function validateDestinationType(destinationType: string): string {
 }
 
 function validateExportId(exportId: string): string {
+  requireString(exportId, 'Export ID');
   const trimmed = validateRequiredTrimmed(exportId, 'Export ID');
   if (trimmed.length > MAX_EXPORT_ID_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Export ID must not exceed ${MAX_EXPORT_ID_LENGTH} characters (got ${trimmed.length}).`);
@@ -175,6 +181,7 @@ function validateExportId(exportId: string): string {
 }
 
 function validateScheduleFrequency(frequency: string): string {
+  requireString(frequency, 'frequency');
   const normalized = validateRequiredTrimmed(frequency, 'Schedule frequency').toLowerCase();
   if (!SCHEDULE_FREQUENCIES.has(normalized)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Schedule frequency must be one of: ${Array.from(SCHEDULE_FREQUENCIES).join(', ')} (got ${normalized}).`);
@@ -200,9 +207,12 @@ function validateOptionalString(
 }
 
 function validateStringArray(values: string[] | undefined, fieldName: string): string[] | undefined {
+  requireString(fieldName, 'Field name');
   if (values === undefined) {
     return undefined;
   }
+
+  requireArray(values, fieldName);
 
   if (!Array.isArray(values)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `${fieldName} must be an array.`);
@@ -325,6 +335,7 @@ function validateDestination(destination: ExportDestination): ExportDestination 
 }
 
 function validateTimeFormat(time: string): string {
+  requireString(time, 'time');
   const trimmed = validateRequiredTrimmed(time, 'Schedule time');
   const match = /^(\d{2}):(\d{2})$/.exec(trimmed);
   if (match === null) {

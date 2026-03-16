@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const CREATE_SQL_REPORT_ACTION_TYPE = 'sql_reports.create_report';
@@ -105,6 +105,7 @@ export interface PreparedSqlReportAction {
 }
 
 export function validateSqlReportName(name: string): string {
+  requireString(name, 'report name');
   const trimmed = name.trim();
   if (trimmed.length < 1) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Report name must not be empty.');
@@ -116,6 +117,7 @@ export function validateSqlReportName(name: string): string {
 }
 
 export function validateSqlReportId(id: string): string {
+  requireString(id, 'reportId');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Report ID must not be empty.');
@@ -124,6 +126,7 @@ export function validateSqlReportId(id: string): string {
 }
 
 export function validateSqlQuery(query: string): string {
+  requireString(query, 'query');
   const trimmed = query.trim();
   if (trimmed.length < 1) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'SQL query must not be empty.');
@@ -135,6 +138,7 @@ export function validateSqlQuery(query: string): string {
 }
 
 export function validateSqlReportExportFormat(format: string): SqlReportExportFormat {
+  requireString(format, 'format');
   if (!SQL_REPORT_EXPORT_FORMATS.includes(format as SqlReportExportFormat)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `format must be one of: ${SQL_REPORT_EXPORT_FORMATS.join(', ')} (got "${format}").`);
   }
@@ -142,6 +146,7 @@ export function validateSqlReportExportFormat(format: string): SqlReportExportFo
 }
 
 export function validateSqlReportStatus(status: string): SqlReportStatus {
+  requireString(status, 'status');
   if (!SQL_REPORT_STATUSES.includes(status as SqlReportStatus)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `status must be one of: ${SQL_REPORT_STATUSES.join(', ')} (got "${status}").`);
   }

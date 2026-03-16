@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 export const PERFORMANCE_DASHBOARD_TYPES = [
@@ -73,6 +73,7 @@ export type ChannelType = (typeof CHANNEL_TYPES)[number];
 
 /** @throws {Error} If `channel` is not a recognised channel type. */
 export function validateChannel(channel: string): ChannelType {
+  requireString(channel, 'channel');
   if (!CHANNEL_TYPES.includes(channel as ChannelType)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `channel must be one of: ${CHANNEL_TYPES.join(', ')} (got "${channel}").`);
   }

@@ -1229,3 +1229,80 @@ describe('BloomreachTagManagerService', () => {
     });
   });
 });
+
+describe('null/undefined input guards', () => {
+  it('throws when prepareCreateTag is called without name', () => {
+    const service = new BloomreachTagManagerService('test');
+    expect(() =>
+      service.prepareCreateTag({
+        project: 'test',
+        name: undefined as unknown as string,
+        jsCode: 'console.log("hello")',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCreateTag is called without jsCode', () => {
+    const service = new BloomreachTagManagerService('test');
+    expect(() =>
+      service.prepareCreateTag({
+        project: 'test',
+        name: 'Checkout tracker',
+        jsCode: undefined as unknown as string,
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCreateTag is called without project', () => {
+    const service = new BloomreachTagManagerService('test');
+    expect(() =>
+      service.prepareCreateTag({
+        project: undefined as unknown as string,
+        name: 'Checkout tracker',
+        jsCode: 'console.log("hello")',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareEditTag is called without tagId', () => {
+    const service = new BloomreachTagManagerService('test');
+    expect(() =>
+      service.prepareEditTag({
+        project: 'test',
+        tagId: undefined as unknown as string,
+        name: 'Updated tag',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareEditTag is called without project', () => {
+    const service = new BloomreachTagManagerService('test');
+    expect(() =>
+      service.prepareEditTag({
+        project: undefined as unknown as string,
+        tagId: 'tag-123',
+        name: 'Updated tag',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareDeleteTag is called without tagId', () => {
+    const service = new BloomreachTagManagerService('test');
+    expect(() =>
+      service.prepareDeleteTag({
+        project: 'test',
+        tagId: undefined as unknown as string,
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareDeleteTag is called without project', () => {
+    const service = new BloomreachTagManagerService('test');
+    expect(() =>
+      service.prepareDeleteTag({
+        project: undefined as unknown as string,
+        tagId: 'tag-123',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+});

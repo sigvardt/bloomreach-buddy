@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 
 // ---------------------------------------------------------------------------
@@ -112,6 +112,7 @@ export interface PreparedAccessAction {
 const MAX_API_KEY_NAME_LENGTH = 200;
 
 export function validateEmail(email: string): string {
+  requireString(email, 'email');
   const trimmed = email.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Email must not be empty.');
@@ -126,6 +127,7 @@ export function validateEmail(email: string): string {
 }
 
 export function validateMemberRole(role: string): TeamMemberRole {
+  requireString(role, 'role');
   if (!TEAM_MEMBER_ROLES.includes(role as TeamMemberRole)) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `role must be one of: ${TEAM_MEMBER_ROLES.join(', ')} (got "${role}").`);
   }
@@ -133,6 +135,7 @@ export function validateMemberRole(role: string): TeamMemberRole {
 }
 
 export function validateMemberId(id: string): string {
+  requireString(id, 'memberId');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Member ID must not be empty.');
@@ -141,6 +144,7 @@ export function validateMemberId(id: string): string {
 }
 
 export function validateApiKeyName(name: string): string {
+  requireString(name, 'api key name');
   const trimmed = name.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'API key name must not be empty.');
@@ -152,6 +156,7 @@ export function validateApiKeyName(name: string): string {
 }
 
 export function validateApiKeyId(id: string): string {
+  requireString(id, 'apiKeyId');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'API key ID must not be empty.');

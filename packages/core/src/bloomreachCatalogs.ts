@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString, requireArray, requireObject } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import { bloomreachApiFetch, buildDataPath } from './bloomreachApiClient.js';
 
@@ -97,6 +97,7 @@ const MAX_CATALOG_NAME_LENGTH = 200;
 const MIN_CATALOG_NAME_LENGTH = 1;
 
 export function validateCatalogName(name: string): string {
+  requireString(name, 'name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_CATALOG_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Catalog name must not be empty.');
@@ -108,6 +109,7 @@ export function validateCatalogName(name: string): string {
 }
 
 export function validateCatalogId(id: string): string {
+  requireString(id, 'id');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Catalog ID must not be empty.');
@@ -116,6 +118,7 @@ export function validateCatalogId(id: string): string {
 }
 
 export function validateCatalogSchema(schema: Record<string, string>): Record<string, string> {
+  requireObject(schema, 'schema');
   const entries = Object.entries(schema);
   if (entries.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Catalog schema must include at least one field.');
@@ -138,6 +141,7 @@ export function validateCatalogSchema(schema: Record<string, string>): Record<st
 }
 
 export function validateCatalogItems(items: Record<string, unknown>[]): Record<string, unknown>[] {
+  requireArray(items, 'items');
   if (items.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Catalog items must include at least one item.');
   }
@@ -147,11 +151,13 @@ export function validateCatalogItems(items: Record<string, unknown>[]): Record<s
 export function validateCatalogItemUpdates(
   items: { id: string; properties: Record<string, unknown> }[],
 ): { id: string; properties: Record<string, unknown> }[] {
+  requireArray(items, 'items');
   if (items.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Catalog item updates must include at least one item.');
   }
 
   return items.map((item) => {
+    requireString(item.id, 'Catalog item ID');
     const id = item.id.trim();
     if (id.length === 0) {
       throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Catalog item ID must not be empty.');

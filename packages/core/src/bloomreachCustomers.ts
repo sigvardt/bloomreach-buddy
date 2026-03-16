@@ -1,5 +1,5 @@
 import { validateProject } from './bloomreachDashboards.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireString, requireArray, requireObject } from './errors.js';
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
 import {
   bloomreachApiFetch,
@@ -155,6 +155,7 @@ const DEFAULT_LIST_LIMIT = 50;
 const MAX_LIST_LIMIT = 1000;
 
 export function validateCustomerId(id: string): string {
+  requireString(id, 'id');
   const trimmed = id.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Customer ID must not be empty.');
@@ -166,6 +167,7 @@ export function validateCustomerId(id: string): string {
 }
 
 export function validateCustomerIds(ids: CustomerIds): CustomerIds {
+  requireObject(ids, 'customerIds');
   const hasAtLeastOne = Object.values(ids).some(
     (v) => typeof v === 'string' && v.trim().length > 0,
   );
@@ -182,6 +184,7 @@ export function validateCustomerIds(ids: CustomerIds): CustomerIds {
 }
 
 export function validateCustomerEventType(eventType: string): string {
+  requireString(eventType, 'Event type');
   const trimmed = eventType.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Event type must not be empty.');
@@ -193,6 +196,7 @@ export function validateCustomerEventType(eventType: string): string {
 }
 
 export function validateCustomerBatchCommands(commands: CustomerBatchCommand[]): CustomerBatchCommand[] {
+  requireArray(commands, 'commands');
   if (!Array.isArray(commands) || commands.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'At least one batch command must be provided.');
   }
@@ -215,6 +219,7 @@ export function validateCustomerBatchCommands(commands: CustomerBatchCommand[]):
 }
 
 export function validateSearchQuery(query: string): string {
+  requireString(query, 'query');
   const trimmed = query.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Search query must not be empty.');

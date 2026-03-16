@@ -1,5 +1,5 @@
 import type { BloomreachApiConfig } from './bloomreachApiClient.js';
-import { BloomreachBuddyError } from './errors.js';
+import { BloomreachBuddyError, requireObject, requireString } from './errors.js';
 
 export const CREATE_DASHBOARD_ACTION_TYPE = 'dashboards.create_dashboard';
 export const SET_HOME_DASHBOARD_ACTION_TYPE = 'dashboards.set_home_dashboard';
@@ -73,6 +73,7 @@ const MIN_LAYOUT_COLUMNS = 1;
 
 /** @throws {Error} If name is empty or exceeds 200 characters. */
 export function validateDashboardName(name: string): string {
+  requireString(name, 'dashboard name');
   const trimmed = name.trim();
   if (trimmed.length < MIN_DASHBOARD_NAME_LENGTH) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Dashboard name must not be empty.');
@@ -85,6 +86,7 @@ export function validateDashboardName(name: string): string {
 
 /** @throws {Error} If project is empty. */
 export function validateProject(project: string): string {
+  requireString(project, 'project');
   const trimmed = project.trim();
   if (trimmed.length === 0) {
     throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Project identifier must not be empty.');
@@ -94,16 +96,18 @@ export function validateProject(project: string): string {
 
 /** @throws {Error} If column count is not an integer between 1 and 6. */
 export function validateLayoutConfig(layout: DashboardLayoutConfig): DashboardLayoutConfig {
-  if (layout.columns !== undefined) {
+  requireObject(layout, 'layout');
+  const validatedLayout = layout as DashboardLayoutConfig;
+  if (validatedLayout.columns !== undefined) {
     if (
-      !Number.isInteger(layout.columns) ||
-      layout.columns < MIN_LAYOUT_COLUMNS ||
-      layout.columns > MAX_LAYOUT_COLUMNS
+      !Number.isInteger(validatedLayout.columns) ||
+      validatedLayout.columns < MIN_LAYOUT_COLUMNS ||
+      validatedLayout.columns > MAX_LAYOUT_COLUMNS
     ) {
-      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Layout columns must be an integer between ${MIN_LAYOUT_COLUMNS} and ${MAX_LAYOUT_COLUMNS} (got ${layout.columns}).`);
+      throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', `Layout columns must be an integer between ${MIN_LAYOUT_COLUMNS} and ${MAX_LAYOUT_COLUMNS} (got ${validatedLayout.columns}).`);
     }
   }
-  return layout;
+  return validatedLayout;
 }
 
 export function buildDashboardsUrl(project: string): string {
@@ -245,6 +249,7 @@ export class BloomreachDashboardsService {
   /** @throws {Error} If input validation fails. */
   prepareSetHomeDashboard(input: SetHomeDashboardInput): PreparedDashboardAction {
     const project = validateProject(input.project);
+    requireString(input.dashboardId, 'dashboard ID');
     const dashboardId = input.dashboardId.trim();
     if (dashboardId.length === 0) {
       throw new BloomreachBuddyError('ACTION_PRECONDITION_FAILED', 'Dashboard ID must not be empty.');

@@ -14,6 +14,7 @@ import {
   createFunnelActionExecutors,
   BloomreachFunnelsService,
 } from '../index.js';
+import type { FunnelStep } from '../index.js';
 import type { BloomreachApiConfig } from '../bloomreachApiClient.js';
 
 const TEST_API_CONFIG: BloomreachApiConfig = {
@@ -1223,5 +1224,98 @@ describe('BloomreachFunnelsService', () => {
         }),
       );
     });
+  });
+});
+
+describe('null/undefined input guards', () => {
+  it('throws when prepareCreateFunnelAnalysis is called without name', () => {
+    const service = new BloomreachFunnelsService('test');
+    expect(() =>
+      service.prepareCreateFunnelAnalysis({
+        project: 'test',
+        name: undefined as unknown as string,
+        steps: [
+          { order: 1, eventName: 'visit' },
+          { order: 2, eventName: 'purchase' },
+        ],
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCreateFunnelAnalysis is called without steps', () => {
+    const service = new BloomreachFunnelsService('test');
+    expect(() =>
+      service.prepareCreateFunnelAnalysis({
+        project: 'test',
+        name: 'My Funnel',
+        steps: undefined as unknown as FunnelStep[],
+      }),
+    ).toThrow('is required and must be an array');
+  });
+
+  it('throws when prepareCreateFunnelAnalysis is called without project', () => {
+    const service = new BloomreachFunnelsService('test');
+    expect(() =>
+      service.prepareCreateFunnelAnalysis({
+        project: undefined as unknown as string,
+        name: 'My Funnel',
+        steps: [
+          { order: 1, eventName: 'visit' },
+          { order: 2, eventName: 'purchase' },
+        ],
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCloneFunnelAnalysis is called without analysisId', () => {
+    const service = new BloomreachFunnelsService('test');
+    expect(() =>
+      service.prepareCloneFunnelAnalysis({
+        project: 'test',
+        analysisId: undefined as unknown as string,
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareCloneFunnelAnalysis is called without project', () => {
+    const service = new BloomreachFunnelsService('test');
+    expect(() =>
+      service.prepareCloneFunnelAnalysis({
+        project: undefined as unknown as string,
+        analysisId: 'funnel-123',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareArchiveFunnelAnalysis is called without analysisId', () => {
+    const service = new BloomreachFunnelsService('test');
+    expect(() =>
+      service.prepareArchiveFunnelAnalysis({
+        project: 'test',
+        analysisId: undefined as unknown as string,
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when prepareArchiveFunnelAnalysis is called without project', () => {
+    const service = new BloomreachFunnelsService('test');
+    expect(() =>
+      service.prepareArchiveFunnelAnalysis({
+        project: undefined as unknown as string,
+        analysisId: 'funnel-123',
+      }),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when validateFunnelName is called with undefined', () => {
+    expect(() =>
+      validateFunnelName(undefined as unknown as string),
+    ).toThrow('is required and must be a string');
+  });
+
+  it('throws when validateFunnelSteps is called with undefined', () => {
+    expect(() =>
+      validateFunnelSteps(undefined as unknown as FunnelStep[]),
+    ).toThrow('is required and must be an array');
   });
 });
