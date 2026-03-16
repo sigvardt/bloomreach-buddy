@@ -211,7 +211,7 @@ describe('BloomreachAuthService', () => {
       expect.any(Function),
     );
     expect(mockPage.goto).toHaveBeenCalledWith('https://eu.login.bloomreach.com/login', {
-      waitUntil: 'domcontentloaded',
+      waitUntil: 'networkidle',
       timeout: 30_000,
     });
     expect(saveSession).toHaveBeenCalledWith(

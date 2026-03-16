@@ -144,12 +144,18 @@ export class BloomreachAuthService {
       async (context: BrowserContext) => {
         const page: Page = context.pages()[0] ?? (await context.newPage());
 
-        await page.goto(loginUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+        await page.goto(loginUrl, { waitUntil: 'networkidle', timeout: 30_000 });
 
         const autoFill = options?.autoFill ?? true;
         if (autoFill) {
           const autoFillConfig = resolveAutoFillConfig();
           if (autoFillConfig.email || autoFillConfig.password) {
+            // Wait for the login form to render (Angular SPA needs time after navigation)
+            try {
+              await page.waitForSelector('input[name="username"], input[type="email"]', { timeout: 10_000 });
+            } catch {
+              // Form may not appear (already authenticated, different page layout) — continue
+            }
             await tryAutoFill(page, autoFillConfig);
           }
         }
