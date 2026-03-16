@@ -63,9 +63,17 @@ export function isLoginPage(url: string): boolean {
   }
 }
 
+/** Non-authenticated paths on the login domain. */
+const LOGIN_DOMAIN_PUBLIC_PATHS = new Set(['/', '/login', '/forgotten-password', '/register']);
+
 export function isAuthenticatedPage(url: string): boolean {
   try {
     const parsed = new URL(url);
+    // After login, browser stays on login.bloomreach.com but moves to /my-account
+    if (parsed.hostname.includes('login.bloomreach.com')) {
+      return !LOGIN_DOMAIN_PUBLIC_PATHS.has(parsed.pathname);
+    }
+    // Or navigates to project pages on .bloomreach.co or .exponea.com
     return (parsed.hostname.endsWith('.bloomreach.co') || parsed.hostname.endsWith('.exponea.com')) && parsed.pathname !== '/login';
   } catch {
     return false;

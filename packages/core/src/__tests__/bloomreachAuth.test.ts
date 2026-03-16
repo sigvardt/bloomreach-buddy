@@ -93,9 +93,22 @@ describe('bloomreachAuth helpers', () => {
   });
 
   it('isAuthenticatedPage returns expected values', () => {
+    // Project pages on .bloomreach.co
     expect(isAuthenticatedPage('https://power.bloomreach.co/project/123')).toBe(true);
+    // Project pages on .exponea.com
+    expect(isAuthenticatedPage('https://app.exponea.com/project/456')).toBe(true);
+    // Login domain public paths are NOT authenticated
     expect(isAuthenticatedPage('https://eu.login.bloomreach.com/')).toBe(false);
+    expect(isAuthenticatedPage('https://eu.login.bloomreach.com/login')).toBe(false);
+    expect(isAuthenticatedPage('https://eu.login.bloomreach.com/forgotten-password')).toBe(false);
+    expect(isAuthenticatedPage('https://eu.login.bloomreach.com/register')).toBe(false);
+    // Login domain authenticated paths (post-login redirects)
+    expect(isAuthenticatedPage('https://eu.login.bloomreach.com/my-account')).toBe(true);
+    expect(isAuthenticatedPage('https://eu.login.bloomreach.com/my-account/user-profile')).toBe(true);
+    // Login paths on project domains are NOT authenticated
     expect(isAuthenticatedPage('https://power.bloomreach.co/login')).toBe(false);
+    // Invalid URLs
+    expect(isAuthenticatedPage('not-a-valid-url')).toBe(false);
   });
 });
 
