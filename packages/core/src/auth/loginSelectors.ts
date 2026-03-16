@@ -160,7 +160,13 @@ async function tryFillByCandidates(
 ): Promise<boolean> {
   for (const candidate of candidates) {
     try {
-      await page.fill(candidate.selector, value);
+      // Use click + clear + type instead of fill — Angular reactive forms
+      // need real keystroke events to update their internal model.
+      // page.fill() dispatches input/change but skips keydown/keyup
+      // which some SPA frameworks rely on for validation.
+      await page.click(candidate.selector);
+      await page.fill(candidate.selector, '');
+      await page.type(candidate.selector, value, { delay: 20 });
       return true;
     } catch (error) {
       const normalized = normalizeError(error, 'Field fill failed', candidate.selector);
