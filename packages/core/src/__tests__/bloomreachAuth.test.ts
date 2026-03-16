@@ -87,15 +87,15 @@ const cookieSummary = [
 describe('bloomreachAuth helpers', () => {
   it('isLoginPage returns expected values', () => {
     expect(isLoginPage('https://eu.login.bloomreach.com/')).toBe(true);
-    expect(isLoginPage('https://app.bloomreach.com/')).toBe(false);
+    expect(isLoginPage('https://app.exponea.com/')).toBe(false);
     expect(isLoginPage('https://example.com/login')).toBe(true);
     expect(isLoginPage('not-a-valid-url')).toBe(false);
   });
 
   it('isAuthenticatedPage returns expected values', () => {
-    expect(isAuthenticatedPage('https://app.bloomreach.com/project/123')).toBe(true);
+    expect(isAuthenticatedPage('https://power.bloomreach.co/project/123')).toBe(true);
     expect(isAuthenticatedPage('https://eu.login.bloomreach.com/')).toBe(false);
-    expect(isAuthenticatedPage('https://app.bloomreach.com/login')).toBe(false);
+    expect(isAuthenticatedPage('https://power.bloomreach.co/login')).toBe(false);
   });
 });
 
@@ -179,7 +179,7 @@ describe('BloomreachAuthService', () => {
       origins: [],
     };
 
-    mockPage.url.mockReturnValueOnce('https://app.bloomreach.com/project/123');
+    mockPage.url.mockReturnValueOnce('https://power.bloomreach.co/project/123');
     mockContext.storageState.mockResolvedValue(storageState);
 
     const auth = new BloomreachAuthService(profileManagerForAuth, {
@@ -197,7 +197,7 @@ describe('BloomreachAuthService', () => {
       { headless: false },
       expect.any(Function),
     );
-    expect(mockPage.goto).toHaveBeenCalledWith('https://eu.login.bloomreach.com/', {
+    expect(mockPage.goto).toHaveBeenCalledWith('https://eu.login.bloomreach.com/login', {
       waitUntil: 'domcontentloaded',
       timeout: 30_000,
     });
@@ -205,7 +205,7 @@ describe('BloomreachAuthService', () => {
       '/profiles',
       'p1',
       storageState,
-      'https://eu.login.bloomreach.com/',
+      'https://eu.login.bloomreach.com/login',
     );
     expect(result.authenticated).toBe(true);
     expect(result.timedOut).toBe(false);
@@ -299,7 +299,7 @@ describe('BloomreachAuthService', () => {
   it('openLogin attempts auto-fill when env vars are set', async () => {
     vi.mocked(resolveAutoFillConfig).mockReturnValue({ email: 'test@example.com', password: 'secret' });
     vi.mocked(tryAutoFill).mockResolvedValue(true);
-    mockPage.url.mockReturnValueOnce('https://app.bloomreach.com/project/123');
+    mockPage.url.mockReturnValueOnce('https://power.bloomreach.co/project/123');
     mockContext.storageState.mockResolvedValue({ cookies: validSession.storageState.cookies, origins: [] });
 
     const auth = new BloomreachAuthService(profileManagerForAuth, {
@@ -316,7 +316,7 @@ describe('BloomreachAuthService', () => {
   });
 
   it('openLogin skips auto-fill when autoFill is false', async () => {
-    mockPage.url.mockReturnValueOnce('https://app.bloomreach.com/project/123');
+    mockPage.url.mockReturnValueOnce('https://power.bloomreach.co/project/123');
     mockContext.storageState.mockResolvedValue({ cookies: validSession.storageState.cookies, origins: [] });
 
     const auth = new BloomreachAuthService(profileManagerForAuth, {

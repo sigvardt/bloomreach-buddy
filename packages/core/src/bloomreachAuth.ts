@@ -18,8 +18,8 @@ import type {
 } from './bloomreachSessionStore.js';
 import { tryAutoFill, resolveAutoFillConfig } from './auth/loginSelectors.js';
 
-export const BLOOMREACH_LOGIN_URL = 'https://eu.login.bloomreach.com/';
-export const BLOOMREACH_APP_URL = 'https://app.bloomreach.com/';
+export const BLOOMREACH_LOGIN_URL = 'https://eu.login.bloomreach.com/login';
+export const BLOOMREACH_APP_URL = 'https://app.exponea.com/';
 
 export const DEFAULT_LOGIN_TIMEOUT_MS = 300_000;
 export const DEFAULT_LOGIN_POLL_INTERVAL_MS = 2_000;
@@ -66,7 +66,7 @@ export function isLoginPage(url: string): boolean {
 export function isAuthenticatedPage(url: string): boolean {
   try {
     const parsed = new URL(url);
-    return parsed.hostname.includes('app.bloomreach.com') && parsed.pathname !== '/login';
+    return (parsed.hostname.endsWith('.bloomreach.co') || parsed.hostname.endsWith('.exponea.com')) && parsed.pathname !== '/login';
   } catch {
     return false;
   }
