@@ -45,6 +45,12 @@ export * from './bloomreachProfileManager.js';
 export * from './bloomreachSessionStore.js';
 export * from './bloomreachAuth.js';
 
+// Auth infrastructure (issue #197)
+export * from './auth/loginSelectors.js';
+export * from './auth/apiAuth.js';
+export * from './auth/webappApiClient.js';
+export * from './auth/authManager.js';
+
 export interface BloomreachClientConfig {
   /** Bloomreach environment ID */
   environment: string;

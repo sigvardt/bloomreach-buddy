@@ -53,6 +53,7 @@ import {
   openBrowserUrl,
   BloomreachProfileManager,
   BLOOMREACH_API_SETTINGS_URL,
+  createAuthManager,
 } from '@bloomreach-buddy/core';
 import type {
   ActionExecutor,
@@ -12364,37 +12365,87 @@ program
     },
   );
 
+program
+  .command('logout')
+  .description('Clear stored Bloomreach browser session')
+  .option('--profile <name>', 'Browser profile name', 'default')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { profile: string; json?: boolean }) => {
+      try {
+        const authManager = createAuthManager();
+        const result = await authManager.logout({ profileName: options.profile });
+
+        if (options.json) {
+          console.log(JSON.stringify(result, null, 2));
+        } else if (result.cleared) {
+          console.log(`  Session cleared for profile "${result.profileName}".`);
+        } else {
+          console.log(`  No session found for profile "${result.profileName}".`);
+        }
+      } catch (error) {
+        if (options.json) {
+          console.log(
+            JSON.stringify(
+              {
+                cleared: false,
+                error: error instanceof Error ? error.message : String(error),
+              },
+              null,
+              2,
+            ),
+          );
+        } else {
+          console.error(
+            `Error: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+        process.exit(1);
+      }
+    },
+  );
+
 const auth = program
   .command('auth')
   .description('Manage Bloomreach browser authentication');
 
 auth
   .command('status')
-  .description('Check browser session authentication status')
+  .description('Check all authentication states (API credentials + browser session)')
   .option('--profile <name>', 'Browser profile name', 'default')
   .option('--json', 'Output as JSON')
   .action(
     async (options: { profile: string; json?: boolean }) => {
       try {
-        const profilesDir = resolveProfilesDir();
-        const profileManager = new BloomreachProfileManager({ profilesDir });
-        const authService = new BloomreachAuthService(profileManager, { profilesDir });
-
-        const status = await authService.status({ profileName: options.profile });
+        const authManager = createAuthManager();
+        const status = await authManager.status({ profileName: options.profile });
 
         if (options.json) {
           console.log(JSON.stringify(status, null, 2));
         } else {
           console.log('');
-          console.log(`  Authenticated: ${status.authenticated ? 'yes' : 'no'}`);
-          console.log(`  Profile:       ${status.profileName}`);
-          console.log(`  Reason:        ${status.reason}`);
-          if (status.sessionExpired) {
-            console.log('  Session:       expired');
+          console.log('  Bloomreach Auth Status');
+          console.log('  =====================');
+          console.log('');
+          console.log('  API Credentials (Tier 1):');
+          console.log(`    Configured: ${status.api.configured ? 'yes' : 'no'}`);
+          if (status.api.projectToken) console.log(`    Token:      ${status.api.projectToken}`);
+          if (status.api.apiKeyId) console.log(`    Key ID:     ${status.api.apiKeyId}`);
+          if (status.api.baseUrl) console.log(`    Base URL:   ${status.api.baseUrl}`);
+          console.log('');
+          console.log('  Browser Session (Tier 2/3):');
+          console.log(`    Authenticated: ${status.browser.authenticated ? 'yes' : 'no'}`);
+          console.log(`    Profile:       ${status.browser.profileName}`);
+          console.log(`    Reason:        ${status.browser.reason}`);
+          if (status.browser.sessionExpired) {
+            console.log('    Session:       expired');
           }
-          if (status.cookieSummary && status.cookieSummary.length > 0) {
-            console.log(`  Cookies:       ${status.cookieSummary.length} stored`);
+          if (status.browser.cookieSummary && status.browser.cookieSummary.length > 0) {
+            console.log(`    Cookies:       ${status.browser.cookieSummary.length} stored`);
           }
+          console.log('');
+          console.log('  Webapp API (Tier 2):');
+          console.log(`    Ready: ${status.webappApiReady ? 'yes' : 'no'}`);
           console.log('');
         }
       } catch (error) {
@@ -12480,6 +12531,64 @@ auth
           console.error(
             `Error: ${error instanceof Error ? error.message : String(error)}`,
           );
+        }
+        process.exit(1);
+      }
+    },
+  );
+
+auth
+  .command('verify-api')
+  .description('Verify Bloomreach API credentials against the live API')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { json?: boolean }) => {
+      try {
+        const authManager = createAuthManager();
+        const result = await authManager.verifyApi();
+
+        if (options.json) {
+          console.log(JSON.stringify(result, null, 2));
+        } else {
+          console.log('');
+          console.log('  API Credential Verification');
+          console.log('  --------------------------');
+          console.log(`  Configured: ${result.configured ? 'yes' : 'no'}`);
+          if (!result.configured) {
+            console.log(
+              '  Set BLOOMREACH_PROJECT_TOKEN, BLOOMREACH_API_KEY_ID, and BLOOMREACH_API_SECRET.',
+            );
+            console.log('');
+            process.exit(1);
+          }
+          console.log(`  Verified:   ${result.verified ? 'yes' : 'no'}`);
+          if (result.projectToken) console.log(`  Token:      ${result.projectToken}`);
+          if (result.apiKeyId) console.log(`  Key ID:     ${result.apiKeyId}`);
+          if (result.baseUrl) console.log(`  Base URL:   ${result.baseUrl}`);
+          if (result.serverTime) {
+            console.log(`  Server time: ${new Date(result.serverTime * 1000).toISOString()}`);
+          }
+          if (result.error && !result.verified) {
+            console.log(`  Error:      ${result.error}`);
+          }
+          console.log('');
+          if (!result.verified) process.exit(1);
+        }
+      } catch (error) {
+        if (options.json) {
+          console.log(
+            JSON.stringify(
+              {
+                configured: false,
+                verified: false,
+                error: error instanceof Error ? error.message : String(error),
+              },
+              null,
+              2,
+            ),
+          );
+        } else {
+          console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
         }
         process.exit(1);
       }

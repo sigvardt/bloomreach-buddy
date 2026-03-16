@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir, chmod } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, chmod, unlink } from 'node:fs/promises';
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 import { hostname, userInfo } from 'node:os';
 import path from 'node:path';
@@ -162,6 +162,26 @@ export async function loadSession(
     return JSON.parse(decrypted) as StoredSession;
   } catch {
     return null;
+  }
+}
+/**
+ * Delete the stored session for a profile.
+ * @returns `true` if a session file existed and was removed, `false` if no session was stored.
+ */
+export async function deleteSession(
+  profilesDir: string,
+  profileName: string,
+): Promise<boolean> {
+  const filePath = getSessionFilePath(profilesDir, profileName);
+  try {
+    await unlink(filePath);
+    return true;
+  } catch (error: unknown) {
+    // ENOENT = file doesn't exist — that's fine, return false
+    if (error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return false;
+    }
+    throw error;
   }
 }
 
