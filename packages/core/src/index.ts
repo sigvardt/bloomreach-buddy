@@ -50,6 +50,11 @@ export * from './auth/loginSelectors.js';
 export * from './auth/apiAuth.js';
 export * from './auth/webappApiClient.js';
 export * from './auth/authManager.js';
+export * from './auth/captchaDetector.js';
+export * from './auth/projectSelectors.js';
+
+// Project management
+export * from './bloomreachProjects.js';
 
 export interface BloomreachClientConfig {
   /** Bloomreach environment ID */

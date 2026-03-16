@@ -52,6 +52,7 @@ import {
   writeEnvFile,
   openBrowserUrl,
   BloomreachProfileManager,
+  BloomreachProjectsService,
   BLOOMREACH_API_SETTINGS_URL,
   createAuthManager,
 } from '@bloomreach-buddy/core';
@@ -12329,6 +12330,11 @@ program
           profileName: options.profile,
           timeoutMs: Number(options.timeout),
           loginUrl: options.loginUrl,
+          onCaptchaDetected: () => {
+            if (!options.json) {
+              console.error('  CAPTCHA detected. Please solve it in the browser window.');
+            }
+          },
         });
 
         if (options.json) {
@@ -12391,6 +12397,219 @@ program
                 cleared: false,
                 error: error instanceof Error ? error.message : String(error),
               },
+              null,
+              2,
+            ),
+          );
+        } else {
+          console.error(
+            `Error: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+        process.exit(1);
+      }
+    },
+  );
+
+// --- Project management ---
+const projects = program
+  .command('projects')
+  .description('Manage Bloomreach project selection');
+
+projects
+  .command('list')
+  .description('List available Bloomreach projects')
+  .option('--profile <name>', 'Browser profile name', 'default')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { profile: string; json?: boolean }) => {
+      try {
+        const profilesDir = resolveProfilesDir();
+        const profileManager = new BloomreachProfileManager({ profilesDir });
+        const projectsService = new BloomreachProjectsService(profileManager, { profilesDir });
+
+        const result = await projectsService.listProjects({
+          profileName: options.profile,
+        });
+
+        if (options.json) {
+          console.log(JSON.stringify(result, null, 2));
+        } else {
+          console.log('');
+          console.log('  Available Bloomreach Projects');
+          console.log('  ============================');
+          console.log('');
+          for (const org of result.hierarchy.organizations) {
+            console.log(`  Organization: ${org.name}`);
+            for (const ws of org.workspaces) {
+              console.log(`    Workspace: ${ws.name}`);
+              for (const prod of ws.products) {
+                console.log(`      ${prod.name} (${prod.projectCount} project${prod.projectCount !== 1 ? 's' : ''})`);
+                for (const projName of prod.projects) {
+                  console.log(`        - ${projName}`);
+                }
+              }
+            }
+          }
+          console.log('');
+          console.log(`  Total: ${result.projects.length} project${result.projects.length !== 1 ? 's' : ''}`);
+          console.log('');
+        }
+      } catch (error) {
+        if (options.json) {
+          console.log(
+            JSON.stringify(
+              { error: error instanceof Error ? error.message : String(error) },
+              null,
+              2,
+            ),
+          );
+        } else {
+          console.error(
+            `Error: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+        process.exit(1);
+      }
+    },
+  );
+
+projects
+  .command('select')
+  .description('Select a Bloomreach project to work in')
+  .argument('<name-or-slug>', 'Project name or URL slug')
+  .option('--profile <name>', 'Browser profile name', 'default')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (
+      nameOrSlug: string,
+      options: { profile: string; json?: boolean },
+    ) => {
+      try {
+        const profilesDir = resolveProfilesDir();
+        const profileManager = new BloomreachProfileManager({ profilesDir });
+        const projectsService = new BloomreachProjectsService(profileManager, { profilesDir });
+
+        const result = await projectsService.selectProject(nameOrSlug, {
+          profileName: options.profile,
+        });
+
+        if (options.json) {
+          console.log(JSON.stringify(result, null, 2));
+        } else {
+          console.log('');
+          console.log(`  Project selected: ${result.project.name}`);
+          console.log(`  URL: ${result.project.url}`);
+          console.log(`  Organization: ${result.project.organization}`);
+          console.log(`  Workspace: ${result.project.workspace}`);
+          console.log(`  Product: ${result.project.product}`);
+          if (result.previousProject) {
+            console.log(`  Previous: ${result.previousProject.name}`);
+          }
+          console.log('');
+        }
+      } catch (error) {
+        if (options.json) {
+          console.log(
+            JSON.stringify(
+              { error: error instanceof Error ? error.message : String(error) },
+              null,
+              2,
+            ),
+          );
+        } else {
+          console.error(
+            `Error: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+        process.exit(1);
+      }
+    },
+  );
+
+projects
+  .command('current')
+  .description('Show the currently selected project')
+  .option('--profile <name>', 'Browser profile name', 'default')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { profile: string; json?: boolean }) => {
+      try {
+        const profilesDir = resolveProfilesDir();
+        const profileManager = new BloomreachProfileManager({ profilesDir });
+        const projectsService = new BloomreachProjectsService(profileManager, { profilesDir });
+
+        const result = await projectsService.currentProject({
+          profileName: options.profile,
+        });
+
+        if (options.json) {
+          console.log(JSON.stringify(result, null, 2));
+        } else if (result.project) {
+          console.log('');
+          console.log(`  Current project: ${result.project.name}`);
+          console.log(`  URL: ${result.project.url}`);
+          console.log(`  Organization: ${result.project.organization}`);
+          console.log('');
+        } else {
+          console.log('');
+          console.log('  No project selected. Run "bloomreach projects select <name>" to choose one.');
+          console.log('');
+        }
+      } catch (error) {
+        if (options.json) {
+          console.log(
+            JSON.stringify(
+              { error: error instanceof Error ? error.message : String(error) },
+              null,
+              2,
+            ),
+          );
+        } else {
+          console.error(
+            `Error: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+        process.exit(1);
+      }
+    },
+  );
+
+projects
+  .command('clear')
+  .description('Clear the current project selection')
+  .option('--profile <name>', 'Browser profile name', 'default')
+  .option('--json', 'Output as JSON')
+  .action(
+    async (options: { profile: string; json?: boolean }) => {
+      try {
+        const profilesDir = resolveProfilesDir();
+        const profileManager = new BloomreachProfileManager({ profilesDir });
+        const projectsService = new BloomreachProjectsService(profileManager, { profilesDir });
+
+        const result = await projectsService.clearProject({
+          profileName: options.profile,
+        });
+
+        if (options.json) {
+          console.log(JSON.stringify(result, null, 2));
+        } else if (result.cleared) {
+          console.log('');
+          console.log('  Project selection cleared.');
+          if (result.previousProject) {
+            console.log(`  Previous: ${result.previousProject.name}`);
+          }
+          console.log('');
+        } else {
+          console.log('');
+          console.log('  No project was selected.');
+          console.log('');
+        }
+      } catch (error) {
+        if (options.json) {
+          console.log(
+            JSON.stringify(
+              { error: error instanceof Error ? error.message : String(error) },
               null,
               2,
             ),
