@@ -21,7 +21,7 @@ export interface AutoFillConfig {
   password?: string;
 }
 
-const DEFAULT_CANDIDATE_TIMEOUT_MS = 500;
+const DEFAULT_CANDIDATE_TIMEOUT_MS = 3_000;
 
 /** Get multi-strategy selectors for the Bloomreach login page. */
 export function getLoginSelectors(): LoginPageSelectors {
