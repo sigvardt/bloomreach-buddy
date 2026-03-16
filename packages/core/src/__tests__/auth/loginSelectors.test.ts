@@ -7,13 +7,14 @@ vi.mock('../../errors.js', async () => {
   return actual;
 });
 
-type MockPage = Pick<Page, '$' | 'fill' | 'click'>;
+type MockPage = Pick<Page, '$' | 'fill' | 'click' | 'type'>;
 
 function createMockPage(): MockPage {
   return {
     $: vi.fn(),
     fill: vi.fn(),
     click: vi.fn(),
+    type: vi.fn(),
   } as unknown as MockPage;
 }
 
@@ -115,6 +116,7 @@ describe('loginSelectors', () => {
     vi.mocked(page.$).mockResolvedValue(handle);
     vi.mocked(page.fill).mockResolvedValue(undefined);
     vi.mocked(page.click).mockResolvedValue(undefined);
+    vi.mocked(page.type).mockResolvedValue(undefined);
 
     const result = await loginSelectorsModule.tryAutoFill(page as Page, {
       email: 'test@example.com',
@@ -122,8 +124,12 @@ describe('loginSelectors', () => {
     });
 
     expect(result).toBe(true);
-    expect(page.fill).toHaveBeenCalledWith('[data-e2e-id="loginForm"] input[name="username"]', 'test@example.com');
-    expect(page.fill).toHaveBeenCalledWith('[data-e2e-id="loginForm"] input[name="password"]', 'secret');
+    // Each field: click(selector) + fill(selector, '') + type(selector, value)
+    expect(page.click).toHaveBeenCalledWith('[data-e2e-id="loginForm"] input[name="username"]');
+    expect(page.type).toHaveBeenCalledWith('[data-e2e-id="loginForm"] input[name="username"]', 'test@example.com', { delay: 20 });
+    expect(page.click).toHaveBeenCalledWith('[data-e2e-id="loginForm"] input[name="password"]');
+    expect(page.type).toHaveBeenCalledWith('[data-e2e-id="loginForm"] input[name="password"]', 'secret', { delay: 20 });
+    // Submit button click
     expect(page.click).toHaveBeenCalledWith('[data-e2e-id="loginScreenLoginButton"]');
   });
 
@@ -132,15 +138,14 @@ describe('loginSelectors', () => {
     const handle = { description: 'element handle' } as unknown as ElementHandle;
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     vi.mocked(page.$).mockResolvedValue(handle);
-    vi.mocked(page.fill).mockRejectedValue(new Error('fill failed'));
+    vi.mocked(page.click).mockRejectedValue(new Error('click failed'));
 
     const result = await loginSelectorsModule.tryAutoFill(page as Page, {
       email: 'test@example.com',
     });
 
     expect(result).toBe(false);
-    expect(page.fill).toHaveBeenCalledTimes(4);
-    expect(page.click).not.toHaveBeenCalled();
+    expect(page.click).toHaveBeenCalledTimes(4);
     expect(console.warn).toHaveBeenCalled();
     warnSpy.mockRestore();
   });
