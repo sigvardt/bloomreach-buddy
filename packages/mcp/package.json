@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@bloomreach-buddy/core": "0.0.1",
-    "@modelcontextprotocol/sdk": "^1.12.1"
+    "@modelcontextprotocol/sdk": "^1.29.0"
   },
   "devDependencies": {
     "tsup": "^8.0.0",
