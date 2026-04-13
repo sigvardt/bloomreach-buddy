@@ -21,7 +21,7 @@
     "eslint": "^10.2.0",
     "prettier": "^3.8.2",
     "@types/node": "^25.6.0",
-    "typescript": "^5.7.0",
+    "typescript": "^6.0.2",
     "typescript-eslint": "^8.58.1"
   },
   "repository": {
