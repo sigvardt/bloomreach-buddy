@@ -22,7 +22,7 @@
   "dependencies": {
     "@bloomreach-buddy/core": "0.0.1",
     "@inquirer/prompts": "8.7.5",
-    "commander": "^15.0.0"
+    "commander": "^15.1.0"
   },
   "devDependencies": {
     "tsup": "^9.0.0"
